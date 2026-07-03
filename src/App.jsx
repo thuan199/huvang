@@ -19,6 +19,16 @@ import {
   History,
 } from 'lucide-react';
 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
+
 function formatMoney(value) {
   const number = Number(value || 0);
   return number.toLocaleString('vi-VN');
@@ -33,6 +43,15 @@ function formatDateTime(value) {
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
+  });
+}
+
+function formatShortDate(value) {
+  if (!value) return '-';
+
+  return new Date(value).toLocaleDateString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
   });
 }
 
@@ -302,6 +321,17 @@ function App() {
       profitPercent,
     };
   }
+
+   const priceChartData = useMemo(() => {
+  return [...priceHistory]
+    .reverse()
+    .map((item) => ({
+      time: formatShortDate(item.created_at),
+      fullTime: formatDateTime(item.created_at),
+      goldType: item.gold_type,
+      price: Number(item.price_per_chi || 0),
+    }));
+}, [priceHistory]);
 
   const summary = useMemo(() => {
     let totalBuyCost = 0;
@@ -580,6 +610,45 @@ function App() {
           )}
         </form>
       </div>
+	  
+	  <div className="card">
+  <h2 className="section-title">
+    <BarChart3 size={20} />
+    Biểu đồ lịch sử giá
+  </h2>
+
+  {priceChartData.length === 0 ? (
+    <p className="small-text">Chưa có dữ liệu để vẽ biểu đồ.</p>
+  ) : (
+    <div className="chart-box">
+      <ResponsiveContainer width="100%" height={320}>
+        <LineChart data={priceChartData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="time" />
+          <YAxis
+            tickFormatter={(value) => formatMoney(value)}
+            width={90}
+          />
+          <Tooltip
+            formatter={(value) => [`${formatMoney(value)} VND`, 'Giá']}
+            labelFormatter={(_, payload) => {
+              if (!payload || payload.length === 0) return '';
+              return payload[0].payload.fullTime;
+            }}
+          />
+          <Line
+            type="monotone"
+            dataKey="price"
+            name="Giá mỗi chỉ"
+            strokeWidth={3}
+            dot={{ r: 4 }}
+            activeDot={{ r: 6 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )}
+</div>
 
       <div className="card">
         <h2 className="section-title">
