@@ -47,9 +47,14 @@ body,
 
 body {
   overflow-x: hidden;
-  font-family: "Segoe UI", Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background: var(--bg-gradient);
   color: var(--text);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Layout chính */
@@ -694,4 +699,47 @@ tbody td {
 
 .location-cell svg {
   color: #64748b;
+}
+
+/* iPhone-like typography */
+h1 {
+  font-weight: 800;
+  letter-spacing: -0.8px;
+}
+
+h2,
+h3 {
+  font-weight: 700;
+  letter-spacing: -0.35px;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+input,
+select,
+textarea {
+  font-size: 15px;
+}
+
+button {
+  font-size: 15px;
+  letter-spacing: -0.1px;
+}
+
+.summary-card span,
+.small-text,
+.user-email,
+label,
+thead th,
+tbody td {
+  letter-spacing: -0.1px;
+}
+
+.summary-card strong {
+  letter-spacing: -0.7px;
 }
