@@ -10,9 +10,12 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+<<<<<<< HEAD
 
 .env
 .env.local
+=======
+>>>>>>> db3e27122ac47d7b56f57624925e9e828b678258
 *.local
 
 # Editor directories and files
@@ -24,4 +27,8 @@ dist-ssr
 *.ntvs*
 *.njsproj
 *.sln
+<<<<<<< HEAD
 *.sw?
+=======
+*.sw?
+>>>>>>> db3e27122ac47d7b56f57624925e9e828b678258
