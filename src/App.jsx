@@ -1,6 +1,16 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from './supabaseClient';
 import './App.css';
+
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
 import {
   Coins,
@@ -17,17 +27,8 @@ import {
   XCircle,
   MapPin,
   History,
+  Globe2,
 } from 'lucide-react';
-
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
 
 function formatMoney(value) {
   const number = Number(value || 0);
@@ -55,6 +56,45 @@ function formatShortDate(value) {
   });
 }
 
+function TradingViewGoldPriceWidget() {
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    containerRef.current.innerHTML = '';
+
+    const widgetDiv = document.createElement('div');
+    widgetDiv.className = 'tradingview-widget-container__widget';
+    containerRef.current.appendChild(widgetDiv);
+
+    const script = document.createElement('script');
+    script.src =
+      'https://s3.tradingview.com/external-embedding/embed-widget-single-quote.js';
+    script.type = 'text/javascript';
+    script.async = true;
+
+    script.textContent = JSON.stringify({
+      symbol: 'OANDA:XAUUSD',
+      width: 260,
+      isTransparent: false,
+      colorTheme: 'light',
+      locale: 'vi_VN',
+    });
+
+    containerRef.current.appendChild(script);
+  }, []);
+
+  return (
+    <div
+      className="tradingview-widget-container tradingview-mini-widget"
+      ref={containerRef}
+    >
+      <div className="tradingview-widget-container__widget" />
+    </div>
+  );
+}
+
 function App() {
   const [transactions, setTransactions] = useState([]);
   const [prices, setPrices] = useState([]);
@@ -62,7 +102,10 @@ function App() {
 
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+
   const [editingId, setEditingId] = useState(null);
+  const [editingPriceId, setEditingPriceId] = useState(null);
+  const [isWorldGoldOpen, setIsWorldGoldOpen] = useState(false);
 
   const defaultTransactionForm = {
     transaction_type: 'BUY',
@@ -74,13 +117,17 @@ function App() {
     note: '',
   };
 
-  const [transactionForm, setTransactionForm] = useState(defaultTransactionForm);
-
-  const [priceForm, setPriceForm] = useState({
+  const defaultPriceForm = {
     gold_type: 'Nhẫn 9999',
     current_price_per_chi: '',
     note: '',
-  });
+  };
+
+  const [transactionForm, setTransactionForm] = useState(
+    defaultTransactionForm
+  );
+
+  const [priceForm, setPriceForm] = useState(defaultPriceForm);
 
   useEffect(() => {
     loadData();
@@ -109,7 +156,9 @@ function App() {
 
     if (transactionError || priceError || historyError) {
       setMessage(
-        transactionError?.message || priceError?.message || historyError?.message
+        transactionError?.message ||
+          priceError?.message ||
+          historyError?.message
       );
     } else {
       setTransactions(transactionData || []);
@@ -187,7 +236,8 @@ function App() {
       gold_type: tx.gold_type || '',
       quantity_chi: String(tx.quantity_chi || ''),
       price_per_chi: String(tx.price_per_chi || ''),
-      transaction_date: tx.transaction_date || new Date().toISOString().slice(0, 10),
+      transaction_date:
+        tx.transaction_date || new Date().toISOString().slice(0, 10),
       location: tx.location || '',
       note: tx.note || '',
     });
@@ -223,16 +273,33 @@ function App() {
       return;
     }
 
-    const { error: priceError } = await supabase.from('gold_prices').upsert(
-      {
-        gold_type: goldType,
-        current_price_per_chi: currentPrice,
-        updated_at: new Date().toISOString(),
-      },
-      {
-        onConflict: 'gold_type',
-      }
-    );
+    let priceError;
+
+    if (editingPriceId) {
+      const result = await supabase
+        .from('gold_prices')
+        .update({
+          gold_type: goldType,
+          current_price_per_chi: currentPrice,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', editingPriceId);
+
+      priceError = result.error;
+    } else {
+      const result = await supabase.from('gold_prices').upsert(
+        {
+          gold_type: goldType,
+          current_price_per_chi: currentPrice,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'gold_type',
+        }
+      );
+
+      priceError = result.error;
+    }
 
     if (priceError) {
       setMessage(priceError.message);
@@ -252,14 +319,54 @@ function App() {
       return;
     }
 
-    setPriceForm({
-      ...priceForm,
-      current_price_per_chi: '',
-      note: '',
-    });
+    setPriceForm(defaultPriceForm);
+    setEditingPriceId(null);
 
     await loadData();
-    setMessage('Đã cập nhật giá vàng và lưu lịch sử giá.');
+
+    setMessage(
+      editingPriceId
+        ? 'Đã sửa giá hiện tại và lưu lịch sử giá.'
+        : 'Đã cập nhật giá vàng và lưu lịch sử giá.'
+    );
+  }
+
+  function editCurrentPrice(item) {
+    setEditingPriceId(item.id);
+
+    setPriceForm({
+      gold_type: item.gold_type || '',
+      current_price_per_chi: String(item.current_price_per_chi || ''),
+      note: 'Sửa giá hiện tại',
+    });
+
+    setMessage('Đang chỉnh sửa giá hiện tại. Sửa xong bấm Lưu giá đã sửa.');
+  }
+
+  function cancelPriceEdit() {
+    setEditingPriceId(null);
+    setPriceForm(defaultPriceForm);
+    setMessage('');
+  }
+
+  async function deleteCurrentPrice(id, goldType) {
+    const ok = window.confirm(`Bạn muốn xóa giá hiện tại của ${goldType}?`);
+    if (!ok) return;
+
+    const { error } = await supabase.from('gold_prices').delete().eq('id', id);
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    if (editingPriceId === id) {
+      cancelPriceEdit();
+    }
+
+    await loadData();
+
+    setMessage('Đã xóa giá hiện tại. Lịch sử giá vẫn được giữ lại.');
   }
 
   async function deleteTransaction(id) {
@@ -322,16 +429,14 @@ function App() {
     };
   }
 
-   const priceChartData = useMemo(() => {
-  return [...priceHistory]
-    .reverse()
-    .map((item) => ({
+  const priceChartData = useMemo(() => {
+    return [...priceHistory].reverse().map((item) => ({
       time: formatShortDate(item.created_at),
       fullTime: formatDateTime(item.created_at),
       goldType: item.gold_type,
       price: Number(item.price_per_chi || 0),
     }));
-}, [priceHistory]);
+  }, [priceHistory]);
 
   const summary = useMemo(() => {
     let totalBuyCost = 0;
@@ -376,6 +481,34 @@ function App() {
       </div>
 
       {message && <p className="message">{message}</p>}
+
+      <div
+        className={isWorldGoldOpen ? 'world-gold-mini open' : 'world-gold-mini'}
+      >
+        {!isWorldGoldOpen ? (
+          <button
+            type="button"
+            className="world-gold-tab"
+            onClick={() => setIsWorldGoldOpen(true)}
+            title="Mở giá vàng thế giới"
+          >
+            <Globe2 size={18} />
+          </button>
+        ) : (
+          <div className="world-gold-price-card">
+            <button
+              type="button"
+              className="world-gold-mini-close"
+              onClick={() => setIsWorldGoldOpen(false)}
+              title="Đóng"
+            >
+              <XCircle size={18} />
+            </button>
+
+            <TradingViewGoldPriceWidget />
+          </div>
+        )}
+      </div>
 
       <div className="summary">
         <div className="summary-card">
@@ -587,10 +720,23 @@ function App() {
             placeholder="Ví dụ: Giá PNJ sáng nay"
           />
 
-          <button type="submit" className="icon-button">
-            <RefreshCcw size={17} />
-            Cập nhật giá
-          </button>
+          <div className="form-actions">
+            <button type="submit" className="icon-button">
+              <RefreshCcw size={17} />
+              {editingPriceId ? 'Lưu giá đã sửa' : 'Cập nhật giá'}
+            </button>
+
+            {editingPriceId && (
+              <button
+                type="button"
+                className="secondary-button icon-button"
+                onClick={cancelPriceEdit}
+              >
+                <XCircle size={17} />
+                Hủy sửa giá
+              </button>
+            )}
+          </div>
 
           <h3>Giá đang lưu</h3>
 
@@ -600,55 +746,79 @@ function App() {
             <ul className="price-list">
               {prices.map((item) => (
                 <li key={item.id}>
-                  <span>{item.gold_type}</span>
-                  <strong>
-                    {formatMoney(item.current_price_per_chi)} VND/chỉ
-                  </strong>
+                  <div className="price-info">
+                    <span>{item.gold_type}</span>
+                    <strong>
+                      {formatMoney(item.current_price_per_chi)} VND/chỉ
+                    </strong>
+                  </div>
+
+                  <div className="price-actions">
+                    <button
+                      type="button"
+                      className="edit-button icon-button table-icon-button"
+                      onClick={() => editCurrentPrice(item)}
+                    >
+                      <Pencil size={15} />
+                      Sửa
+                    </button>
+
+                    <button
+                      type="button"
+                      className="danger-button icon-button table-icon-button"
+                      onClick={() =>
+                        deleteCurrentPrice(item.id, item.gold_type)
+                      }
+                    >
+                      <Trash2 size={15} />
+                      Xóa
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
           )}
         </form>
       </div>
-	  
-	  <div className="card">
-  <h2 className="section-title">
-    <BarChart3 size={20} />
-    Biểu đồ lịch sử giá
-  </h2>
 
-  {priceChartData.length === 0 ? (
-    <p className="small-text">Chưa có dữ liệu để vẽ biểu đồ.</p>
-  ) : (
-    <div className="chart-box">
-      <ResponsiveContainer width="100%" height={320}>
-        <LineChart data={priceChartData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="time" />
-          <YAxis
-            tickFormatter={(value) => formatMoney(value)}
-            width={90}
-          />
-          <Tooltip
-            formatter={(value) => [`${formatMoney(value)} VND`, 'Giá']}
-            labelFormatter={(_, payload) => {
-              if (!payload || payload.length === 0) return '';
-              return payload[0].payload.fullTime;
-            }}
-          />
-          <Line
-            type="monotone"
-            dataKey="price"
-            name="Giá mỗi chỉ"
-            strokeWidth={3}
-            dot={{ r: 4 }}
-            activeDot={{ r: 6 }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  )}
-</div>
+      <div className="card">
+        <h2 className="section-title">
+          <BarChart3 size={20} />
+          Biểu đồ lịch sử giá
+        </h2>
+
+        {priceChartData.length === 0 ? (
+          <p className="small-text">Chưa có dữ liệu để vẽ biểu đồ.</p>
+        ) : (
+          <div className="chart-box">
+            <ResponsiveContainer width="100%" height={320}>
+              <LineChart data={priceChartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="time" />
+                <YAxis
+                  tickFormatter={(value) => formatMoney(value)}
+                  width={90}
+                />
+                <Tooltip
+                  formatter={(value) => [`${formatMoney(value)} VND`, 'Giá']}
+                  labelFormatter={(_, payload) => {
+                    if (!payload || payload.length === 0) return '';
+                    return payload[0].payload.fullTime;
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="price"
+                  name="Giá mỗi chỉ"
+                  strokeWidth={3}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
 
       <div className="card">
         <h2 className="section-title">
