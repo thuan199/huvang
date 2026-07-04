@@ -884,3 +884,103 @@ select:-webkit-autofill {
     grid-template-columns: 1fr;
   }
 }
+
+.app-logo {
+  position: relative;
+  overflow: hidden;
+}
+
+.app-logo::after {
+  content: "";
+  position: absolute;
+  top: -40%;
+  left: -70%;
+  width: 45%;
+  height: 180%;
+  background: rgba(255, 255, 255, 0.45);
+  transform: rotate(25deg);
+  animation: goldShine 3.8s ease-in-out infinite;
+}
+
+@keyframes goldShine {
+  0% {
+    left: -70%;
+  }
+  45% {
+    left: 120%;
+  }
+  100% {
+    left: 120%;
+  }
+}
+
+.profit,
+.loss {
+  transition: transform 0.18s ease, text-shadow 0.18s ease;
+}
+
+.summary-card:hover .profit {
+  text-shadow: 0 0 18px rgba(21, 128, 61, 0.18);
+}
+
+.summary-card:hover .loss {
+  text-shadow: 0 0 18px rgba(220, 38, 38, 0.18);
+}
+
+button {
+  transition: transform 0.16s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+button:hover {
+  filter: brightness(1.03);
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+body {
+  background:
+    linear-gradient(rgba(184, 134, 11, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(184, 134, 11, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at top left, rgba(212, 175, 55, 0.22), transparent 34%),
+    radial-gradient(circle at top right, rgba(17, 24, 39, 0.08), transparent 28%),
+    var(--bg-gradient);
+  background-size:
+    42px 42px,
+    42px 42px,
+    auto,
+    auto,
+    auto;
+}
+
+.world-gold-mini {
+  transition: transform 0.22s ease, opacity 0.22s ease;
+}
+
+.world-gold-price-card {
+  animation: slideGoldWidget 0.22s ease;
+}
+
+@keyframes slideGoldWidget {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.card,
+.summary-card {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.card:hover,
+.summary-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 46px rgba(75, 58, 24, 0.16);
+}
