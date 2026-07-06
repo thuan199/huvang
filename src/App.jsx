@@ -797,6 +797,7 @@ function App() {
                 <XAxis dataKey="time" />
                 <YAxis
                   tickFormatter={(value) => formatMoney(value)}
+				  domain={['dataMin - 10000', 'dataMax + 10000']}
                   width={90}
                 />
                 <Tooltip
