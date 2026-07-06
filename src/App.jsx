@@ -430,13 +430,48 @@ function App() {
   }
 
   const priceChartData = useMemo(() => {
-    return [...priceHistory].reverse().map((item) => ({
-      time: formatShortDate(item.created_at),
-      fullTime: formatDateTime(item.created_at),
-      goldType: item.gold_type,
-      price: Number(item.price_per_chi || 0),
-    }));
-  }, [priceHistory]);
+  const sorted = [...priceHistory].sort(
+    (a, b) => new Date(a.created_at) - new Date(b.created_at)
+  );
+
+  if (sorted.length === 0) return [];
+
+  const result = [];
+
+  const currentDate = new Date(sorted[0].created_at);
+  currentDate.setHours(0, 0, 0, 0);
+
+  const endDate = new Date();
+  endDate.setHours(0, 0, 0, 0);
+
+  let currentPrice = Number(sorted[0].price_per_chi || 0);
+
+  while (currentDate.getTime() <= endDate.getTime()) {
+    const historiesOfDay = sorted.filter((item) => {
+      const itemDate = new Date(item.created_at);
+      itemDate.setHours(0, 0, 0, 0);
+      return itemDate.getTime() === currentDate.getTime();
+    });
+
+    if (historiesOfDay.length > 0) {
+      const lastHistoryOfDay = historiesOfDay[historiesOfDay.length - 1];
+      currentPrice = Number(lastHistoryOfDay.price_per_chi || 0);
+    }
+
+    result.push({
+      time: currentDate.toLocaleDateString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+      }),
+      fullTime: currentDate.toLocaleDateString('vi-VN'),
+      price: currentPrice,
+    });
+
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  return result;
+}, [priceHistory]);
 
   const summary = useMemo(() => {
     let totalBuyCost = 0;
@@ -808,7 +843,7 @@ function App() {
                   }}
                 />
                 <Line
-                  type="monotone"
+                  type="linear"
                   dataKey="price"
                   name="Giá mỗi chỉ"
                   strokeWidth={3}
