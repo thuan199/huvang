@@ -488,7 +488,7 @@ function App() {
         {!isWorldGoldOpen ? (
           <button
             type="button"
-            className="world-gold-tab"
+            className="world-gold-tab gold-blink"
             onClick={() => setIsWorldGoldOpen(true)}
             title="Mở giá vàng thế giới"
           >
