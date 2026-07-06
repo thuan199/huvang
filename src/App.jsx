@@ -472,7 +472,7 @@ function App() {
           </div>
 
           <div>
-            <h1>Gold Tracker</h1>
+            <h1>Hũ vàng của Ethan</h1>
             <p className="user-email">
               Theo dõi lịch sử mua bán vàng, lời/lỗ và giá hiện tại
             </p>
