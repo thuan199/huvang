@@ -843,7 +843,7 @@ function App() {
                   }}
                 />
                 <Line
-                  type="linear"
+                  type="stepAfter"
                   dataKey="price"
                   name="Giá mỗi chỉ"
                   strokeWidth={3}
