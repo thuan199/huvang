@@ -139,14 +139,27 @@ function App() {
   }, []);
 
   useEffect(() => {
-    loadWorldGoldPrice();
+  loadWorldGoldPrice();
 
-    const timer = setInterval(() => {
+  const timer = setInterval(() => {
+    if (document.visibilityState === 'visible') {
       loadWorldGoldPrice();
-    }, 60 * 1000);
+    }
+  }, 60 * 1000);
 
-    return () => clearInterval(timer);
-  }, []);
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      loadWorldGoldPrice();
+    }
+  };
+
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+
+  return () => {
+    clearInterval(timer);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+  };
+}, []);
 
   async function loadWorldGoldPrice() {
     try {
