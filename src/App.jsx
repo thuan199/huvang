@@ -748,7 +748,7 @@ function App() {
             placeholder="Ví dụ: 5"
           />
 
-          <label>Giá mỗi chỉ</label>
+          <label>Giá mua vào</label>
           <input
             type="number"
             value={transactionForm.price_per_chi}
@@ -1068,8 +1068,8 @@ function App() {
                   <th>Loại</th>
                   <th>Vàng</th>
                   <th>Số chỉ</th>
-                  <th>Giá cửa hàng mua</th>
-				  <th>Giá cửa hàng bán</th>
+                  <th>Giá cửa hàng thu</th>
+				  <th>Giá thời điểm mua</th>
                   <th>Nơi mua/bán</th>
                   <th>Lời/lỗ</th>
                   <th>Lời/lỗ %</th>
@@ -1144,7 +1144,7 @@ function App() {
       <div className="card">
         <h2 className="section-title">
           <History size={20} />
-          Lịch sử cập nhật giá
+          Lịch sử cập nhật giá tại cửa hàng PNJ
         </h2>
 
         {priceHistory.length === 0 ? (
@@ -1156,8 +1156,8 @@ function App() {
                 <tr>
                   <th>Thời gian</th>
                   <th>Loại vàng</th>
-                  <th>Giá mỗi chỉ</th>
-				  <th>Giá bán ra mỗi chỉ</th>
+                  <th>Giá mua</th>
+				  <th>Giá bán </th>
                   <th>Ghi chú</th>
                 </tr>
               </thead>

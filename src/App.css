@@ -1035,3 +1035,19 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+table th,
+table td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+table th:first-child,
+table td:first-child {
+  text-align: center;
+}
+
+table th:last-child,
+table td:last-child {
+  text-align: center;
+}
