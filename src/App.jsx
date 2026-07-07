@@ -1055,8 +1055,8 @@ function App() {
                   <th>Loại</th>
                   <th>Vàng</th>
                   <th>Số chỉ</th>
-                  <th>Giá mua/bán</th>
-                  <th>Giá hiện tại</th>
+                  <th>Giá cửa hàng mua</th>
+				  <th>Giá cửa hàng bán</th>
                   <th>Nơi mua/bán</th>
                   <th>Lời/lỗ</th>
                   <th>Lời/lỗ %</th>
@@ -1075,8 +1075,8 @@ function App() {
                       <td>{tx.transaction_type === 'BUY' ? 'Mua' : 'Bán'}</td>
                       <td>{tx.gold_type}</td>
                       <td>{Number(tx.quantity_chi)}</td>
+					  <td>{formatMoney(result.currentPrice)}</td>
                       <td>{formatMoney(tx.price_per_chi)}</td>
-                      <td>{formatMoney(result.currentPrice)}</td>
                       <td>
                         {tx.location ? (
                           <span className="location-cell">
