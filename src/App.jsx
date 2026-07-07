@@ -107,6 +107,10 @@ function App() {
   const [editingPriceId, setEditingPriceId] = useState(null);
   const [isWorldGoldOpen, setIsWorldGoldOpen] = useState(false);
 
+  const [worldGold, setWorldGold] = useState(null);
+  const [worldGoldLoading, setWorldGoldLoading] = useState(false);
+  const [worldGoldError, setWorldGoldError] = useState('');
+
   const defaultTransactionForm = {
     transaction_type: 'BUY',
     gold_type: 'Nhẫn 9999',
@@ -118,10 +122,11 @@ function App() {
   };
 
   const defaultPriceForm = {
-    gold_type: 'Nhẫn 9999',
-    current_price_per_chi: '',
-    note: '',
-  };
+  gold_type: 'Nhẫn 9999',
+  current_price_per_chi: '',
+  sell_price_per_chi: '',
+  note: '',
+};
 
   const [transactionForm, setTransactionForm] = useState(
     defaultTransactionForm
@@ -132,6 +137,70 @@ function App() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    loadWorldGoldPrice();
+
+    const timer = setInterval(() => {
+      loadWorldGoldPrice();
+    }, 60 * 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  async function loadWorldGoldPrice() {
+    try {
+      setWorldGoldLoading(true);
+      setWorldGoldError('');
+
+      const [goldRes, fxRes] = await Promise.all([
+        fetch(`https://xaus.com/api/v1/spot?t=${Date.now()}`),
+        fetch('https://open.er-api.com/v6/latest/USD'),
+      ]);
+
+      if (!goldRes.ok || !fxRes.ok) {
+        throw new Error('Không lấy được dữ liệu giá vàng thế giới hoặc tỷ giá.');
+      }
+
+      const goldData = await goldRes.json();
+      const fxData = await fxRes.json();
+
+      const goldUsdOz = Number(
+        goldData.spot_usd_oz ??
+          goldData.price ??
+          goldData.gold_price ??
+          goldData.data?.spot_usd_oz ??
+          goldData.data?.price
+      );
+
+      const usdVnd = Number(fxData.rates?.VND);
+
+      if (!goldUsdOz || !usdVnd) {
+        throw new Error('Dữ liệu giá vàng thế giới hoặc tỷ giá không hợp lệ.');
+      }
+
+      const gramPerOunce = 31.1035;
+      const gramPerLuong = 37.5;
+
+      const worldGoldVndPerLuong =
+        goldUsdOz * usdVnd * (gramPerLuong / gramPerOunce);
+
+      setWorldGold({
+        goldUsdOz,
+        usdVnd,
+        worldGoldVndPerLuong,
+        updatedAt:
+          goldData.updated_at ||
+          goldData.timestamp ||
+          goldData.data?.updated_at ||
+          new Date().toISOString(),
+      });
+    } catch (error) {
+      setWorldGoldError(error.message || 'Không thể cập nhật giá vàng thế giới.');
+    } finally {
+      setWorldGoldLoading(false);
+    }
+  }
 
   async function loadData() {
     setLoading(true);
@@ -261,6 +330,7 @@ function App() {
     setMessage('');
 
     const currentPrice = Number(priceForm.current_price_per_chi);
+	const sellPrice = Number(priceForm.sell_price_per_chi);
     const goldType = priceForm.gold_type.trim();
 
     if (!goldType) {
@@ -272,6 +342,11 @@ function App() {
       setMessage('Vui lòng nhập giá hiện tại hợp lệ.');
       return;
     }
+	
+	if (!sellPrice || sellPrice <= 0) {
+	  setMessage('Vui lòng nhập giá bán ra hợp lệ.');
+	  return;
+	}
 
     let priceError;
 
@@ -281,6 +356,7 @@ function App() {
         .update({
           gold_type: goldType,
           current_price_per_chi: currentPrice,
+		  sell_price_per_chi: sellPrice,
           updated_at: new Date().toISOString(),
         })
         .eq('id', editingPriceId);
@@ -291,6 +367,7 @@ function App() {
         {
           gold_type: goldType,
           current_price_per_chi: currentPrice,
+		  sell_price_per_chi: sellPrice,
           updated_at: new Date().toISOString(),
         },
         {
@@ -311,6 +388,7 @@ function App() {
       .insert({
         gold_type: goldType,
         price_per_chi: currentPrice,
+		sell_price_per_chi: sellPrice,
         note: priceForm.note.trim() || 'Cập nhật giá hiện tại',
       });
 
@@ -337,6 +415,7 @@ function App() {
     setPriceForm({
       gold_type: item.gold_type || '',
       current_price_per_chi: String(item.current_price_per_chi || ''),
+	  sell_price_per_chi: String(item.sell_price_per_chi || ''),
       note: 'Sửa giá hiện tại',
     });
 
@@ -497,6 +576,22 @@ function App() {
       profitPercent,
     };
   }, [transactions, priceMap]);
+
+  const shopGold = prices[0];
+
+	const shopSellPriceVndPerLuong = shopGold
+	  ? Number(shopGold.sell_price_per_chi || 0) * 10
+	  : 0;
+
+	const goldDifference =
+	  worldGold && shopSellPriceVndPerLuong
+		? shopSellPriceVndPerLuong - worldGold.worldGoldVndPerLuong
+		: 0;
+
+  const goldDifferencePercent =
+    worldGold && worldGold.worldGoldVndPerLuong > 0
+      ? (goldDifference / worldGold.worldGoldVndPerLuong) * 100
+      : 0;
 
   return (
     <div className="container">
@@ -730,7 +825,7 @@ function App() {
             placeholder="Nhẫn 9999"
           />
 
-          <label>Giá hiện tại mỗi chỉ</label>
+          <label>Giá cửa hàng mua vào mỗi chỉ</label>
           <input
             type="number"
             value={priceForm.current_price_per_chi}
@@ -742,6 +837,19 @@ function App() {
             }
             placeholder="Ví dụ: 8300000"
           />
+		  
+		  <label>Giá cửa hàng bán ra mỗi chỉ</label>
+			<input
+			  type="number"
+			  value={priceForm.sell_price_per_chi}
+			  onChange={(e) =>
+				setPriceForm({
+				  ...priceForm,
+				  sell_price_per_chi: e.target.value,
+				})
+			  }
+			  placeholder="Ví dụ: 14800000"
+			/>
 
           <label>Ghi chú giá</label>
           <input
@@ -784,8 +892,11 @@ function App() {
                   <div className="price-info">
                     <span>{item.gold_type}</span>
                     <strong>
-                      {formatMoney(item.current_price_per_chi)} VND/chỉ
+                      Mua vào: {formatMoney(item.current_price_per_chi)} VND/chỉ
                     </strong>
+					<strong>
+					 Bán ra: {formatMoney(item.sell_price_per_chi)} VND/chỉ
+					</strong> 
                   </div>
 
                   <div className="price-actions">
@@ -853,6 +964,75 @@ function App() {
               </LineChart>
             </ResponsiveContainer>
           </div>
+        )}
+      </div>
+
+      <div className="card">
+        <h2 className="section-title">
+          <Globe2 size={20} />
+          So sánh giá vàng thế giới
+        </h2>
+
+        <p className="small-text">
+          Tự động cập nhật giá vàng thế giới và tỷ giá USD/VND mỗi 1 phút.
+        </p>
+
+        {worldGoldLoading && (
+          <p className="small-text">Đang cập nhật giá thế giới...</p>
+        )}
+
+        {worldGoldError && <p className="message">{worldGoldError}</p>}
+
+        {worldGold && (
+          <div className="world-gold-compare">
+            <div>
+              <span>Giá vàng thế giới</span>
+              <strong>{worldGold.goldUsdOz.toFixed(2)} USD/oz</strong>
+            </div>
+
+            <div>
+              <span>Tỷ giá USD/VND</span>
+              <strong>{formatMoney(worldGold.usdVnd)} VND</strong>
+            </div>
+
+            <div>
+              <span>Quy đổi VND/lượng</span>
+              <strong>
+                {formatMoney(Math.round(worldGold.worldGoldVndPerLuong))} VND
+              </strong>
+            </div>
+
+						<div>
+			  <span>Giá cửa hàng bán ra</span>
+			  <strong>
+				{shopGold && shopGold.sell_price_per_chi
+				  ? `${shopGold.gold_type}: ${formatMoney(
+					  shopSellPriceVndPerLuong
+					)} VND/lượng`
+				  : 'Chưa có giá bán ra'}
+			  </strong>
+			</div>
+
+			<div>
+			  <span>Chênh lệch</span>
+			  <strong className={goldDifference >= 0 ? 'profit' : 'loss'}>
+				{shopGold && shopGold.sell_price_per_chi
+				  ? `${formatMoney(Math.round(goldDifference))} VND (${goldDifferencePercent.toFixed(
+					  2
+					)}%)`
+				  : '-'}
+			  </strong>
+			</div>
+
+            <div>
+              <span>Cập nhật lúc</span>
+              <strong>{formatDateTime(worldGold.updatedAt)}</strong>
+            </div>
+          </div>
+        )}
+
+        {!worldGold && !worldGoldLoading && !worldGoldError && (
+          <p className="small-text">Chưa có dữ liệu giá vàng thế giới.</p>
         )}
       </div>
 
@@ -964,6 +1144,7 @@ function App() {
                   <th>Thời gian</th>
                   <th>Loại vàng</th>
                   <th>Giá mỗi chỉ</th>
+				  <th>Giá bán ra mỗi chỉ</th>
                   <th>Ghi chú</th>
                 </tr>
               </thead>
@@ -974,6 +1155,7 @@ function App() {
                     <td>{formatDateTime(item.created_at)}</td>
                     <td>{item.gold_type}</td>
                     <td>{formatMoney(item.price_per_chi)} VND</td>
+					<td>{formatMoney(item.sell_price_per_chi)} VND</td>
                     <td>{item.note || '-'}</td>
                   </tr>
                 ))}

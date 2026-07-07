@@ -1005,3 +1005,33 @@ body {
     box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
   }
 }
+
+.world-gold-compare {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.world-gold-compare div {
+  padding: 14px;
+  border-radius: 14px;
+  background: #fff8e1;
+  border: 1px solid #f3d27a;
+}
+
+.world-gold-compare span {
+  display: block;
+  font-size: 13px;
+  color: #7a5a00;
+  margin-bottom: 6px;
+}
+
+.world-gold-compare strong {
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .world-gold-compare {
+    grid-template-columns: 1fr;
+  }
+}
