@@ -1051,3 +1051,165 @@ table th:last-child,
 table td:last-child {
   text-align: center;
 }
+.theme-toggle {
+  width: 46px;
+  height: 46px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f7d354, #b8860b);
+  color: #07111f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.dark-theme {
+  background: #07111f;
+  color: #f8fafc;
+}
+
+.dark-theme .container {
+  background: #07111f;
+}
+
+.dark-theme .card,
+.dark-theme .summary-card {
+  background: #111827;
+  color: #f8fafc;
+  border-color: #334155;
+}
+
+.dark-theme input,
+.dark-theme select,
+.dark-theme textarea {
+  background: #020617;
+  color: #f8fafc;
+  border-color: #475569;
+}
+
+.dark-theme table {
+  background: #111827;
+  color: #f8fafc;
+}
+
+.dark-theme th {
+  background: #1f2937;
+}
+
+.dark-theme td {
+  border-color: #334155;
+}
+
+.dark-theme .small-text,
+.dark-theme .user-email {
+  color: #cbd5e1;
+}
+
+.dark-theme,
+.dark-theme * {
+  color: #f8fafc;
+}
+
+.dark-theme label,
+.dark-theme h1,
+.dark-theme h2,
+.dark-theme h3,
+.dark-theme span,
+.dark-theme p,
+.dark-theme strong,
+.dark-theme td,
+.dark-theme th {
+  color: #f8fafc;
+}
+
+.dark-theme .small-text,
+.dark-theme .user-email {
+  color: #cbd5e1;
+}
+
+.dark-theme input::placeholder,
+.dark-theme textarea::placeholder {
+  color: #94a3b8;
+}
+
+.dark-theme .table-wrap table {
+  background: #111827;
+}
+
+.dark-theme .table-wrap th {
+  background: #1f2937;
+  color: #f8fafc;
+}
+
+.dark-theme .table-wrap td {
+  background: #0f172a;
+  color: #f8fafc;
+  border-color: #334155;
+}
+
+.dark-theme .table-wrap tr:nth-child(even) td {
+  background: #111827;
+}
+
+.dark-theme .table-wrap tr:hover td {
+  background: #1e293b;
+}
+
+.dark-theme .world-gold-compare div {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+.dark-theme .world-gold-compare span {
+  color: #cbd5e1;
+}
+
+.dark-theme .world-gold-compare strong {
+  color: #f8fafc;
+}
+
+.dark-theme .price-list li {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+.dark-theme .price-info span,
+.dark-theme .price-info strong,
+.dark-theme .price-info small {
+  color: #f8fafc;
+}
+
+.dark-theme .price-info small {
+  color: #cbd5e1;
+}
+
+.dark-theme .summary-icon,
+.dark-theme .app-logo,
+.dark-theme .section-title svg {
+  filter: brightness(0.8);
+  opacity: 0.85;
+}
+
+.dark-theme .theme-toggle {
+  background: #1e293b;
+  color: #facc15;
+  border: 1px solid #334155;
+}
+
+.dark-theme .icon-button {
+  filter: brightness(0.9);
+}
+
+.dark-theme .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background-color: #0f172a !important;
+  border: 1px solid #334155 !important;
+  border-radius: 10px !important;
+}
+
+.dark-theme .recharts-tooltip-wrapper .recharts-tooltip-label,
+.dark-theme .recharts-tooltip-wrapper .recharts-tooltip-item,
+.dark-theme .recharts-tooltip-wrapper .recharts-tooltip-item-name,
+.dark-theme .recharts-tooltip-wrapper .recharts-tooltip-item-value {
+  color: #f8fafc !important;
+}

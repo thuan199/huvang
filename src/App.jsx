@@ -28,6 +28,8 @@ import {
   MapPin,
   History,
   Globe2,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 function formatMoney(value) {
@@ -106,6 +108,10 @@ function App() {
   const [editingId, setEditingId] = useState(null);
   const [editingPriceId, setEditingPriceId] = useState(null);
   const [isWorldGoldOpen, setIsWorldGoldOpen] = useState(false);
+  const [theme, setTheme] = useState('light');
+	  useEffect(() => {
+	  document.body.className = theme === 'dark' ? 'dark-theme' : '';
+	}, [theme]);
 
   const [worldGold, setWorldGold] = useState(null);
   const [worldGoldLoading, setWorldGoldLoading] = useState(false);
@@ -615,12 +621,20 @@ function App() {
           </div>
 
           <div>
-            <h1>Hũ vàng của Ethan</h1>
+            <h1>Hũ vàng</h1>
             <p className="user-email">
               Theo dõi lịch sử mua bán vàng, lời/lỗ và giá hiện tại
             </p>
           </div>
         </div>
+		<button
+		  type="button"
+		  className="theme-toggle"
+		  onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+		  title={theme === 'light' ? 'Chuyển sang theme tối' : 'Chuyển sang theme sáng'}
+		>
+		  {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+		</button>
       </div>
 
       {message && <p className="message">{message}</p>}
