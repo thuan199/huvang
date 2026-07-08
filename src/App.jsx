@@ -108,6 +108,7 @@ function App() {
   const [editingId, setEditingId] = useState(null);
   const [editingPriceId, setEditingPriceId] = useState(null);
   const [isWorldGoldOpen, setIsWorldGoldOpen] = useState(false);
+  const [chartRange, setChartRange] = useState('1d');
   const [theme, setTheme] = useState('light');
 	  useEffect(() => {
 	  document.body.className = theme === 'dark' ? 'dark-theme' : '';
@@ -240,7 +241,7 @@ function App() {
       .from('gold_price_history')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(30);
+      .limit(1000);
 
     if (transactionError || priceError || historyError) {
       setMessage(
@@ -526,7 +527,22 @@ function App() {
       profitPercent,
     };
   }
+  
+  function getChartStartDate(range) {
+  const date = new Date();
+  if (range === '1d') {
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+  if (range === '1w') date.setDate(date.getDate() - 7);
+  if (range === '1m') date.setMonth(date.getMonth() - 1);
+  if (range === '3m') date.setMonth(date.getMonth() - 3);
+  if (range === '6m') date.setMonth(date.getMonth() - 6);
+  if (range === '12m') date.setMonth(date.getMonth() - 12);
 
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
   const priceChartData = useMemo(() => {
   const sorted = [...priceHistory].sort(
     (a, b) => new Date(a.created_at) - new Date(b.created_at)
@@ -534,42 +550,24 @@ function App() {
 
   if (sorted.length === 0) return [];
 
-  const result = [];
+  const startDate = getChartStartDate(chartRange);
 
-  const currentDate = new Date(sorted[0].created_at);
-  currentDate.setHours(0, 0, 0, 0);
+  startDate.setHours(0, 0, 0, 0);
 
-  const endDate = new Date();
-  endDate.setHours(0, 0, 0, 0);
-
-  let currentPrice = Number(sorted[0].price_per_chi || 0);
-
-  while (currentDate.getTime() <= endDate.getTime()) {
-    const historiesOfDay = sorted.filter((item) => {
-      const itemDate = new Date(item.created_at);
-      itemDate.setHours(0, 0, 0, 0);
-      return itemDate.getTime() === currentDate.getTime();
-    });
-
-    if (historiesOfDay.length > 0) {
-      const lastHistoryOfDay = historiesOfDay[historiesOfDay.length - 1];
-      currentPrice = Number(lastHistoryOfDay.price_per_chi || 0);
-    }
-
-    result.push({
-      time: currentDate.toLocaleDateString('vi-VN', {
+  return sorted
+    .filter((item) => new Date(item.created_at) >= startDate)
+    .map((item) => ({
+      time: new Date(item.created_at).toLocaleString('vi-VN', {
         day: '2-digit',
         month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
       }),
-      fullTime: currentDate.toLocaleDateString('vi-VN'),
-      price: currentPrice,
-    });
-
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-
-  return result;
-}, [priceHistory]);
+      fullTime: formatDateTime(item.created_at),
+      price: Number(item.price_per_chi || 0),
+      sellPrice: Number(item.sell_price_per_chi || 0),
+    }));
+}, [priceHistory, chartRange]);
 
   const summary = useMemo(() => {
     let totalBuyCost = 0;
@@ -959,6 +957,14 @@ function App() {
           <BarChart3 size={20} />
           Biểu đồ lịch sử giá
         </h2>
+		<div className="chart-range-buttons">
+		  <button type="button" className={chartRange === '1d' ? 'active' : ''} onClick={() => setChartRange('1d')}>Hôm nay</button>
+		  <button type="button" className={chartRange === '1w' ? 'active' : ''} onClick={() => setChartRange('1w')}>1 tuần</button>
+		  <button type="button" className={chartRange === '1m' ? 'active' : ''} onClick={() => setChartRange('1m')}>1 tháng</button>
+		  <button type="button" className={chartRange === '3m' ? 'active' : ''} onClick={() => setChartRange('3m')}>3 tháng</button>
+		  <button type="button" className={chartRange === '6m' ? 'active' : ''} onClick={() => setChartRange('6m')}>6 tháng</button>
+		  <button type="button" className={chartRange === '12m' ? 'active' : ''} onClick={() => setChartRange('12m')}>12 tháng</button>
+		</div>
 
         {priceChartData.length === 0 ? (
           <p className="small-text">Chưa có dữ liệu để vẽ biểu đồ.</p>
@@ -974,20 +980,31 @@ function App() {
                   width={90}
                 />
                 <Tooltip
-                  formatter={(value) => [`${formatMoney(value)} VND`, 'Giá']}
-                  labelFormatter={(_, payload) => {
-                    if (!payload || payload.length === 0) return '';
-                    return payload[0].payload.fullTime;
-                  }}
-                />
+				  formatter={(value, name) => [
+					`${formatMoney(value)} VND`,
+					name
+				  ]}
+				  labelFormatter={(_, payload) => {
+					if (!payload || payload.length === 0) return '';
+					return payload[0].payload.fullTime;
+				  }}
+				/>
                 <Line
                   type="stepAfter"
                   dataKey="price"
-                  name="Giá mỗi chỉ"
+                  name="Giá mua"
                   strokeWidth={3}
                   dot={{ r: 4 }}
                   activeDot={{ r: 6 }}
                 />
+				<Line
+				  type="stepAfter"
+				  dataKey="sellPrice"
+				  name="Giá bán"
+				  strokeWidth={3}
+				  dot={{ r: 4 }}
+				  activeDot={{ r: 6 }}
+				  />
               </LineChart>
             </ResponsiveContainer>
           </div>

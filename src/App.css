@@ -1213,3 +1213,38 @@ table td:last-child {
 .dark-theme .recharts-tooltip-wrapper .recharts-tooltip-item-value {
   color: #f8fafc !important;
 }
+
+.chart-range-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 16px;
+}
+
+.chart-range-buttons button {
+  border: 1px solid #d6b85a;
+  background: #fff8e1;
+  color: #7a5a00;
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.dark-theme .chart-range-buttons button {
+  background: #0f172a;
+  color: #f8fafc;
+  border-color: #334155;
+}
+.chart-range-buttons button.active {
+  background: #b8860b;
+  color: white;
+  border-color: #b8860b;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(184, 134, 11, 0.35);
+}
+
+.dark-theme .chart-range-buttons button.active {
+  background: #facc15;
+  color: #111827;
+  border-color: #facc15;
+}
