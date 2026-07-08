@@ -175,6 +175,7 @@ function App() {
     gold_type: 'Nhẫn 9999',
     quantity_chi: '',
     price_per_chi: '',
+	sell_price_per_chi: '',
     transaction_date: new Date().toISOString().slice(0, 10),
     location: '',
     note: '',
@@ -285,18 +286,20 @@ function App() {
     const { data: transactionData, error: transactionError } = await supabase
       .from('gold_transactions')
       .select('*')
+      .eq('user_id', user.id)
       .order('transaction_date', { ascending: false })
       .order('created_at', { ascending: false });
 
     const { data: priceData, error: priceError } = await supabase
       .from('gold_prices')
       .select('*')
+      .eq('user_id', user.id)
       .order('gold_type', { ascending: true });
 
     const { data: historyData, error: historyError } = await supabase
       .from('gold_price_history')
       .select('*')
-      .or(`user_id.eq.${user.id},user_id.is.null`)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(1000);
 
@@ -321,6 +324,7 @@ function App() {
 
     const quantity = Number(transactionForm.quantity_chi);
     const price = Number(transactionForm.price_per_chi);
+	const sellPrice = Number(transactionForm.sell_price_per_chi);
 
     if (!transactionForm.gold_type.trim()) {
       setMessage('Vui lòng nhập loại vàng.');
@@ -333,15 +337,22 @@ function App() {
     }
 
     if (!price || price <= 0) {
-      setMessage('Vui lòng nhập giá hợp lệ.');
+      setMessage('Vui lòng nhập giá mua vào hợp lệ.');
+      return;
+    }
+
+    if (!sellPrice || sellPrice <= 0) {
+      setMessage('Vui lòng nhập giá bán ra hợp lệ.');
       return;
     }
 
     const payload = {
+      user_id: user.id,
       transaction_type: transactionForm.transaction_type,
       gold_type: transactionForm.gold_type.trim(),
       quantity_chi: quantity,
       price_per_chi: price,
+      sell_price_per_chi: sellPrice,
       transaction_date: transactionForm.transaction_date,
       location: transactionForm.location.trim(),
       note: transactionForm.note.trim(),
@@ -353,7 +364,8 @@ function App() {
       const result = await supabase
         .from('gold_transactions')
         .update(payload)
-        .eq('id', editingId);
+        .eq('id', editingId)
+        .eq('user_id', user.id);
 
       error = result.error;
     } else {
@@ -382,6 +394,7 @@ function App() {
       gold_type: tx.gold_type || '',
       quantity_chi: String(tx.quantity_chi || ''),
       price_per_chi: String(tx.price_per_chi || ''),
+	  sell_price_per_chi: String(tx.sell_price_per_chi || ''),
       transaction_date:
         tx.transaction_date || new Date().toISOString().slice(0, 10),
       location: tx.location || '',
@@ -512,7 +525,11 @@ function App() {
     const ok = window.confirm(`Bạn muốn xóa giá hiện tại của ${goldType}?`);
     if (!ok) return;
 
-    const { error } = await supabase.from('gold_prices').delete().eq('id', id);
+    const { error } = await supabase
+      .from('gold_prices')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id);
 
     if (error) {
       setMessage(error.message);
@@ -535,7 +552,8 @@ function App() {
     const { error } = await supabase
       .from('gold_transactions')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', user.id);
 
     if (error) {
       setMessage(error.message);
@@ -562,11 +580,19 @@ function App() {
 
   function calculateTransactionResult(tx) {
     const quantity = Number(tx.quantity_chi);
-    const transactionPrice = Number(tx.price_per_chi);
-    const currentPrice = priceMap[tx.gold_type] || transactionPrice;
+    const buyPrice = Number(tx.price_per_chi);
+    const currentBuybackPrice = priceMap[tx.gold_type] || 0;
 
-    const originalValue = quantity * transactionPrice;
-    const currentValue = quantity * currentPrice;
+    // Giá bán ra của người dùng:
+    // - Ưu tiên giá đã lưu trong giao dịch
+    // - Nếu dữ liệu cũ chưa có sell_price_per_chi thì lấy giá cửa hàng mua vào hiện tại
+    // - Nếu vẫn chưa có thì lấy giá mua ban đầu để tránh NaN
+    const sellPrice = Number(
+      tx.sell_price_per_chi || currentBuybackPrice || buyPrice
+    );
+
+    const originalValue = quantity * buyPrice;
+    const currentValue = quantity * sellPrice;
 
     let profit = 0;
 
@@ -582,7 +608,7 @@ function App() {
     return {
       originalValue,
       currentValue,
-      currentPrice,
+      currentPrice: sellPrice,
       profit,
       profitPercent,
     };
@@ -864,8 +890,21 @@ function App() {
                 price_per_chi: e.target.value,
               })
             }
-            placeholder="Ví dụ: 8000000"
+            placeholder="Ví dụ: 8300000"
           />
+		  <label>Giá bán ra mỗi chỉ</label>
+		<input
+		  type="number"
+		  value={transactionForm.sell_price_per_chi}
+		  onChange={(e) =>
+			setTransactionForm({
+			  ...transactionForm,
+			  sell_price_per_chi: e.target.value,
+			})
+		  }
+		  placeholder="Ví dụ: 8000000"
+		/>
+		  
 
           <label>Ngày giao dịch</label>
           <input
@@ -1193,8 +1232,8 @@ function App() {
                   <th>Loại</th>
                   <th>Vàng</th>
                   <th>Số chỉ</th>
-                  <th>Giá cửa hàng thu</th>
-				  <th>Giá thời điểm mua</th>
+                  <th>Giá mua vào</th>
+                  <th>Giá bán ra</th>
                   <th>Nơi mua/bán</th>
                   <th>Lời/lỗ</th>
                   <th>Lời/lỗ %</th>
@@ -1213,8 +1252,8 @@ function App() {
                       <td>{tx.transaction_type === 'BUY' ? 'Mua' : 'Bán'}</td>
                       <td>{tx.gold_type}</td>
                       <td>{Number(tx.quantity_chi)}</td>
-					  <td>{formatMoney(result.currentPrice)}</td>
-                      <td>{formatMoney(tx.price_per_chi)}</td>
+					  <td>{formatMoney(tx.price_per_chi)}</td>
+                      <td>{formatMoney(tx.sell_price_per_chi || result.currentPrice)}</td>
                       <td>
                         {tx.location ? (
                           <span className="location-cell">
