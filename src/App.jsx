@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from './supabaseClient';
 import './App.css';
+import Login from './components/Login';
 
 import {
   LineChart,
@@ -30,6 +31,7 @@ import {
   Globe2,
   Sun,
   Moon,
+  LogOut,
 } from 'lucide-react';
 
 function formatMoney(value) {
@@ -62,42 +64,92 @@ function TradingViewGoldPriceWidget() {
   const containerRef = useRef(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const timer = setTimeout(() => {
+      const container = containerRef.current;
+      if (!container) return;
 
-    containerRef.current.innerHTML = '';
+      container.innerHTML = '';
 
-    const widgetDiv = document.createElement('div');
-    widgetDiv.className = 'tradingview-widget-container__widget';
-    containerRef.current.appendChild(widgetDiv);
+      const widgetDiv = document.createElement('div');
+      widgetDiv.className = 'tradingview-widget-container__widget';
+      container.appendChild(widgetDiv);
 
-    const script = document.createElement('script');
-    script.src =
-      'https://s3.tradingview.com/external-embedding/embed-widget-single-quote.js';
-    script.type = 'text/javascript';
-    script.async = true;
+      const script = document.createElement('script');
+      script.src =
+        'https://s3.tradingview.com/external-embedding/embed-widget-single-quote.js';
+      script.type = 'text/javascript';
+      script.async = true;
 
-    script.textContent = JSON.stringify({
-      symbol: 'OANDA:XAUUSD',
-      width: 260,
-      isTransparent: false,
-      colorTheme: 'light',
-      locale: 'vi_VN',
-    });
+      script.innerHTML = JSON.stringify({
+        symbol: 'OANDA:XAUUSD',
+        width: '100%',
+        isTransparent: false,
+        colorTheme: 'light',
+        locale: 'vi_VN',
+      });
 
-    containerRef.current.appendChild(script);
+      container.appendChild(script);
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (
     <div
       className="tradingview-widget-container tradingview-mini-widget"
       ref={containerRef}
-    >
-      <div className="tradingview-widget-container__widget" />
-    </div>
+    />
   );
 }
 
 function App() {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    async function checkUser() {
+      const { data } = await supabase.auth.getSession();
+      setUser(data.session?.user || null);
+      setAuthLoading(false);
+    }
+
+    checkUser();
+
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+		async function updateDisplayName() {
+		  const name = window.prompt('Nhập tên hiển thị:');
+
+		  if (!name || !name.trim()) return;
+
+		  const { data, error } = await supabase.auth.updateUser({
+			data: {
+			  display_name: name.trim(),
+			},
+		  });
+
+		  if (error) {
+			setMessage(error.message);
+			return;
+		  }
+
+		  setUser(data.user);
+		  setMessage('Đã cập nhật tên hiển thị.');
+		}
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    setUser(null);
+  }
+
   const [transactions, setTransactions] = useState([]);
   const [prices, setPrices] = useState([]);
   const [priceHistory, setPriceHistory] = useState([]);
@@ -142,8 +194,10 @@ function App() {
   const [priceForm, setPriceForm] = useState(defaultPriceForm);
 
   useEffect(() => {
+  if (user) {
     loadData();
-  }, []);
+  }
+}, [user]);
 
   useEffect(() => {
   loadWorldGoldPrice();
@@ -223,6 +277,8 @@ function App() {
   }
 
   async function loadData() {
+    if (!user) return;
+
     setLoading(true);
     setMessage('');
 
@@ -240,6 +296,7 @@ function App() {
     const { data: historyData, error: historyError } = await supabase
       .from('gold_price_history')
       .select('*')
+      .or(`user_id.eq.${user.id},user_id.is.null`)
       .order('created_at', { ascending: false })
       .limit(1000);
 
@@ -406,10 +463,11 @@ function App() {
     const { error: historyError } = await supabase
       .from('gold_price_history')
       .insert({
-        gold_type: goldType,
-        price_per_chi: currentPrice,
-		sell_price_per_chi: sellPrice,
-        note: priceForm.note.trim() || 'Cập nhật giá hiện tại',
+         user_id: user.id,
+		  gold_type: goldType,
+		  price_per_chi: currentPrice,
+		  sell_price_per_chi: sellPrice,
+		  note: priceForm.note.trim() || 'Cập nhật giá hiện tại',
       });
 
     if (historyError) {
@@ -610,29 +668,63 @@ function App() {
       ? (goldDifference / worldGold.worldGoldVndPerLuong) * 100
       : 0;
 
+	if (authLoading) {
+	  return <p>Đang kiểm tra đăng nhập...</p>;
+	}
+
+	if (!user) {
+	  return <Login />;
+	}
   return (
     <div className="container">
       <div className="topbar">
         <div className="app-title">
-          <div className="app-logo">
-            <Coins size={28} />
-          </div>
-
-          <div>
-            <h1>Hũ vàng</h1>
-            <p className="user-email">
-              Theo dõi lịch sử mua bán vàng, lời/lỗ và giá hiện tại
-            </p>
-          </div>
+				  <div className="app-logo">
+					<Coins size={28} />
+				  </div>
+		  
+				  <div>
+					<h1>Hũ vàng</h1>
+					<p className="user-email">
+					  Theo dõi lịch sử mua bán vàng, lời/lỗ và giá hiện tại
+					</p>
+				  </div>
         </div>
+		
+		<div className="topbar-right">
+  <div className="topbar-actions">
+		  <div className="welcome-user">
+			Xin chào, <strong>{user?.user_metadata?.display_name || user?.email}</strong>
+		  </div>
 		<button
 		  type="button"
-		  className="theme-toggle"
-		  onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-		  title={theme === 'light' ? 'Chuyển sang theme tối' : 'Chuyển sang theme sáng'}
+		  className="logout-button"
+		  onClick={updateDisplayName}
 		>
-		  {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+		  Đổi tên
 		</button>
+		  <button
+			type="button"
+			className="logout-button"
+			onClick={handleLogout}
+			title="Đăng xuất"
+		  >
+			<LogOut size={16} />
+			Đăng xuất
+		  </button>
+
+		  <button
+			type="button"
+			className="theme-toggle small"
+			onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+			title={theme === 'light' ? 'Chuyển sang theme tối' : 'Chuyển sang theme sáng'}
+		  >
+			{theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+		  </button>
+		</div>
+</div>
+		
+		
       </div>
 
       {message && <p className="message">{message}</p>}
