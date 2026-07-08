@@ -189,11 +189,14 @@ h3 {
 }
 
 .summary-card {
-  position: relative;
-  overflow: hidden;
-  min-height: 96px;
-  padding: 14px 16px;
-  box-shadow: var(--shadow-soft);
+  min-height: 150px;
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
 }
 
 .summary-card::before {
@@ -207,20 +210,13 @@ h3 {
 }
 
 .summary-card span {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--muted);
-  font-size: 14px;
-  letter-spacing: -0.1px;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .summary-card strong {
-  display: block;
-  color: var(--text);
-  font-size: 23px;
-  font-weight: 900;
-  line-height: 1.15;
-  letter-spacing: -0.7px;
+  font-size: 26px;
+  font-weight: 800;
 }
 
 .summary-icon {
