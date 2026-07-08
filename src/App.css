@@ -1437,3 +1437,16 @@ table td:last-child {
 .login-links button:hover {
   text-decoration: underline;
 }
+
+.topbar-actions .logout-button {
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+.topbar-actions .logout-button svg {
+  width: 14px;
+  height: 14px;
+}

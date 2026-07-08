@@ -436,19 +436,21 @@ function App() {
 		  sell_price_per_chi: sellPrice,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', editingPriceId);
+        .eq('id', editingPriceId)
+		 .eq('user_id', user.id);
 
       priceError = result.error;
     } else {
       const result = await supabase.from('gold_prices').upsert(
         {
+			user_id: user.id,
           gold_type: goldType,
           current_price_per_chi: currentPrice,
 		  sell_price_per_chi: sellPrice,
           updated_at: new Date().toISOString(),
         },
         {
-          onConflict: 'gold_type',
+          onConflict: 'user_id,gold_type',
         }
       );
 
