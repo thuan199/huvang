@@ -154,6 +154,25 @@ function App() {
   const [prices, setPrices] = useState([]);
   const [priceHistory, setPriceHistory] = useState([]);
 
+  const [historyPage, setHistoryPage] = useState(1);
+  const historyPageSize = 10;
+
+  const historyTotalPages = Math.max(
+    1,
+    Math.ceil(priceHistory.length / historyPageSize)
+  );
+
+  const paginatedPriceHistory = useMemo(() => {
+    const start = (historyPage - 1) * historyPageSize;
+    return priceHistory.slice(start, start + historyPageSize);
+  }, [priceHistory, historyPage]);
+
+  useEffect(() => {
+    if (historyPage > historyTotalPages) {
+      setHistoryPage(historyTotalPages);
+    }
+  }, [historyPage, historyTotalPages]);
+
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -1558,7 +1577,7 @@ function App() {
               </thead>
 
               <tbody>
-			  {priceHistory.map((item) => (
+			  {paginatedPriceHistory.map((item) => (
 				<tr key={item.id}>
 				  <td>{formatDateTime(item.created_at)}</td>
 
@@ -1592,6 +1611,31 @@ function App() {
 			  ))}
 			</tbody>
             </table>
+			<div className="pagination">
+			<button
+			  type="button"
+			  disabled={historyPage === 1}
+			  onClick={() => setHistoryPage((page) => Math.max(1, page - 1))}
+			>
+			  Trang trước
+			</button>
+
+			<span>
+			  Trang {historyPage} / {historyTotalPages}
+			</span>
+
+			<button
+			  type="button"
+			  disabled={historyPage >= historyTotalPages}
+			  onClick={() =>
+                setHistoryPage((page) =>
+                  Math.min(historyTotalPages, page + 1)
+                )
+              }
+			>
+			  Trang sau
+			</button>
+		  </div>
           </div>
         )}
       </div>
