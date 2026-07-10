@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { Mail, Lock, Coins, UserPlus, KeyRound } from 'lucide-react';
+import {
+  Mail,
+  Lock,
+  Coins,
+  UserPlus,
+  KeyRound,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import { supabase } from '../supabaseClient';
 
 export default function Login() {
@@ -9,6 +17,14 @@ export default function Login() {
   const [displayName, setDisplayName] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  function changeMode(nextMode) {
+    setMode(nextMode);
+    setMessage('');
+    setPassword('');
+    setShowPassword(false);
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -16,7 +32,9 @@ export default function Login() {
     setLoading(true);
 
     try {
-      if (!email.trim()) {
+      const normalizedEmail = email.trim();
+
+      if (!normalizedEmail) {
         setMessage('Vui lòng nhập email.');
         return;
       }
@@ -28,11 +46,15 @@ export default function Login() {
         }
 
         const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
+          email: normalizedEmail,
           password,
         });
 
-        if (error) setMessage('Email hoặc mật khẩu không đúng.');
+        if (error) {
+          setMessage('Email hoặc mật khẩu không đúng.');
+        }
+
+        return;
       }
 
       if (mode === 'register') {
@@ -47,7 +69,7 @@ export default function Login() {
         }
 
         const { error } = await supabase.auth.signUp({
-          email: email.trim(),
+          email: normalizedEmail,
           password,
           options: {
             data: {
@@ -59,13 +81,17 @@ export default function Login() {
         if (error) {
           setMessage(error.message);
         } else {
-          setMessage('Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản.');
+          setMessage(
+            'Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản.'
+          );
         }
+
+        return;
       }
 
       if (mode === 'forgot') {
         const { error } = await supabase.auth.resetPasswordForEmail(
-          email.trim(),
+          normalizedEmail,
           {
             redirectTo: window.location.origin,
           }
@@ -74,9 +100,14 @@ export default function Login() {
         if (error) {
           setMessage(error.message);
         } else {
-          setMessage('Đã gửi email đặt lại mật khẩu. Vui lòng kiểm tra hộp thư.');
+          setMessage(
+            'Đã gửi email đặt lại mật khẩu. Vui lòng kiểm tra hộp thư.'
+          );
         }
       }
+    } catch (error) {
+      console.error('Lỗi xác thực:', error);
+      setMessage(error?.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -102,38 +133,66 @@ export default function Login() {
         {mode === 'register' && (
           <div className="input-group">
             <UserPlus size={18} />
+
             <input
               type="text"
               placeholder="Tên hiển thị"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
+              autoComplete="name"
             />
           </div>
         )}
 
         <div className="input-group">
           <Mail size={18} />
+
           <input
             type="email"
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
           />
         </div>
 
         {mode !== 'forgot' && (
-          <div className="input-group">
+          <div className="input-group password-input-group">
             <Lock size={18} />
+
             <input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               placeholder="Mật khẩu"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete={
+                mode === 'register'
+                  ? 'new-password'
+                  : 'current-password'
+              }
             />
+
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword((current) => !current)}
+              title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+              aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+            >
+              {showPassword ? (
+                <EyeOff size={19} />
+              ) : (
+                <Eye size={19} />
+              )}
+            </button>
           </div>
         )}
 
-        <button className="login-button" type="submit" disabled={loading}>
+        <button
+          className="login-button"
+          type="submit"
+          disabled={loading}
+        >
           {loading && 'Đang xử lý...'}
           {!loading && mode === 'login' && 'Đăng nhập'}
           {!loading && mode === 'register' && 'Đăng ký'}
@@ -142,19 +201,28 @@ export default function Login() {
 
         <div className="login-links">
           {mode !== 'login' && (
-            <button type="button" onClick={() => setMode('login')}>
+            <button
+              type="button"
+              onClick={() => changeMode('login')}
+            >
               Đã có tài khoản? Đăng nhập
             </button>
           )}
 
           {mode !== 'register' && (
-            <button type="button" onClick={() => setMode('register')}>
+            <button
+              type="button"
+              onClick={() => changeMode('register')}
+            >
               Chưa có tài khoản? Đăng ký
             </button>
           )}
 
           {mode !== 'forgot' && (
-            <button type="button" onClick={() => setMode('forgot')}>
+            <button
+              type="button"
+              onClick={() => changeMode('forgot')}
+            >
               <KeyRound size={14} />
               Quên mật khẩu?
             </button>

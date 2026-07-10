@@ -1501,3 +1501,71 @@ table td:last-child {
 .dark-theme .pagination span {
   color: #f9fafb;
 }
+.password-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-group input {
+  width: 100%;
+  padding-right: 48px;
+  box-sizing: border-box;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+  margin: 0;
+
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #6b7280;
+
+  cursor: pointer;
+  box-shadow: none;
+
+  transition: color 0.2s ease;
+  animation: none;
+}
+
+.password-toggle:hover {
+  background: transparent;
+  color: #111827;
+  transform: translateY(-50%);
+  box-shadow: none;
+}
+
+.password-toggle:active {
+  transform: translateY(-50%);
+}
+
+.password-toggle:focus,
+.password-toggle:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.password-toggle svg {
+  display: block;
+  width: 19px;
+  height: 19px;
+  pointer-events: none;
+}
+.password-toggle:hover,
+.password-toggle:active {
+  transform: translateY(-50%) !important;
+}
