@@ -977,7 +977,7 @@ body {
 
 .card:hover,
 .summary-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(0px);
   box-shadow: 0 20px 46px rgba(75, 58, 24, 0.16);
 }
 

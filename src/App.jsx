@@ -1033,7 +1033,7 @@ function App() {
           </div>
         )}
       </div>
-
+		
       <div className="summary">
         <div className="summary-card">
           <div className="summary-icon wallet-icon">
