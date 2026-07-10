@@ -1479,3 +1479,25 @@ table td:last-child {
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+.dark-theme .pagination button {
+  background: #1f2937;
+  color: #f9fafb;
+  border-color: #4b5563;
+}
+
+.dark-theme .pagination button:hover:not(:disabled) {
+  background: #374151;
+  color: #ffffff;
+}
+
+.dark-theme .pagination button:disabled {
+  background: #111827;
+  color: #6b7280;
+  border-color: #374151;
+  opacity: 1;
+}
+
+.dark-theme .pagination span {
+  color: #f9fafb;
+}
