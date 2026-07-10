@@ -1462,8 +1462,8 @@ function App() {
                   <th>Loại</th>
                   <th>Vàng</th>
                   <th>Số chỉ</th>
-                  <th>Giá mua vào</th>
-                  <th>Giá bán ra</th>
+                  <th>Giá tại thời điểm mua</th>
+                  <th>Giá bán ra hiện tại</th>
                   <th>Nơi mua/bán</th>
                   <th>Lời/lỗ</th>
                   <th>Lời/lỗ %</th>
