@@ -102,9 +102,71 @@ function TradingViewGoldPriceWidget() {
   );
 }
 
+function TradingViewGoldChart({ theme }) {
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    const widget = document.createElement('div');
+    widget.className = 'tradingview-widget-container__widget';
+    widget.style.width = '100%';
+    widget.style.height = '100%';
+
+    const script = document.createElement('script');
+
+    script.src =
+      'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+
+    script.type = 'text/javascript';
+    script.async = true;
+
+    script.innerHTML = JSON.stringify({
+      autosize: true,
+      symbol: 'OANDA:XAUUSD',
+      interval: '60',
+      timezone: 'Asia/Ho_Chi_Minh',
+      theme: theme === 'dark' ? 'dark' : 'light',
+      style: '1',
+      locale: 'vi_VN',
+      allow_symbol_change: false,
+      hide_side_toolbar: false,
+      hide_top_toolbar: false,
+      hide_legend: false,
+      hide_volume: false,
+      save_image: true,
+      calendar: false,
+      details: true,
+      hotlist: false,
+      withdateranges: true,
+      studies: [],
+      support_host: 'https://www.tradingview.com',
+    });
+
+    container.appendChild(widget);
+    container.appendChild(script);
+
+    return () => {
+      container.innerHTML = '';
+    };
+  }, [theme]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="tradingview-widget-container gold-chart-widget"
+    />
+  );
+}
+
 function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [activeGoldTab, setActiveGoldTab] = useState('local');
 
   useEffect(() => {
     async function checkUser() {
@@ -1469,63 +1531,154 @@ function App() {
       </div>
 
       <div className="card">
-        <h2 className="section-title">
-          <BarChart3 size={20} />
-          Biểu đồ lịch sử giá
-        </h2>
-        <div className="chart-range-buttons">
-          <button type="button" className={chartRange === '1d' ? 'active' : ''} onClick={() => setChartRange('1d')}>Hôm nay</button>
-          <button type="button" className={chartRange === '1w' ? 'active' : ''} onClick={() => setChartRange('1w')}>1 tuần</button>
-          <button type="button" className={chartRange === '1m' ? 'active' : ''} onClick={() => setChartRange('1m')}>1 tháng</button>
-          <button type="button" className={chartRange === '3m' ? 'active' : ''} onClick={() => setChartRange('3m')}>3 tháng</button>
-          <button type="button" className={chartRange === '6m' ? 'active' : ''} onClick={() => setChartRange('6m')}>6 tháng</button>
-          <button type="button" className={chartRange === '12m' ? 'active' : ''} onClick={() => setChartRange('12m')}>12 tháng</button>
-        </div>
+  <div className="gold-chart-tabs">
+    <button
+      type="button"
+      className={activeGoldTab === 'local' ? 'active' : ''}
+      onClick={() => setActiveGoldTab('local')}
+    >
+      <BarChart3 size={17} />
+      Lịch sử giá PNJ
+    </button>
 
-        {priceChartData.length === 0 ? (
-          <p className="small-text">Chưa có lịch sử giá để vẽ biểu đồ.</p>
-        ) : (
-          <div className="chart-box">
-            <ResponsiveContainer width="100%" height={320}>
-              <LineChart data={priceChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="time" />
-                <YAxis
-                  tickFormatter={(value) => formatMoney(value)}
-                  domain={['dataMin - 50000', 'dataMax + 50000']}
-                  width={90}
-                />
-                <Tooltip
-                  formatter={(value, name) => [
-                    `${formatMoney(value)} VND`,
-                    name
-                  ]}
-                  labelFormatter={(_, payload) => {
-                    if (!payload || payload.length === 0) return '';
-                    return payload[0].payload.fullTime;
-                  }}
-                />
-                <Line
-                  type="stepAfter"
-                  dataKey="price"
-                  name="Giá mua"
-                  strokeWidth={3}
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-                <Line
-                  type="stepAfter"
-                  dataKey="sellPrice"
-                  name="Giá bán"
-                  strokeWidth={3}
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        )}
+    <button
+      type="button"
+      className={activeGoldTab === 'world' ? 'active' : ''}
+      onClick={() => setActiveGoldTab('world')}
+    >
+      <Globe2 size={17} />
+      Biểu đồ XAU/USD
+    </button>
+  </div>
+
+  {activeGoldTab === 'local' && (
+    <>
+      <h2 className="section-title">
+        <BarChart3 size={20} />
+        Biểu đồ lịch sử giá
+      </h2>
+
+      <div className="chart-range-buttons">
+        <button
+          type="button"
+          className={chartRange === '1d' ? 'active' : ''}
+          onClick={() => setChartRange('1d')}
+        >
+          Hôm nay
+        </button>
+
+        <button
+          type="button"
+          className={chartRange === '1w' ? 'active' : ''}
+          onClick={() => setChartRange('1w')}
+        >
+          1 tuần
+        </button>
+
+        <button
+          type="button"
+          className={chartRange === '1m' ? 'active' : ''}
+          onClick={() => setChartRange('1m')}
+        >
+          1 tháng
+        </button>
+
+        <button
+          type="button"
+          className={chartRange === '3m' ? 'active' : ''}
+          onClick={() => setChartRange('3m')}
+        >
+          3 tháng
+        </button>
+
+        <button
+          type="button"
+          className={chartRange === '6m' ? 'active' : ''}
+          onClick={() => setChartRange('6m')}
+        >
+          6 tháng
+        </button>
+
+        <button
+          type="button"
+          className={chartRange === '12m' ? 'active' : ''}
+          onClick={() => setChartRange('12m')}
+        >
+          12 tháng
+        </button>
       </div>
+
+      {priceChartData.length === 0 ? (
+        <p className="small-text">
+          Chưa có lịch sử giá để vẽ biểu đồ.
+        </p>
+      ) : (
+        <div className="chart-box">
+          <ResponsiveContainer width="100%" height={320}>
+            <LineChart data={priceChartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+
+              <XAxis dataKey="time" />
+
+              <YAxis
+                tickFormatter={(value) => formatMoney(value)}
+                domain={['dataMin - 50000', 'dataMax + 50000']}
+                width={90}
+              />
+
+              <Tooltip
+                formatter={(value, name) => [
+                  `${formatMoney(value)} VND`,
+                  name,
+                ]}
+                labelFormatter={(_, payload) => {
+                  if (!payload || payload.length === 0) return '';
+
+                  return payload[0].payload.fullTime;
+                }}
+              />
+
+              <Line
+                type="stepAfter"
+                dataKey="price"
+                name="Giá mua"
+                strokeWidth={3}
+                dot={{ r: 4 }}
+                activeDot={{ r: 6 }}
+              />
+
+              <Line
+                type="stepAfter"
+                dataKey="sellPrice"
+                name="Giá bán"
+                strokeWidth={3}
+                dot={{ r: 4 }}
+                activeDot={{ r: 6 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </>
+  )}
+
+  {activeGoldTab === 'world' && (
+    <>
+      <h2 className="section-title">
+        <Globe2 size={20} />
+        Biểu đồ vàng thế giới XAU/USD
+      </h2>
+
+      <p className="small-text">
+        Biểu đồ tương tác từ TradingView, mã OANDA:XAUUSD.
+      </p>
+
+      <div className="world-chart-box">
+        <TradingViewGoldChart theme={theme} />
+      </div>
+    </>
+  )}
+</div>
 
       <div className="card">
         <p className="small-text">
