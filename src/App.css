@@ -1269,15 +1269,9 @@ table td:last-child {
 }
 
 .login-logo{
-    width:72px;
-    height:72px;
-    border-radius:50%;
-    margin:auto;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    background:#d4af37;
-    color:white;
+    width: 75px;
+    height: 75px;   
+    margin: 0 auto 0px;
 }
 
 .login-card h1{

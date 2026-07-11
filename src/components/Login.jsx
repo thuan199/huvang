@@ -117,7 +117,10 @@ export default function Login() {
     <div className="login-page">
       <form className="login-card" onSubmit={handleSubmit}>
         <div className="login-logo">
-          <Coins size={42} />
+          <img
+          src="/logo.png"
+          className="login-logo"
+          />
         </div>
 
         <h1>Hũ vàng</h1>
