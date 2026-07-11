@@ -1592,3 +1592,21 @@ table td:last-child {
     transform: rotate(360deg);
   }
 }
+
+.world-gold-market-note {
+  margin: 8px 0 14px;
+  padding: 10px 12px;
+
+  border-left: 4px solid #d4af37;
+  border-radius: 6px;
+
+  background: rgba(212, 175, 55, 0.12);
+  color: #5f4b00;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.dark-theme .world-gold-market-note {
+  background: rgba(212, 175, 55, 0.16);
+  color: #f5d76e;
+}

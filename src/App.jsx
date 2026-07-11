@@ -188,6 +188,7 @@ function App() {
   const [worldGold, setWorldGold] = useState(null);
   const [worldGoldLoading, setWorldGoldLoading] = useState(false);
   const [worldGoldError, setWorldGoldError] = useState('');
+  const [worldGoldMarketMessage, setWorldGoldMarketMessage] = useState('');
 
   const defaultTransactionForm = {
     transaction_type: 'BUY',
@@ -219,6 +220,58 @@ function App() {
     }
   }, [user]);
 
+  function getWorldGoldMarketStatus(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date);
+
+  const values = {};
+
+  for (const part of parts) {
+    values[part.type] = part.value;
+  }
+
+  const dayMap = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+
+  const day = dayMap[values.weekday];
+  const hour = Number(values.hour);
+  const minute = Number(values.minute);
+  const totalMinutes = hour * 60 + minute;
+
+  const fourAM = 4 * 60;
+
+  const isClosed =
+    day === 0 ||
+    (day === 6 && totalMinutes >= fourAM) ||
+    (day === 1 && totalMinutes < fourAM);
+
+  if (isClosed) {
+    return {
+      isOpen: false,
+      message:
+        'Thị trường vàng thế giới đang đóng cửa. Thị trường hoạt động lại từ 04:00 sáng thứ Hai đến 04:00 sáng thứ Bảy theo giờ Việt Nam.',
+    };
+  }
+
+  return {
+    isOpen: true,
+    message:
+      'Thị trường vàng thế giới hoạt động từ 04:00 sáng thứ Hai đến 04:00 sáng thứ Bảy theo giờ Việt Nam.',
+  };
+}
+
   useEffect(() => {
     loadWorldGoldPrice();
 
@@ -243,58 +296,75 @@ function App() {
   }, []);
 
   async function loadWorldGoldPrice() {
-    try {
-      setWorldGoldLoading(true);
-      setWorldGoldError('');
+  const marketStatus = getWorldGoldMarketStatus();
 
-      const [goldRes, fxRes] = await Promise.all([
-        fetch(`https://xaus.com/api/v1/spot?t=${Date.now()}`),
-        fetch('https://open.er-api.com/v6/latest/USD'),
-      ]);
+  setWorldGoldMarketMessage(marketStatus.message);
+  setWorldGoldError('');
 
-      if (!goldRes.ok || !fxRes.ok) {
-        throw new Error('Không lấy được dữ liệu giá vàng thế giới hoặc tỷ giá.');
-      }
+  // Từ 04:00 thứ Bảy đến trước 04:00 thứ Hai:
+  // không gọi API lấy giá mới.
+  if (!marketStatus.isOpen) {
+    setWorldGoldLoading(false);
+    return;
+  }
 
-      const goldData = await goldRes.json();
-      const fxData = await fxRes.json();
+  try {
+    setWorldGoldLoading(true);
 
-      const goldUsdOz = Number(
-        goldData.spot_usd_oz ??
+    const [goldRes, fxRes] = await Promise.all([
+      fetch(`https://xaus.com/api/v1/spot?t=${Date.now()}`),
+      fetch('https://open.er-api.com/v6/latest/USD'),
+    ]);
+
+    if (!goldRes.ok || !fxRes.ok) {
+      throw new Error(
+        'Không lấy được dữ liệu giá vàng thế giới hoặc tỷ giá.'
+      );
+    }
+
+    const goldData = await goldRes.json();
+    const fxData = await fxRes.json();
+
+    const goldUsdOz = Number(
+      goldData.spot_usd_oz ??
         goldData.price ??
         goldData.gold_price ??
         goldData.data?.spot_usd_oz ??
         goldData.data?.price
+    );
+
+    const usdVnd = Number(fxData.rates?.VND);
+
+    if (!goldUsdOz || !usdVnd) {
+      throw new Error(
+        'Dữ liệu giá vàng thế giới hoặc tỷ giá không hợp lệ.'
       );
-
-      const usdVnd = Number(fxData.rates?.VND);
-
-      if (!goldUsdOz || !usdVnd) {
-        throw new Error('Dữ liệu giá vàng thế giới hoặc tỷ giá không hợp lệ.');
-      }
-
-      const gramPerOunce = 31.1035;
-      const gramPerLuong = 37.5;
-
-      const worldGoldVndPerLuong =
-        goldUsdOz * usdVnd * (gramPerLuong / gramPerOunce);
-
-      setWorldGold({
-        goldUsdOz,
-        usdVnd,
-        worldGoldVndPerLuong,
-        updatedAt:
-          goldData.updated_at ||
-          goldData.timestamp ||
-          goldData.data?.updated_at ||
-          new Date().toISOString(),
-      });
-    } catch (error) {
-      setWorldGoldError(error.message || 'Không thể cập nhật giá vàng thế giới.');
-    } finally {
-      setWorldGoldLoading(false);
     }
+
+    const gramPerOunce = 31.1035;
+    const gramPerLuong = 37.5;
+
+    const worldGoldVndPerLuong =
+      goldUsdOz * usdVnd * (gramPerLuong / gramPerOunce);
+
+    setWorldGold({
+      goldUsdOz,
+      usdVnd,
+      worldGoldVndPerLuong,
+      updatedAt:
+        goldData.updated_at ||
+        goldData.timestamp ||
+        goldData.data?.updated_at ||
+        new Date().toISOString(),
+    });
+  } catch (error) {
+    setWorldGoldError(
+      error?.message || 'Không thể cập nhật giá vàng thế giới.'
+    );
+  } finally {
+    setWorldGoldLoading(false);
   }
+}
 
   async function loadData() {
     if (!user) return;
@@ -1413,7 +1483,7 @@ function App() {
         </div>
 
         {priceChartData.length === 0 ? (
-          <p className="small-text">Chưa có dữ liệu để vẽ biểu đồ.</p>
+          <p className="small-text">Chưa có lịch sử giá để vẽ biểu đồ.</p>
         ) : (
           <div className="chart-box">
             <ResponsiveContainer width="100%" height={320}>
@@ -1458,14 +1528,15 @@ function App() {
       </div>
 
       <div className="card">
-        <h2 className="section-title">
-          <Globe2 size={20} />
-          So sánh giá vàng thế giới
-        </h2>
-
         <p className="small-text">
-          Tự động cập nhật giá vàng thế giới và tỷ giá USD/VND mỗi 1 phút.
+          Tự động cập nhật giá vàng thế giới và tỷ giá USD/VND mỗi 1 phút khi thị trường đang hoạt động.
         </p>
+
+        {worldGoldMarketMessage && (
+          <p className="world-gold-market-note">
+            {worldGoldMarketMessage}
+          </p>
+        )}
 
         {worldGoldLoading && (
           <p className="small-text">Đang cập nhật giá thế giới...</p>
