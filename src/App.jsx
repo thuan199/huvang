@@ -1153,7 +1153,10 @@ function App() {
       <div className="topbar">
         <div className="app-title">
           <div className="app-logo">
-            <Coins size={28} />
+            <img
+            src="/logo.png"
+            className="login-logo"
+            />
           </div>
 
           <div>

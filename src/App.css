@@ -142,15 +142,14 @@ h3 {
 }
 
 .app-logo {
-  width: 54px;
-  height: 54px;
+  width: 75px;
+  height: 75px;
   border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #111827;
-  background: linear-gradient(135deg, #fff1a8 0%, #d4af37 45%, #9b7410 100%);
-  box-shadow: 0 14px 28px rgba(180, 130, 20, 0.3);
+
 }
 
 /* Card */
@@ -1183,7 +1182,7 @@ table td:last-child {
 .dark-theme .summary-icon,
 .dark-theme .app-logo,
 .dark-theme .section-title svg {
-  filter: brightness(0.8);
+  filter: brightness(0.85);
   opacity: 0.85;
 }
 
