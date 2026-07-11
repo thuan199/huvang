@@ -1684,3 +1684,18 @@ table td:last-child {
     height: 460px;
   }
 }
+
+.app-footer {
+  margin-top: 24px;
+  padding: 16px 12px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.6;
+  border-top: 1px solid #e5e7eb;
+}
+
+.dark-theme .app-footer {
+  color: #9ca3af;
+  border-top-color: #374151;
+}

@@ -167,6 +167,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [activeGoldTab, setActiveGoldTab] = useState('local');
+  const loadedUserIdRef = useRef(null);
 
   useEffect(() => {
     async function checkUser() {
@@ -179,6 +180,10 @@ function App() {
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
+        if (!session?.user) {
+          loadedUserIdRef.current = null;
+        }
+
         setUser(session?.user || null);
       }
     );
@@ -209,6 +214,7 @@ function App() {
   }
   async function handleLogout() {
     await supabase.auth.signOut();
+    loadedUserIdRef.current = null;
     setUser(null);
   }
 
@@ -277,62 +283,106 @@ function App() {
   const [priceForm, setPriceForm] = useState(defaultPriceForm);
 
   useEffect(() => {
-    if (user) {
-      loadData();
+  // Chỉ tự động lấy giá khi đang thêm giao dịch mới.
+  // Khi sửa giao dịch cũ thì giữ nguyên dữ liệu đã lưu.
+  if (editingId) return;
+
+  const currentBuybackPrice = getCurrentBuybackPrice(
+    transactionForm.gold_type
+  );
+
+  setTransactionForm((currentForm) => {
+    const newSellPrice =
+      currentBuybackPrice > 0 ? String(currentBuybackPrice) : '';
+
+    if (currentForm.sell_price_per_chi === newSellPrice) {
+      return currentForm;
     }
-  }, [user]);
+
+    return {
+      ...currentForm,
+      sell_price_per_chi: newSellPrice,
+    };
+  });
+}, [transactionForm.gold_type, prices, editingId]);
+
+  useEffect(() => {
+    const userId = user?.id;
+
+    if (!userId) {
+      loadedUserIdRef.current = null;
+      return;
+    }
+
+    /*
+     * Chỉ tải dữ liệu một lần khi đăng nhập.
+     * Việc đổi tên hiển thị vẫn tạo object user mới nhưng không tải lại,
+     * vì user.id không thay đổi.
+     *
+     * Ref cũng ngăn React StrictMode gọi tải dữ liệu hai lần trong môi
+     * trường development.
+     */
+    if (loadedUserIdRef.current === userId) return;
+
+    loadedUserIdRef.current = userId;
+
+    loadData(userId).catch(() => {
+      // Cho phép thử tải lại nếu lần tải đầu tiên thất bại.
+      loadedUserIdRef.current = null;
+    });
+  }, [user?.id]);
 
   function getWorldGoldMarketStatus(date = new Date()) {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Ho_Chi_Minh',
-    weekday: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  }).formatToParts(date);
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      weekday: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(date);
 
-  const values = {};
+    const values = {};
 
-  for (const part of parts) {
-    values[part.type] = part.value;
-  }
+    for (const part of parts) {
+      values[part.type] = part.value;
+    }
 
-  const dayMap = {
-    Sun: 0,
-    Mon: 1,
-    Tue: 2,
-    Wed: 3,
-    Thu: 4,
-    Fri: 5,
-    Sat: 6,
-  };
+    const dayMap = {
+      Sun: 0,
+      Mon: 1,
+      Tue: 2,
+      Wed: 3,
+      Thu: 4,
+      Fri: 5,
+      Sat: 6,
+    };
 
-  const day = dayMap[values.weekday];
-  const hour = Number(values.hour);
-  const minute = Number(values.minute);
-  const totalMinutes = hour * 60 + minute;
+    const day = dayMap[values.weekday];
+    const hour = Number(values.hour);
+    const minute = Number(values.minute);
+    const totalMinutes = hour * 60 + minute;
 
-  const fourAM = 4 * 60;
+    const fourAM = 4 * 60;
 
-  const isClosed =
-    day === 0 ||
-    (day === 6 && totalMinutes >= fourAM) ||
-    (day === 1 && totalMinutes < fourAM);
+    const isClosed =
+      day === 0 ||
+      (day === 6 && totalMinutes >= fourAM) ||
+      (day === 1 && totalMinutes < fourAM);
 
-  if (isClosed) {
+    if (isClosed) {
+      return {
+        isOpen: false,
+        message:
+          'Thị trường vàng thế giới đang đóng cửa. Thị trường hoạt động lại từ 04:00 sáng thứ Hai đến 04:00 sáng thứ Bảy theo giờ Việt Nam.',
+      };
+    }
+
     return {
-      isOpen: false,
+      isOpen: true,
       message:
-        'Thị trường vàng thế giới đang đóng cửa. Thị trường hoạt động lại từ 04:00 sáng thứ Hai đến 04:00 sáng thứ Bảy theo giờ Việt Nam.',
+        'Thị trường vàng thế giới hoạt động từ 04:00 sáng thứ Hai đến 04:00 sáng thứ Bảy theo giờ Việt Nam.',
     };
   }
-
-  return {
-    isOpen: true,
-    message:
-      'Thị trường vàng thế giới hoạt động từ 04:00 sáng thứ Hai đến 04:00 sáng thứ Bảy theo giờ Việt Nam.',
-  };
-}
 
   useEffect(() => {
     loadWorldGoldPrice();
@@ -358,78 +408,78 @@ function App() {
   }, []);
 
   async function loadWorldGoldPrice() {
-  const marketStatus = getWorldGoldMarketStatus();
+    const marketStatus = getWorldGoldMarketStatus();
 
-  setWorldGoldMarketMessage(marketStatus.message);
-  setWorldGoldError('');
+    setWorldGoldMarketMessage(marketStatus.message);
+    setWorldGoldError('');
 
-  // Từ 04:00 thứ Bảy đến trước 04:00 thứ Hai:
-  // không gọi API lấy giá mới.
-  if (!marketStatus.isOpen) {
-    setWorldGoldLoading(false);
-    return;
-  }
-
-  try {
-    setWorldGoldLoading(true);
-
-    const [goldRes, fxRes] = await Promise.all([
-      fetch(`https://xaus.com/api/v1/spot?t=${Date.now()}`),
-      fetch('https://open.er-api.com/v6/latest/USD'),
-    ]);
-
-    if (!goldRes.ok || !fxRes.ok) {
-      throw new Error(
-        'Không lấy được dữ liệu giá vàng thế giới hoặc tỷ giá.'
-      );
+    // Từ 04:00 thứ Bảy đến trước 04:00 thứ Hai:
+    // không gọi API lấy giá mới.
+    if (!marketStatus.isOpen) {
+      setWorldGoldLoading(false);
+      return;
     }
 
-    const goldData = await goldRes.json();
-    const fxData = await fxRes.json();
+    try {
+      setWorldGoldLoading(true);
 
-    const goldUsdOz = Number(
-      goldData.spot_usd_oz ??
+      const [goldRes, fxRes] = await Promise.all([
+        fetch(`https://xaus.com/api/v1/spot?t=${Date.now()}`),
+        fetch('https://open.er-api.com/v6/latest/USD'),
+      ]);
+
+      if (!goldRes.ok || !fxRes.ok) {
+        throw new Error(
+          'Không lấy được dữ liệu giá vàng thế giới hoặc tỷ giá.'
+        );
+      }
+
+      const goldData = await goldRes.json();
+      const fxData = await fxRes.json();
+
+      const goldUsdOz = Number(
+        goldData.spot_usd_oz ??
         goldData.price ??
         goldData.gold_price ??
         goldData.data?.spot_usd_oz ??
         goldData.data?.price
-    );
-
-    const usdVnd = Number(fxData.rates?.VND);
-
-    if (!goldUsdOz || !usdVnd) {
-      throw new Error(
-        'Dữ liệu giá vàng thế giới hoặc tỷ giá không hợp lệ.'
       );
+
+      const usdVnd = Number(fxData.rates?.VND);
+
+      if (!goldUsdOz || !usdVnd) {
+        throw new Error(
+          'Dữ liệu giá vàng thế giới hoặc tỷ giá không hợp lệ.'
+        );
+      }
+
+      const gramPerOunce = 31.1035;
+      const gramPerLuong = 37.5;
+
+      const worldGoldVndPerLuong =
+        goldUsdOz * usdVnd * (gramPerLuong / gramPerOunce);
+
+      setWorldGold({
+        goldUsdOz,
+        usdVnd,
+        worldGoldVndPerLuong,
+        updatedAt:
+          goldData.updated_at ||
+          goldData.timestamp ||
+          goldData.data?.updated_at ||
+          new Date().toISOString(),
+      });
+    } catch (error) {
+      setWorldGoldError(
+        error?.message || 'Không thể cập nhật giá vàng thế giới.'
+      );
+    } finally {
+      setWorldGoldLoading(false);
     }
-
-    const gramPerOunce = 31.1035;
-    const gramPerLuong = 37.5;
-
-    const worldGoldVndPerLuong =
-      goldUsdOz * usdVnd * (gramPerLuong / gramPerOunce);
-
-    setWorldGold({
-      goldUsdOz,
-      usdVnd,
-      worldGoldVndPerLuong,
-      updatedAt:
-        goldData.updated_at ||
-        goldData.timestamp ||
-        goldData.data?.updated_at ||
-        new Date().toISOString(),
-    });
-  } catch (error) {
-    setWorldGoldError(
-      error?.message || 'Không thể cập nhật giá vàng thế giới.'
-    );
-  } finally {
-    setWorldGoldLoading(false);
   }
-}
 
-  async function loadData() {
-    if (!user) return;
+  async function loadData(userId = user?.id) {
+    if (!userId) return;
 
     setLoading(true);
     setMessage('');
@@ -437,20 +487,20 @@ function App() {
     const { data: transactionData, error: transactionError } = await supabase
       .from('gold_transactions')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .order('transaction_date', { ascending: false })
       .order('created_at', { ascending: false });
 
     const { data: priceData, error: priceError } = await supabase
       .from('gold_prices')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .order('gold_type', { ascending: true });
 
     const { data: historyData, error: historyError } = await supabase
       .from('gold_price_history')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(1000);
 
@@ -468,6 +518,20 @@ function App() {
 
     setLoading(false);
   }
+
+  function getCurrentBuybackPrice(goldType) {
+  const normalizedGoldType = String(goldType || '').trim().toLowerCase();
+
+  const matchedPrice = prices.find(
+    (item) =>
+      String(item.gold_type || '').trim().toLowerCase() ===
+      normalizedGoldType
+  );
+
+  return matchedPrice
+    ? Number(matchedPrice.current_price_per_chi || 0)
+    : 0;
+}
 
   async function saveTransaction(e) {
     e.preventDefault();
@@ -529,12 +593,14 @@ function App() {
       return;
     }
 
+    const wasEditing = Boolean(editingId);
+
     setTransactionForm(defaultTransactionForm);
     setEditingId(null);
 
-    await loadData();
+    await loadData(user.id);
 
-    setMessage(editingId ? 'Đã cập nhật giao dịch.' : 'Đã lưu giao dịch.');
+    setMessage(wasEditing ? 'Đã cập nhật giao dịch.' : 'Đã lưu giao dịch.');
   }
 
   function editTransaction(tx) {
@@ -640,8 +706,7 @@ function App() {
         sell_price_per_chi: currentPrice,
       })
       .eq('user_id', user.id)
-      .eq('gold_type', goldType)
-      .eq('transaction_type', 'BUY');
+      .eq('gold_type', goldType);
 
     if (transactionPriceError) {
       setMessage(
@@ -670,7 +735,7 @@ function App() {
     setPriceForm(defaultPriceForm);
     setEditingPriceId(null);
 
-    await loadData();
+    await loadData(user.id);
 
     setMessage(
       wasEditing
@@ -717,7 +782,7 @@ function App() {
       cancelPriceEdit();
     }
 
-    await loadData();
+    await loadData(user.id);
 
     setMessage('Đã xóa giá hiện tại. Lịch sử giá vẫn được giữ lại.');
   }
@@ -839,7 +904,6 @@ function App() {
           })
           .eq('user_id', user.id)
           .eq('gold_type', item.gold_type)
-          .eq('transaction_type', 'BUY')
           .select();
 
         if (updateTransactionError) {
@@ -850,7 +914,7 @@ function App() {
 
         console.log('updatedTransactions:', updatedTransactions);
 
-        await loadData();
+        await loadData(user.id);
 
         setMessage(
           `Đã xóa lịch sử giá. Giá hiện tại của ${item.gold_type
@@ -895,7 +959,6 @@ function App() {
         })
         .eq('user_id', user.id)
         .eq('gold_type', item.gold_type)
-        .eq('transaction_type', 'BUY')
         .select();
 
       if (clearTransactionError) {
@@ -906,7 +969,7 @@ function App() {
 
       console.log('clearedTransactions:', clearedTransactions);
 
-      await loadData();
+      await loadData(user.id);
 
       setMessage(
         `Đã xóa lịch sử cuối cùng của ${item.gold_type}. Giá đang lưu cũng đã được xóa.`
@@ -939,7 +1002,7 @@ function App() {
       cancelEdit();
     }
 
-    await loadData();
+    await loadData(user.id);
     setMessage('Đã xóa giao dịch.');
   }
 
@@ -974,13 +1037,15 @@ function App() {
     const originalValue = quantity * buyPrice;
     const currentValue = quantity * currentPrice;
 
-    let profit = 0;
-
-    if (tx.transaction_type === 'BUY') {
-      profit = currentValue - originalValue;
-    } else {
-      profit = originalValue - currentValue;
-    }
+    /*
+     * BUY/SELL chỉ là nhãn loại giao dịch.
+     * Theo định nghĩa của ứng dụng:
+     * - originalValue: tổng giá tại thời điểm mua
+     * - currentValue: tổng giá cửa hàng có thể thu lại hiện tại
+     *
+     * Vì vậy cả hai loại đều dùng cùng một công thức.
+     */
+    const profit = currentValue - originalValue;
 
     const profitPercent =
       originalValue > 0 ? (profit / originalValue) * 100 : 0;
@@ -1100,8 +1165,6 @@ function App() {
     let totalCurrentValue = 0;
 
     for (const tx of transactions) {
-      if (tx.transaction_type !== 'BUY') continue;
-
       const result = calculateTransactionResult(tx);
 
       totalBuyCost += result.originalValue;
@@ -1149,13 +1212,13 @@ function App() {
     return <Login />;
   }
   return (
-    <div className="container">
+    <div className="container">  
       <div className="topbar">
         <div className="app-title">
           <div className="app-logo">
             <img
-            src="/logo.png"
-            className="login-logo"
+              src="/logo.png"
+              className="login-logo"
             />
           </div>
 
@@ -1534,154 +1597,154 @@ function App() {
       </div>
 
       <div className="card">
-  <div className="gold-chart-tabs">
-    <button
-      type="button"
-      className={activeGoldTab === 'local' ? 'active' : ''}
-      onClick={() => setActiveGoldTab('local')}
-    >
-      <BarChart3 size={17} />
-      Lịch sử giá PNJ
-    </button>
+        <div className="gold-chart-tabs">
+          <button
+            type="button"
+            className={activeGoldTab === 'local' ? 'active' : ''}
+            onClick={() => setActiveGoldTab('local')}
+          >
+            <BarChart3 size={17} />
+            Lịch sử giá PNJ
+          </button>
 
-    <button
-      type="button"
-      className={activeGoldTab === 'world' ? 'active' : ''}
-      onClick={() => setActiveGoldTab('world')}
-    >
-      <Globe2 size={17} />
-      Biểu đồ XAU/USD
-    </button>
-  </div>
-
-  {activeGoldTab === 'local' && (
-    <>
-      <h2 className="section-title">
-        <BarChart3 size={20} />
-        Biểu đồ lịch sử giá
-      </h2>
-
-      <div className="chart-range-buttons">
-        <button
-          type="button"
-          className={chartRange === '1d' ? 'active' : ''}
-          onClick={() => setChartRange('1d')}
-        >
-          Hôm nay
-        </button>
-
-        <button
-          type="button"
-          className={chartRange === '1w' ? 'active' : ''}
-          onClick={() => setChartRange('1w')}
-        >
-          1 tuần
-        </button>
-
-        <button
-          type="button"
-          className={chartRange === '1m' ? 'active' : ''}
-          onClick={() => setChartRange('1m')}
-        >
-          1 tháng
-        </button>
-
-        <button
-          type="button"
-          className={chartRange === '3m' ? 'active' : ''}
-          onClick={() => setChartRange('3m')}
-        >
-          3 tháng
-        </button>
-
-        <button
-          type="button"
-          className={chartRange === '6m' ? 'active' : ''}
-          onClick={() => setChartRange('6m')}
-        >
-          6 tháng
-        </button>
-
-        <button
-          type="button"
-          className={chartRange === '12m' ? 'active' : ''}
-          onClick={() => setChartRange('12m')}
-        >
-          12 tháng
-        </button>
-      </div>
-
-      {priceChartData.length === 0 ? (
-        <p className="small-text">
-          Chưa có lịch sử giá để vẽ biểu đồ.
-        </p>
-      ) : (
-        <div className="chart-box">
-          <ResponsiveContainer width="100%" height={320}>
-            <LineChart data={priceChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-
-              <XAxis dataKey="time" />
-
-              <YAxis
-                tickFormatter={(value) => formatMoney(value)}
-                domain={['dataMin - 50000', 'dataMax + 50000']}
-                width={90}
-              />
-
-              <Tooltip
-                formatter={(value, name) => [
-                  `${formatMoney(value)} VND`,
-                  name,
-                ]}
-                labelFormatter={(_, payload) => {
-                  if (!payload || payload.length === 0) return '';
-
-                  return payload[0].payload.fullTime;
-                }}
-              />
-
-              <Line
-                type="stepAfter"
-                dataKey="price"
-                name="Giá mua"
-                strokeWidth={3}
-                dot={{ r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-
-              <Line
-                type="stepAfter"
-                dataKey="sellPrice"
-                name="Giá bán"
-                strokeWidth={3}
-                dot={{ r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <button
+            type="button"
+            className={activeGoldTab === 'world' ? 'active' : ''}
+            onClick={() => setActiveGoldTab('world')}
+          >
+            <Globe2 size={17} />
+            Biểu đồ XAU/USD
+          </button>
         </div>
-      )}
-    </>
-  )}
 
-  {activeGoldTab === 'world' && (
-    <>
-      <h2 className="section-title">
-        <Globe2 size={20} />
-        Biểu đồ vàng thế giới XAU/USD
-      </h2>
+        {activeGoldTab === 'local' && (
+          <>
+            <h2 className="section-title">
+              <BarChart3 size={20} />
+              Biểu đồ lịch sử giá
+            </h2>
 
-      <p className="small-text">
-        Biểu đồ tương tác từ TradingView, mã OANDA:XAUUSD.
-      </p>
+            <div className="chart-range-buttons">
+              <button
+                type="button"
+                className={chartRange === '1d' ? 'active' : ''}
+                onClick={() => setChartRange('1d')}
+              >
+                Hôm nay
+              </button>
 
-      <div className="world-chart-box">
-        <TradingViewGoldChart theme={theme} />
+              <button
+                type="button"
+                className={chartRange === '1w' ? 'active' : ''}
+                onClick={() => setChartRange('1w')}
+              >
+                1 tuần
+              </button>
+
+              <button
+                type="button"
+                className={chartRange === '1m' ? 'active' : ''}
+                onClick={() => setChartRange('1m')}
+              >
+                1 tháng
+              </button>
+
+              <button
+                type="button"
+                className={chartRange === '3m' ? 'active' : ''}
+                onClick={() => setChartRange('3m')}
+              >
+                3 tháng
+              </button>
+
+              <button
+                type="button"
+                className={chartRange === '6m' ? 'active' : ''}
+                onClick={() => setChartRange('6m')}
+              >
+                6 tháng
+              </button>
+
+              <button
+                type="button"
+                className={chartRange === '12m' ? 'active' : ''}
+                onClick={() => setChartRange('12m')}
+              >
+                12 tháng
+              </button>
+            </div>
+
+            {priceChartData.length === 0 ? (
+              <p className="small-text">
+                Chưa có lịch sử giá để vẽ biểu đồ.
+              </p>
+            ) : (
+              <div className="chart-box">
+                <ResponsiveContainer width="100%" height={320}>
+                  <LineChart data={priceChartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+
+                    <XAxis dataKey="time" />
+
+                    <YAxis
+                      tickFormatter={(value) => formatMoney(value)}
+                      domain={['dataMin - 50000', 'dataMax + 50000']}
+                      width={90}
+                    />
+
+                    <Tooltip
+                      formatter={(value, name) => [
+                        `${formatMoney(value)} VND`,
+                        name,
+                      ]}
+                      labelFormatter={(_, payload) => {
+                        if (!payload || payload.length === 0) return '';
+
+                        return payload[0].payload.fullTime;
+                      }}
+                    />
+
+                    <Line
+                      type="stepAfter"
+                      dataKey="price"
+                      name="Giá mua"
+                      strokeWidth={3}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+
+                    <Line
+                      type="stepAfter"
+                      dataKey="sellPrice"
+                      name="Giá bán"
+                      strokeWidth={3}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </>
+        )}
+
+        {activeGoldTab === 'world' && (
+          <>
+            <h2 className="section-title">
+              <Globe2 size={20} />
+              Biểu đồ vàng thế giới XAU/USD
+            </h2>
+
+            <p className="small-text">
+              Biểu đồ tương tác từ TradingView, mã OANDA:XAUUSD.
+            </p>
+
+            <div className="world-chart-box">
+              <TradingViewGoldChart theme={theme} />
+            </div>
+          </>
+        )}
       </div>
-    </>
-  )}
-</div>
 
       <div className="card">
         <p className="small-text">
@@ -1927,6 +1990,10 @@ function App() {
                 Trang sau
               </button>
             </div>
+
+            <footer className="app-footer">
+            <p>© 2026 Phạm Ngọc Thuần</p>
+            </footer>
           </div>
         )}
       </div>
