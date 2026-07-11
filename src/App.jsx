@@ -1161,10 +1161,19 @@ function App() {
   }, [priceHistory, chartRange]);
 
   const summary = useMemo(() => {
+    let totalGoldQuantity = 0;
     let totalBuyCost = 0;
     let totalCurrentValue = 0;
 
     for (const tx of transactions) {
+      const quantity = Number(tx.quantity_chi || 0);
+
+      if (tx.transaction_type === 'BUY') {
+        totalGoldQuantity += quantity;
+      } else if (tx.transaction_type === 'SELL') {
+        totalGoldQuantity -= quantity;
+      }
+
       const result = calculateTransactionResult(tx);
 
       totalBuyCost += result.originalValue;
@@ -1172,10 +1181,14 @@ function App() {
     }
 
     const profit = totalCurrentValue - totalBuyCost;
+
     const profitPercent =
-      totalBuyCost > 0 ? (profit / totalBuyCost) * 100 : 0;
+      totalBuyCost > 0
+        ? (profit / totalBuyCost) * 100
+        : 0;
 
     return {
+      totalGoldQuantity,
       totalBuyCost,
       totalCurrentValue,
       profit,
@@ -1297,6 +1310,19 @@ function App() {
       </div>
 
       <div className="summary">
+        <div className="summary-card">
+          <div className="summary-icon">
+            <Coins size={22} />
+          </div>
+          <span>Tổng số vàng đang có</span>
+
+          <strong>
+            {Number(summary.totalGoldQuantity || 0).toLocaleString('vi-VN', {
+              maximumFractionDigits: 4,
+            })}{' '}
+            chỉ
+          </strong>
+        </div>
         <div className="summary-card">
           <div className="summary-icon wallet-icon">
             <Wallet size={22} />
