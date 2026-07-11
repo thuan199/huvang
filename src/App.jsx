@@ -126,25 +126,25 @@ function App() {
     };
   }, []);
 
-		async function updateDisplayName() {
-		  const name = window.prompt('Nhập tên hiển thị:');
+  async function updateDisplayName() {
+    const name = window.prompt('Nhập tên hiển thị:');
 
-		  if (!name || !name.trim()) return;
+    if (!name || !name.trim()) return;
 
-		  const { data, error } = await supabase.auth.updateUser({
-			data: {
-			  display_name: name.trim(),
-			},
-		  });
+    const { data, error } = await supabase.auth.updateUser({
+      data: {
+        display_name: name.trim(),
+      },
+    });
 
-		  if (error) {
-			setMessage(error.message);
-			return;
-		  }
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
 
-		  setUser(data.user);
-		  setMessage('Đã cập nhật tên hiển thị.');
-		}
+    setUser(data.user);
+    setMessage('Đã cập nhật tên hiển thị.');
+  }
   async function handleLogout() {
     await supabase.auth.signOut();
     setUser(null);
@@ -181,9 +181,9 @@ function App() {
   const [isWorldGoldOpen, setIsWorldGoldOpen] = useState(false);
   const [chartRange, setChartRange] = useState('1d');
   const [theme, setTheme] = useState('light');
-	  useEffect(() => {
-	  document.body.className = theme === 'dark' ? 'dark-theme' : '';
-	}, [theme]);
+  useEffect(() => {
+    document.body.className = theme === 'dark' ? 'dark-theme' : '';
+  }, [theme]);
 
   const [worldGold, setWorldGold] = useState(null);
   const [worldGoldLoading, setWorldGoldLoading] = useState(false);
@@ -194,18 +194,18 @@ function App() {
     gold_type: 'Nhẫn 9999',
     quantity_chi: '',
     price_per_chi: '',
-	sell_price_per_chi: '',
+    sell_price_per_chi: '',
     transaction_date: new Date().toISOString().slice(0, 10),
     location: '',
     note: '',
   };
 
   const defaultPriceForm = {
-  gold_type: 'Nhẫn 9999',
-  current_price_per_chi: '',
-  sell_price_per_chi: '',
-  note: '',
-};
+    gold_type: 'Nhẫn 9999',
+    current_price_per_chi: '',
+    sell_price_per_chi: '',
+    note: '',
+  };
 
   const [transactionForm, setTransactionForm] = useState(
     defaultTransactionForm
@@ -214,33 +214,33 @@ function App() {
   const [priceForm, setPriceForm] = useState(defaultPriceForm);
 
   useEffect(() => {
-  if (user) {
-    loadData();
-  }
-}, [user]);
+    if (user) {
+      loadData();
+    }
+  }, [user]);
 
   useEffect(() => {
-  loadWorldGoldPrice();
+    loadWorldGoldPrice();
 
-  const timer = setInterval(() => {
-    if (document.visibilityState === 'visible') {
-      loadWorldGoldPrice();
-    }
-  }, 60 * 1000);
+    const timer = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadWorldGoldPrice();
+      }
+    }, 60 * 1000);
 
-  const handleVisibilityChange = () => {
-    if (document.visibilityState === 'visible') {
-      loadWorldGoldPrice();
-    }
-  };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadWorldGoldPrice();
+      }
+    };
 
-  document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
-  return () => {
-    clearInterval(timer);
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
-  };
-}, []);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   async function loadWorldGoldPrice() {
     try {
@@ -261,10 +261,10 @@ function App() {
 
       const goldUsdOz = Number(
         goldData.spot_usd_oz ??
-          goldData.price ??
-          goldData.gold_price ??
-          goldData.data?.spot_usd_oz ??
-          goldData.data?.price
+        goldData.price ??
+        goldData.gold_price ??
+        goldData.data?.spot_usd_oz ??
+        goldData.data?.price
       );
 
       const usdVnd = Number(fxData.rates?.VND);
@@ -325,8 +325,8 @@ function App() {
     if (transactionError || priceError || historyError) {
       setMessage(
         transactionError?.message ||
-          priceError?.message ||
-          historyError?.message
+        priceError?.message ||
+        historyError?.message
       );
     } else {
       setTransactions(transactionData || []);
@@ -343,7 +343,7 @@ function App() {
 
     const quantity = Number(transactionForm.quantity_chi);
     const price = Number(transactionForm.price_per_chi);
-	const sellPrice = Number(transactionForm.sell_price_per_chi);
+    const sellPrice = Number(transactionForm.sell_price_per_chi);
 
     if (!transactionForm.gold_type.trim()) {
       setMessage('Vui lòng nhập loại vàng.');
@@ -413,7 +413,7 @@ function App() {
       gold_type: tx.gold_type || '',
       quantity_chi: String(tx.quantity_chi || ''),
       price_per_chi: String(tx.price_per_chi || ''),
-	  sell_price_per_chi: String(tx.sell_price_per_chi || ''),
+      sell_price_per_chi: String(tx.sell_price_per_chi || ''),
       transaction_date:
         tx.transaction_date || new Date().toISOString().slice(0, 10),
       location: tx.location || '',
@@ -435,117 +435,117 @@ function App() {
   }
 
   async function saveCurrentPrice(e) {
-  e.preventDefault();
-  setMessage('');
+    e.preventDefault();
+    setMessage('');
 
-  const currentPrice = Number(priceForm.current_price_per_chi);
-  const sellPrice = Number(priceForm.sell_price_per_chi);
-  const goldType = priceForm.gold_type.trim();
+    const currentPrice = Number(priceForm.current_price_per_chi);
+    const sellPrice = Number(priceForm.sell_price_per_chi);
+    const goldType = priceForm.gold_type.trim();
 
-  if (!goldType) {
-    setMessage('Vui lòng nhập loại vàng.');
-    return;
-  }
+    if (!goldType) {
+      setMessage('Vui lòng nhập loại vàng.');
+      return;
+    }
 
-  if (!currentPrice || currentPrice <= 0) {
-    setMessage('Vui lòng nhập giá cửa hàng mua vào hợp lệ.');
-    return;
-  }
+    if (!currentPrice || currentPrice <= 0) {
+      setMessage('Vui lòng nhập giá cửa hàng mua vào hợp lệ.');
+      return;
+    }
 
-  if (!sellPrice || sellPrice <= 0) {
-    setMessage('Vui lòng nhập giá cửa hàng bán ra hợp lệ.');
-    return;
-  }
+    if (!sellPrice || sellPrice <= 0) {
+      setMessage('Vui lòng nhập giá cửa hàng bán ra hợp lệ.');
+      return;
+    }
 
-  let priceError;
+    let priceError;
 
-  if (editingPriceId) {
-    const result = await supabase
-      .from('gold_prices')
-      .update({
-        gold_type: goldType,
-        current_price_per_chi: currentPrice,
-        sell_price_per_chi: sellPrice,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', editingPriceId)
-      .eq('user_id', user.id);
-
-    priceError = result.error;
-  } else {
-    const result = await supabase
-      .from('gold_prices')
-      .upsert(
-        {
-          user_id: user.id,
+    if (editingPriceId) {
+      const result = await supabase
+        .from('gold_prices')
+        .update({
           gold_type: goldType,
           current_price_per_chi: currentPrice,
           sell_price_per_chi: sellPrice,
           updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: 'user_id,gold_type',
-        }
+        })
+        .eq('id', editingPriceId)
+        .eq('user_id', user.id);
+
+      priceError = result.error;
+    } else {
+      const result = await supabase
+        .from('gold_prices')
+        .upsert(
+          {
+            user_id: user.id,
+            gold_type: goldType,
+            current_price_per_chi: currentPrice,
+            sell_price_per_chi: sellPrice,
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'user_id,gold_type',
+          }
+        );
+
+      priceError = result.error;
+    }
+
+    if (priceError) {
+      setMessage(priceError.message);
+      return;
+    }
+
+    /*
+     * Giá cửa hàng mua vào hiện tại chính là giá người dùng
+     * có thể bán vàng lại cho cửa hàng.
+     *
+     * Vì vậy cập nhật vào sell_price_per_chi của giao dịch.
+     */
+    const { error: transactionPriceError } = await supabase
+      .from('gold_transactions')
+      .update({
+        sell_price_per_chi: currentPrice,
+      })
+      .eq('user_id', user.id)
+      .eq('gold_type', goldType)
+      .eq('transaction_type', 'BUY');
+
+    if (transactionPriceError) {
+      setMessage(
+        `Đã lưu giá hiện tại nhưng không cập nhật được giá trong danh sách giao dịch: ${transactionPriceError.message}`
       );
+      return;
+    }
 
-    priceError = result.error;
-  }
+    const { error: historyError } = await supabase
+      .from('gold_price_history')
+      .insert({
+        user_id: user.id,
+        gold_type: goldType,
+        price_per_chi: currentPrice,
+        sell_price_per_chi: sellPrice,
+        note: priceForm.note.trim() || 'Cập nhật giá hiện tại',
+      });
 
-  if (priceError) {
-    setMessage(priceError.message);
-    return;
-  }
+    if (historyError) {
+      setMessage(historyError.message);
+      return;
+    }
 
-  /*
-   * Giá cửa hàng mua vào hiện tại chính là giá người dùng
-   * có thể bán vàng lại cho cửa hàng.
-   *
-   * Vì vậy cập nhật vào sell_price_per_chi của giao dịch.
-   */
-  const { error: transactionPriceError } = await supabase
-    .from('gold_transactions')
-    .update({
-      sell_price_per_chi: currentPrice,
-    })
-    .eq('user_id', user.id)
-    .eq('gold_type', goldType)
-    .eq('transaction_type', 'BUY');
+    const wasEditing = Boolean(editingPriceId);
 
-  if (transactionPriceError) {
+    setPriceForm(defaultPriceForm);
+    setEditingPriceId(null);
+
+    await loadData();
+
     setMessage(
-      `Đã lưu giá hiện tại nhưng không cập nhật được giá trong danh sách giao dịch: ${transactionPriceError.message}`
+      wasEditing
+        ? 'Đã sửa giá hiện tại, cập nhật giao dịch và lưu lịch sử giá.'
+        : 'Đã cập nhật giá vàng, danh sách giao dịch và lịch sử giá.'
     );
-    return;
   }
-
-  const { error: historyError } = await supabase
-    .from('gold_price_history')
-    .insert({
-      user_id: user.id,
-      gold_type: goldType,
-      price_per_chi: currentPrice,
-      sell_price_per_chi: sellPrice,
-      note: priceForm.note.trim() || 'Cập nhật giá hiện tại',
-    });
-
-  if (historyError) {
-    setMessage(historyError.message);
-    return;
-  }
-
-  const wasEditing = Boolean(editingPriceId);
-
-  setPriceForm(defaultPriceForm);
-  setEditingPriceId(null);
-
-  await loadData();
-
-  setMessage(
-    wasEditing
-      ? 'Đã sửa giá hiện tại, cập nhật giao dịch và lưu lịch sử giá.'
-      : 'Đã cập nhật giá vàng, danh sách giao dịch và lịch sử giá.'
-  );
-}
 
   function editCurrentPrice(item) {
     setEditingPriceId(item.id);
@@ -553,7 +553,7 @@ function App() {
     setPriceForm({
       gold_type: item.gold_type || '',
       current_price_per_chi: String(item.current_price_per_chi || ''),
-	  sell_price_per_chi: String(item.sell_price_per_chi || ''),
+      sell_price_per_chi: String(item.sell_price_per_chi || ''),
       note: 'Sửa giá hiện tại',
     });
 
@@ -589,205 +589,204 @@ function App() {
 
     setMessage('Đã xóa giá hiện tại. Lịch sử giá vẫn được giữ lại.');
   }
-  
+
   async function deletePriceHistory(item) {
-  try {
-    if (!item?.id) {
-      setMessage('Không tìm thấy ID của lịch sử giá cần xóa.');
-      return;
-    }
+    try {
+      if (!item?.id) {
+        setMessage('Không tìm thấy ID của lịch sử giá cần xóa.');
+        return;
+      }
 
-    const ok = window.confirm(
-      `Bạn muốn xóa lịch sử giá của ${item.gold_type} lúc ${formatDateTime(
-        item.created_at
-      )}?`
-    );
-
-    if (!ok) return;
-
-    setMessage('');
-
-    /*
-     * Xóa lịch sử và yêu cầu Supabase trả lại dòng đã xóa.
-     * Nếu mảng rỗng thì thường do RLS không cho phép DELETE.
-     */
-    const {
-      data: deletedRows,
-      error: deleteHistoryError,
-    } = await supabase
-      .from('gold_price_history')
-      .delete()
-      .eq('id', item.id)
-      .eq('user_id', user.id)
-      .select();
-
-    console.log('deletedRows:', deletedRows);
-    console.log('deleteHistoryError:', deleteHistoryError);
-
-    if (deleteHistoryError) {
-      throw new Error(
-        `Không xóa được lịch sử giá: ${deleteHistoryError.message}`
+      const ok = window.confirm(
+        `Bạn muốn xóa lịch sử giá của ${item.gold_type} lúc ${formatDateTime(
+          item.created_at
+        )}?`
       );
-    }
 
-    if (!deletedRows || deletedRows.length === 0) {
-      throw new Error(
-        'Supabase không xóa dòng dữ liệu. Hãy kiểm tra quyền DELETE của bảng gold_price_history.'
-      );
-    }
+      if (!ok) return;
 
-    /*
-     * Tìm dòng lịch sử mới nhất còn lại của cùng loại vàng.
-     */
-    const {
-      data: latestHistory,
-      error: latestHistoryError,
-    } = await supabase
-      .from('gold_price_history')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('gold_type', item.gold_type)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (latestHistoryError) {
-      throw new Error(
-        `Không lấy được lịch sử giá mới nhất: ${latestHistoryError.message}`
-      );
-    }
-
-    if (latestHistory) {
-      const latestBuyPrice = Number(latestHistory.price_per_chi || 0);
-      const latestSellPrice = Number(
-        latestHistory.sell_price_per_chi || 0
-      );
+      setMessage('');
 
       /*
-       * Đồng bộ dòng lịch sử mới nhất sang "Giá đang lưu".
+       * Xóa lịch sử và yêu cầu Supabase trả lại dòng đã xóa.
+       * Nếu mảng rỗng thì thường do RLS không cho phép DELETE.
        */
       const {
-        data: updatedPrices,
-        error: updateCurrentPriceError,
+        data: deletedRows,
+        error: deleteHistoryError,
       } = await supabase
-        .from('gold_prices')
-        .upsert(
-          {
-            user_id: user.id,
-            gold_type: item.gold_type,
-            current_price_per_chi: latestBuyPrice,
-            sell_price_per_chi: latestSellPrice,
-            updated_at: latestHistory.created_at,
-          },
-          {
-            onConflict: 'user_id,gold_type',
-          }
-        )
+        .from('gold_price_history')
+        .delete()
+        .eq('id', item.id)
+        .eq('user_id', user.id)
         .select();
 
-      if (updateCurrentPriceError) {
+      console.log('deletedRows:', deletedRows);
+      console.log('deleteHistoryError:', deleteHistoryError);
+
+      if (deleteHistoryError) {
         throw new Error(
-          `Không đồng bộ được giá đang lưu: ${updateCurrentPriceError.message}`
+          `Không xóa được lịch sử giá: ${deleteHistoryError.message}`
         );
       }
 
-      console.log('updatedPrices:', updatedPrices);
+      if (!deletedRows || deletedRows.length === 0) {
+        throw new Error(
+          'Supabase không xóa dòng dữ liệu. Hãy kiểm tra quyền DELETE của bảng gold_price_history.'
+        );
+      }
 
       /*
-       * Đồng bộ giá cửa hàng mua vào mới nhất
-       * sang giá bán ra hiện tại của giao dịch.
+       * Tìm dòng lịch sử mới nhất còn lại của cùng loại vàng.
        */
       const {
-        data: updatedTransactions,
-        error: updateTransactionError,
+        data: latestHistory,
+        error: latestHistoryError,
+      } = await supabase
+        .from('gold_price_history')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('gold_type', item.gold_type)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (latestHistoryError) {
+        throw new Error(
+          `Không lấy được lịch sử giá mới nhất: ${latestHistoryError.message}`
+        );
+      }
+
+      if (latestHistory) {
+        const latestBuyPrice = Number(latestHistory.price_per_chi || 0);
+        const latestSellPrice = Number(
+          latestHistory.sell_price_per_chi || 0
+        );
+
+        /*
+         * Đồng bộ dòng lịch sử mới nhất sang "Giá đang lưu".
+         */
+        const {
+          data: updatedPrices,
+          error: updateCurrentPriceError,
+        } = await supabase
+          .from('gold_prices')
+          .upsert(
+            {
+              user_id: user.id,
+              gold_type: item.gold_type,
+              current_price_per_chi: latestBuyPrice,
+              sell_price_per_chi: latestSellPrice,
+              updated_at: latestHistory.created_at,
+            },
+            {
+              onConflict: 'user_id,gold_type',
+            }
+          )
+          .select();
+
+        if (updateCurrentPriceError) {
+          throw new Error(
+            `Không đồng bộ được giá đang lưu: ${updateCurrentPriceError.message}`
+          );
+        }
+
+        console.log('updatedPrices:', updatedPrices);
+
+        /*
+         * Đồng bộ giá cửa hàng mua vào mới nhất
+         * sang giá bán ra hiện tại của giao dịch.
+         */
+        const {
+          data: updatedTransactions,
+          error: updateTransactionError,
+        } = await supabase
+          .from('gold_transactions')
+          .update({
+            sell_price_per_chi: latestBuyPrice,
+          })
+          .eq('user_id', user.id)
+          .eq('gold_type', item.gold_type)
+          .eq('transaction_type', 'BUY')
+          .select();
+
+        if (updateTransactionError) {
+          throw new Error(
+            `Không cập nhật được giá giao dịch: ${updateTransactionError.message}`
+          );
+        }
+
+        console.log('updatedTransactions:', updatedTransactions);
+
+        await loadData();
+
+        setMessage(
+          `Đã xóa lịch sử giá. Giá hiện tại của ${item.gold_type
+          } đã trở về ${formatMoney(latestBuyPrice)} VND/chỉ.`
+        );
+
+        return;
+      }
+
+      /*
+       * Nếu không còn dòng lịch sử nào:
+       * xóa luôn "Giá đang lưu".
+       */
+      const {
+        data: deletedCurrentPrices,
+        error: deleteCurrentPriceError,
+      } = await supabase
+        .from('gold_prices')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('gold_type', item.gold_type)
+        .select();
+
+      if (deleteCurrentPriceError) {
+        throw new Error(
+          `Không xóa được giá đang lưu: ${deleteCurrentPriceError.message}`
+        );
+      }
+
+      console.log('deletedCurrentPrices:', deletedCurrentPrices);
+
+      /*
+       * Không còn giá hiện tại thì đưa giá giao dịch về null.
+       */
+      const {
+        data: clearedTransactions,
+        error: clearTransactionError,
       } = await supabase
         .from('gold_transactions')
         .update({
-          sell_price_per_chi: latestBuyPrice,
+          sell_price_per_chi: null,
         })
         .eq('user_id', user.id)
         .eq('gold_type', item.gold_type)
         .eq('transaction_type', 'BUY')
         .select();
 
-      if (updateTransactionError) {
+      if (clearTransactionError) {
         throw new Error(
-          `Không cập nhật được giá giao dịch: ${updateTransactionError.message}`
+          `Không xóa được giá hiện tại của giao dịch: ${clearTransactionError.message}`
         );
       }
 
-      console.log('updatedTransactions:', updatedTransactions);
+      console.log('clearedTransactions:', clearedTransactions);
 
       await loadData();
 
       setMessage(
-        `Đã xóa lịch sử giá. Giá hiện tại của ${
-          item.gold_type
-        } đã trở về ${formatMoney(latestBuyPrice)} VND/chỉ.`
+        `Đã xóa lịch sử cuối cùng của ${item.gold_type}. Giá đang lưu cũng đã được xóa.`
       );
+    } catch (error) {
+      console.error('Lỗi xóa lịch sử giá:', error);
 
-      return;
-    }
-
-    /*
-     * Nếu không còn dòng lịch sử nào:
-     * xóa luôn "Giá đang lưu".
-     */
-    const {
-      data: deletedCurrentPrices,
-      error: deleteCurrentPriceError,
-    } = await supabase
-      .from('gold_prices')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('gold_type', item.gold_type)
-      .select();
-
-    if (deleteCurrentPriceError) {
-      throw new Error(
-        `Không xóa được giá đang lưu: ${deleteCurrentPriceError.message}`
+      setMessage(
+        error?.message || 'Không thể xóa lịch sử giá.'
       );
     }
-
-    console.log('deletedCurrentPrices:', deletedCurrentPrices);
-
-    /*
-     * Không còn giá hiện tại thì đưa giá giao dịch về null.
-     */
-    const {
-      data: clearedTransactions,
-      error: clearTransactionError,
-    } = await supabase
-      .from('gold_transactions')
-      .update({
-        sell_price_per_chi: null,
-      })
-      .eq('user_id', user.id)
-      .eq('gold_type', item.gold_type)
-      .eq('transaction_type', 'BUY')
-      .select();
-
-    if (clearTransactionError) {
-      throw new Error(
-        `Không xóa được giá hiện tại của giao dịch: ${clearTransactionError.message}`
-      );
-    }
-
-    console.log('clearedTransactions:', clearedTransactions);
-
-    await loadData();
-
-    setMessage(
-      `Đã xóa lịch sử cuối cùng của ${item.gold_type}. Giá đang lưu cũng đã được xóa.`
-    );
-  } catch (error) {
-    console.error('Lỗi xóa lịch sử giá:', error);
-
-    setMessage(
-      error?.message || 'Không thể xóa lịch sử giá.'
-    );
   }
-}
 
   async function deleteTransaction(id) {
     const ok = window.confirm('Bạn muốn xóa giao dịch này?');
@@ -813,96 +812,156 @@ function App() {
   }
 
   const priceMap = useMemo(() => {
-  const map = {};
+    const map = {};
 
-  // priceHistory đang được load theo created_at giảm dần.
-  // Vì vậy dòng đầu tiên của mỗi loại vàng là giá mới nhất.
-  for (const item of priceHistory) {
-    if (!map[item.gold_type]) {
-      map[item.gold_type] = Number(item.price_per_chi || 0);
+    // priceHistory đang được load theo created_at giảm dần.
+    // Vì vậy dòng đầu tiên của mỗi loại vàng là giá mới nhất.
+    for (const item of priceHistory) {
+      if (!map[item.gold_type]) {
+        map[item.gold_type] = Number(item.price_per_chi || 0);
+      }
     }
-  }
 
-  return map;
-}, [priceHistory]);
+    return map;
+  }, [priceHistory]);
 
   function calculateTransactionResult(tx) {
-  const quantity = Number(tx.quantity_chi || 0);
-  const buyPrice = Number(tx.price_per_chi || 0);
+    const quantity = Number(tx.quantity_chi || 0);
+    const buyPrice = Number(tx.price_per_chi || 0);
 
-  // Giá cửa hàng mua vào mới nhất trong lịch sử giá.
-  // Đây là giá người dùng có thể bán vàng lại cho cửa hàng.
-  const latestBuybackPrice = Number(priceMap[tx.gold_type] || 0);
+    // Giá cửa hàng mua vào mới nhất trong lịch sử giá.
+    // Đây là giá người dùng có thể bán vàng lại cho cửa hàng.
+    const latestBuybackPrice = Number(priceMap[tx.gold_type] || 0);
 
-  const currentPrice = Number(
-    latestBuybackPrice ||
+    const currentPrice = Number(
+      latestBuybackPrice ||
       tx.sell_price_per_chi ||
       buyPrice
-  );
+    );
 
-  const originalValue = quantity * buyPrice;
-  const currentValue = quantity * currentPrice;
+    const originalValue = quantity * buyPrice;
+    const currentValue = quantity * currentPrice;
 
-  let profit = 0;
+    let profit = 0;
 
-  if (tx.transaction_type === 'BUY') {
-    profit = currentValue - originalValue;
-  } else {
-    profit = originalValue - currentValue;
+    if (tx.transaction_type === 'BUY') {
+      profit = currentValue - originalValue;
+    } else {
+      profit = originalValue - currentValue;
+    }
+
+    const profitPercent =
+      originalValue > 0 ? (profit / originalValue) * 100 : 0;
+
+    return {
+      originalValue,
+      currentValue,
+      currentPrice,
+      profit,
+      profitPercent,
+    };
   }
 
-  const profitPercent =
-    originalValue > 0 ? (profit / originalValue) * 100 : 0;
-
-  return {
-    originalValue,
-    currentValue,
-    currentPrice,
-    profit,
-    profitPercent,
-  };
-}
-  
   function getChartStartDate(range) {
-  const date = new Date();
-  if (range === '1d') {
+    const date = new Date();
+    if (range === '1d') {
+      date.setHours(0, 0, 0, 0);
+      return date;
+    }
+    if (range === '1w') date.setDate(date.getDate() - 7);
+    if (range === '1m') date.setMonth(date.getMonth() - 1);
+    if (range === '3m') date.setMonth(date.getMonth() - 3);
+    if (range === '6m') date.setMonth(date.getMonth() - 6);
+    if (range === '12m') date.setMonth(date.getMonth() - 12);
+
     date.setHours(0, 0, 0, 0);
     return date;
   }
-  if (range === '1w') date.setDate(date.getDate() - 7);
-  if (range === '1m') date.setMonth(date.getMonth() - 1);
-  if (range === '3m') date.setMonth(date.getMonth() - 3);
-  if (range === '6m') date.setMonth(date.getMonth() - 6);
-  if (range === '12m') date.setMonth(date.getMonth() - 12);
-
-  date.setHours(0, 0, 0, 0);
-  return date;
-}
   const priceChartData = useMemo(() => {
-  const sorted = [...priceHistory].sort(
-    (a, b) => new Date(a.created_at) - new Date(b.created_at)
-  );
+    const sorted = [...priceHistory].sort(
+      (a, b) => new Date(a.created_at) - new Date(b.created_at)
+    );
 
-  if (sorted.length === 0) return [];
+    if (sorted.length === 0) return [];
 
-  const startDate = getChartStartDate(chartRange);
+    const startDate = getChartStartDate(chartRange);
+    startDate.setHours(0, 0, 0, 0);
 
-  startDate.setHours(0, 0, 0, 0);
+    // Các lần cập nhật nằm trong khoảng thời gian đang xem.
+    const historyInRange = sorted.filter(
+      (item) => new Date(item.created_at) >= startDate
+    );
 
-  return sorted
-    .filter((item) => new Date(item.created_at) >= startDate)
-    .map((item) => ({
-      time: new Date(item.created_at).toLocaleString('vi-VN', {
-        day: '2-digit',
-        month: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-      fullTime: formatDateTime(item.created_at),
-      price: Number(item.price_per_chi || 0),
-      sellPrice: Number(item.sell_price_per_chi || 0),
-    }));
-}, [priceHistory, chartRange]);
+    // Tìm giá cuối cùng trước thời điểm bắt đầu khoảng xem.
+    const historyBeforeRange = sorted.filter(
+      (item) => new Date(item.created_at) < startDate
+    );
+
+    const latestPreviousPrice =
+      historyBeforeRange.length > 0
+        ? historyBeforeRange[historyBeforeRange.length - 1]
+        : null;
+
+    const chartData = [];
+
+    /*
+     * Nếu trước thời điểm bắt đầu đã có giá,
+     * thêm một điểm đầu kỳ để giữ nguyên giá cũ.
+     *
+     * Ví dụ:
+     * Hôm nay chưa cập nhật giá thì giá hôm nay
+     * bằng giá cuối cùng của ngày hôm qua.
+     */
+    if (latestPreviousPrice) {
+      chartData.push({
+        time:
+          chartRange === '1d'
+            ? 'Đầu ngày'
+            : startDate.toLocaleDateString('vi-VN', {
+              day: '2-digit',
+              month: '2-digit',
+            }),
+        fullTime: `${startDate.toLocaleDateString('vi-VN')} 00:00`,
+        price: Number(latestPreviousPrice.price_per_chi || 0),
+        sellPrice: Number(latestPreviousPrice.sell_price_per_chi || 0),
+        isCarriedForward: true,
+      });
+    }
+
+    // Thêm các lần cập nhật thực tế trong khoảng thời gian đang xem.
+    for (const item of historyInRange) {
+      chartData.push({
+        time: new Date(item.created_at).toLocaleString('vi-VN', {
+          day: '2-digit',
+          month: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+        fullTime: formatDateTime(item.created_at),
+        price: Number(item.price_per_chi || 0),
+        sellPrice: Number(item.sell_price_per_chi || 0),
+        isCarriedForward: false,
+      });
+    }
+
+    /*
+     * Trường hợp không có giá cũ trước khoảng xem nhưng có lịch sử,
+     * dùng dòng đầu tiên có thể tìm thấy.
+     */
+    if (chartData.length === 0 && sorted.length > 0) {
+      const latestPrice = sorted[sorted.length - 1];
+
+      chartData.push({
+        time: 'Giá gần nhất',
+        fullTime: formatDateTime(latestPrice.created_at),
+        price: Number(latestPrice.price_per_chi || 0),
+        sellPrice: Number(latestPrice.sell_price_per_chi || 0),
+        isCarriedForward: true,
+      });
+    }
+
+    return chartData;
+  }, [priceHistory, chartRange]);
 
   const summary = useMemo(() => {
     let totalBuyCost = 0;
@@ -931,77 +990,82 @@ function App() {
 
   const shopGold = prices[0];
 
-	const shopSellPriceVndPerLuong = shopGold
-	  ? Number(shopGold.sell_price_per_chi || 0) * 10
-	  : 0;
+  const shopSellPriceVndPerLuong = shopGold
+    ? Number(shopGold.sell_price_per_chi || 0) * 10
+    : 0;
 
-	const goldDifference =
-	  worldGold && shopSellPriceVndPerLuong
-		? shopSellPriceVndPerLuong - worldGold.worldGoldVndPerLuong
-		: 0;
+  const goldDifference =
+    worldGold && shopSellPriceVndPerLuong
+      ? shopSellPriceVndPerLuong - worldGold.worldGoldVndPerLuong
+      : 0;
 
   const goldDifferencePercent =
     worldGold && worldGold.worldGoldVndPerLuong > 0
       ? (goldDifference / worldGold.worldGoldVndPerLuong) * 100
       : 0;
 
-	if (authLoading) {
-	  return <p>Đang kiểm tra đăng nhập...</p>;
-	}
+  if (authLoading) {
+    return (
+      <div className="auth-loading">
+        <div className="auth-spinner" />
+        <p>Đang kiểm tra đăng nhập...</p>
+      </div>
+    );
+  }
 
-	if (!user) {
-	  return <Login />;
-	}
+  if (!user) {
+    return <Login />;
+  }
   return (
     <div className="container">
       <div className="topbar">
         <div className="app-title">
-				  <div className="app-logo">
-					<Coins size={28} />
-				  </div>
-		  
-				  <div>
-					<h1>Hũ vàng</h1>
-					<p className="user-email">
-					  Theo dõi lịch sử mua bán vàng, lời/lỗ và giá hiện tại
-					</p>
-				  </div>
-        </div>
-		
-		<div className="topbar-right">
-  <div className="topbar-actions">
-		  <div className="welcome-user">
-			Xin chào, <strong>{user?.user_metadata?.display_name || user?.email}</strong>
-		  </div>
-		<button
-		  type="button"
-		  className="logout-button"
-		  onClick={updateDisplayName}
-		>
-		  Đổi tên
-		</button>
-		  <button
-			type="button"
-			className="logout-button"
-			onClick={handleLogout}
-			title="Đăng xuất"
-		  >
-			<LogOut size={16} />
-			Đăng xuất
-		  </button>
+          <div className="app-logo">
+            <Coins size={28} />
+          </div>
 
-		  <button
-			type="button"
-			className="theme-toggle small"
-			onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-			title={theme === 'light' ? 'Chuyển sang theme tối' : 'Chuyển sang theme sáng'}
-		  >
-			{theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
-		  </button>
-		</div>
-</div>
-		
-		
+          <div>
+            <h1>Hũ vàng</h1>
+            <p className="user-email">
+              Theo dõi lịch sử mua bán vàng, lời/lỗ và giá hiện tại
+            </p>
+          </div>
+        </div>
+
+        <div className="topbar-right">
+          <div className="topbar-actions">
+            <div className="welcome-user">
+              Xin chào, <strong>{user?.user_metadata?.display_name || user?.email}</strong>
+            </div>
+            <button
+              type="button"
+              className="logout-button"
+              onClick={updateDisplayName}
+            >
+              Đổi tên
+            </button>
+            <button
+              type="button"
+              className="logout-button"
+              onClick={handleLogout}
+              title="Đăng xuất"
+            >
+              <LogOut size={16} />
+              Đăng xuất
+            </button>
+
+            <button
+              type="button"
+              className="theme-toggle small"
+              onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+              title={theme === 'light' ? 'Chuyển sang theme tối' : 'Chuyển sang theme sáng'}
+            >
+              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+            </button>
+          </div>
+        </div>
+
+
       </div>
 
       {message && <p className="message">{message}</p>}
@@ -1033,7 +1097,7 @@ function App() {
           </div>
         )}
       </div>
-		
+
       <div className="summary">
         <div className="summary-card">
           <div className="summary-icon wallet-icon">
@@ -1141,19 +1205,19 @@ function App() {
             }
             placeholder="Ví dụ: 8300000"
           />
-		  <label>Giá bán ra mỗi chỉ</label>
-		<input
-		  type="number"
-		  value={transactionForm.sell_price_per_chi}
-		  onChange={(e) =>
-			setTransactionForm({
-			  ...transactionForm,
-			  sell_price_per_chi: e.target.value,
-			})
-		  }
-		  placeholder="Ví dụ: 8000000"
-		/>
-		  
+          <label>Giá bán ra mỗi chỉ</label>
+          <input
+            type="number"
+            value={transactionForm.sell_price_per_chi}
+            onChange={(e) =>
+              setTransactionForm({
+                ...transactionForm,
+                sell_price_per_chi: e.target.value,
+              })
+            }
+            placeholder="Ví dụ: 8000000"
+          />
+
 
           <label>Ngày giao dịch</label>
           <input
@@ -1244,19 +1308,19 @@ function App() {
             }
             placeholder="Ví dụ: 8300000"
           />
-		  
-		  <label>Giá cửa hàng bán ra mỗi chỉ</label>
-			<input
-			  type="number"
-			  value={priceForm.sell_price_per_chi}
-			  onChange={(e) =>
-				setPriceForm({
-				  ...priceForm,
-				  sell_price_per_chi: e.target.value,
-				})
-			  }
-			  placeholder="Ví dụ: 14800000"
-			/>
+
+          <label>Giá cửa hàng bán ra mỗi chỉ</label>
+          <input
+            type="number"
+            value={priceForm.sell_price_per_chi}
+            onChange={(e) =>
+              setPriceForm({
+                ...priceForm,
+                sell_price_per_chi: e.target.value,
+              })
+            }
+            placeholder="Ví dụ: 14800000"
+          />
 
           <label>Ghi chú giá</label>
           <input
@@ -1301,9 +1365,9 @@ function App() {
                     <strong>
                       Mua vào: {formatMoney(item.current_price_per_chi)} VND/chỉ
                     </strong>
-					<strong>
-					 Bán ra: {formatMoney(item.sell_price_per_chi)} VND/chỉ
-					</strong> 
+                    <strong>
+                      Bán ra: {formatMoney(item.sell_price_per_chi)} VND/chỉ
+                    </strong>
                   </div>
 
                   <div className="price-actions">
@@ -1339,14 +1403,14 @@ function App() {
           <BarChart3 size={20} />
           Biểu đồ lịch sử giá
         </h2>
-		<div className="chart-range-buttons">
-		  <button type="button" className={chartRange === '1d' ? 'active' : ''} onClick={() => setChartRange('1d')}>Hôm nay</button>
-		  <button type="button" className={chartRange === '1w' ? 'active' : ''} onClick={() => setChartRange('1w')}>1 tuần</button>
-		  <button type="button" className={chartRange === '1m' ? 'active' : ''} onClick={() => setChartRange('1m')}>1 tháng</button>
-		  <button type="button" className={chartRange === '3m' ? 'active' : ''} onClick={() => setChartRange('3m')}>3 tháng</button>
-		  <button type="button" className={chartRange === '6m' ? 'active' : ''} onClick={() => setChartRange('6m')}>6 tháng</button>
-		  <button type="button" className={chartRange === '12m' ? 'active' : ''} onClick={() => setChartRange('12m')}>12 tháng</button>
-		</div>
+        <div className="chart-range-buttons">
+          <button type="button" className={chartRange === '1d' ? 'active' : ''} onClick={() => setChartRange('1d')}>Hôm nay</button>
+          <button type="button" className={chartRange === '1w' ? 'active' : ''} onClick={() => setChartRange('1w')}>1 tuần</button>
+          <button type="button" className={chartRange === '1m' ? 'active' : ''} onClick={() => setChartRange('1m')}>1 tháng</button>
+          <button type="button" className={chartRange === '3m' ? 'active' : ''} onClick={() => setChartRange('3m')}>3 tháng</button>
+          <button type="button" className={chartRange === '6m' ? 'active' : ''} onClick={() => setChartRange('6m')}>6 tháng</button>
+          <button type="button" className={chartRange === '12m' ? 'active' : ''} onClick={() => setChartRange('12m')}>12 tháng</button>
+        </div>
 
         {priceChartData.length === 0 ? (
           <p className="small-text">Chưa có dữ liệu để vẽ biểu đồ.</p>
@@ -1358,19 +1422,19 @@ function App() {
                 <XAxis dataKey="time" />
                 <YAxis
                   tickFormatter={(value) => formatMoney(value)}
-				  domain={['dataMin - 50000', 'dataMax + 50000']}
+                  domain={['dataMin - 50000', 'dataMax + 50000']}
                   width={90}
                 />
                 <Tooltip
-				  formatter={(value, name) => [
-					`${formatMoney(value)} VND`,
-					name
-				  ]}
-				  labelFormatter={(_, payload) => {
-					if (!payload || payload.length === 0) return '';
-					return payload[0].payload.fullTime;
-				  }}
-				/>
+                  formatter={(value, name) => [
+                    `${formatMoney(value)} VND`,
+                    name
+                  ]}
+                  labelFormatter={(_, payload) => {
+                    if (!payload || payload.length === 0) return '';
+                    return payload[0].payload.fullTime;
+                  }}
+                />
                 <Line
                   type="stepAfter"
                   dataKey="price"
@@ -1379,14 +1443,14 @@ function App() {
                   dot={{ r: 4 }}
                   activeDot={{ r: 6 }}
                 />
-				<Line
-				  type="stepAfter"
-				  dataKey="sellPrice"
-				  name="Giá bán"
-				  strokeWidth={3}
-				  dot={{ r: 4 }}
-				  activeDot={{ r: 6 }}
-				  />
+                <Line
+                  type="stepAfter"
+                  dataKey="sellPrice"
+                  name="Giá bán"
+                  strokeWidth={3}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -1428,27 +1492,27 @@ function App() {
               </strong>
             </div>
 
-						<div>
-			  <span>Giá cửa hàng bán ra</span>
-			  <strong>
-				{shopGold && shopGold.sell_price_per_chi
-				  ? `${shopGold.gold_type}: ${formatMoney(
-					  shopSellPriceVndPerLuong
-					)} VND/lượng`
-				  : 'Chưa có giá bán ra'}
-			  </strong>
-			</div>
+            <div>
+              <span>Giá cửa hàng bán ra</span>
+              <strong>
+                {shopGold && shopGold.sell_price_per_chi
+                  ? `${shopGold.gold_type}: ${formatMoney(
+                    shopSellPriceVndPerLuong
+                  )} VND/lượng`
+                  : 'Chưa có giá bán ra'}
+              </strong>
+            </div>
 
-			<div>
-			  <span>Chênh lệch</span>
-			  <strong className={goldDifference >= 0 ? 'profit' : 'loss'}>
-				{shopGold && shopGold.sell_price_per_chi
-				  ? `${formatMoney(Math.round(goldDifference))} VND (${goldDifferencePercent.toFixed(
-					  2
-					)}%)`
-				  : '-'}
-			  </strong>
-			</div>
+            <div>
+              <span>Chênh lệch</span>
+              <strong className={goldDifference >= 0 ? 'profit' : 'loss'}>
+                {shopGold && shopGold.sell_price_per_chi
+                  ? `${formatMoney(Math.round(goldDifference))} VND (${goldDifferencePercent.toFixed(
+                    2
+                  )}%)`
+                  : '-'}
+              </strong>
+            </div>
 
             <div>
               <span>Cập nhật lúc</span>
@@ -1501,8 +1565,8 @@ function App() {
                       <td>{tx.transaction_type === 'BUY' ? 'Mua' : 'Bán'}</td>
                       <td>{tx.gold_type}</td>
                       <td>{Number(tx.quantity_chi)}</td>
-					  <td>{formatMoney(tx.price_per_chi)}</td>
-                     <td>{formatMoney(result.currentPrice)}</td>
+                      <td>{formatMoney(tx.price_per_chi)}</td>
+                      <td>{formatMoney(result.currentPrice)}</td>
                       <td>
                         {tx.location ? (
                           <span className="location-cell">
@@ -1570,72 +1634,72 @@ function App() {
                   <th>Thời gian</th>
                   <th>Loại vàng</th>
                   <th>Giá mua</th>
-				  <th>Giá bán </th>
+                  <th>Giá bán </th>
                   <th>Ghi chú</th>
-				  <th>Thao tác</th>
+                  <th>Thao tác</th>
                 </tr>
               </thead>
 
               <tbody>
-			  {paginatedPriceHistory.map((item) => (
-				<tr key={item.id}>
-				  <td>{formatDateTime(item.created_at)}</td>
+                {paginatedPriceHistory.map((item) => (
+                  <tr key={item.id}>
+                    <td>{formatDateTime(item.created_at)}</td>
 
-				  <td>{item.gold_type}</td>
+                    <td>{item.gold_type}</td>
 
-				  <td>
-					{formatMoney(item.price_per_chi)} VND
-				  </td>
+                    <td>
+                      {formatMoney(item.price_per_chi)} VND
+                    </td>
 
-				  <td>
-					{formatMoney(item.sell_price_per_chi)} VND
-				  </td>
+                    <td>
+                      {formatMoney(item.sell_price_per_chi)} VND
+                    </td>
 
-				  <td>{item.note || '-'}</td>
+                    <td>{item.note || '-'}</td>
 
-				  <td>
-					<button
-				  type="button"
-				  className="danger-button icon-button table-icon-button"
-				  onClick={(e) => {
-					e.preventDefault();
-					e.stopPropagation();
-					deletePriceHistory(item);
-				  }}
-				>
-				  <Trash2 size={15} />
-				  Xóa
-				</button>
-				  </td>
-				</tr>
-			  ))}
-			</tbody>
+                    <td>
+                      <button
+                        type="button"
+                        className="danger-button icon-button table-icon-button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          deletePriceHistory(item);
+                        }}
+                      >
+                        <Trash2 size={15} />
+                        Xóa
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
-			<div className="pagination">
-			<button
-			  type="button"
-			  disabled={historyPage === 1}
-			  onClick={() => setHistoryPage((page) => Math.max(1, page - 1))}
-			>
-			  Trang trước
-			</button>
+            <div className="pagination">
+              <button
+                type="button"
+                disabled={historyPage === 1}
+                onClick={() => setHistoryPage((page) => Math.max(1, page - 1))}
+              >
+                Trang trước
+              </button>
 
-			<span>
-			  Trang {historyPage} / {historyTotalPages}
-			</span>
+              <span>
+                Trang {historyPage} / {historyTotalPages}
+              </span>
 
-			<button
-			  type="button"
-			  disabled={historyPage >= historyTotalPages}
-			  onClick={() =>
-                setHistoryPage((page) =>
-                  Math.min(historyTotalPages, page + 1)
-                )
-              }
-			>
-			  Trang sau
-			</button>
-		  </div>
+              <button
+                type="button"
+                disabled={historyPage >= historyTotalPages}
+                onClick={() =>
+                  setHistoryPage((page) =>
+                    Math.min(historyTotalPages, page + 1)
+                  )
+                }
+              >
+                Trang sau
+              </button>
+            </div>
           </div>
         )}
       </div>
