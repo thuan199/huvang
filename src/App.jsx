@@ -1238,7 +1238,7 @@ function App() {
           <div>
             <h1>Hũ vàng</h1>
             <p className="user-email">
-              Theo dõi lịch sử mua bán vàng, lời/lỗ và giá hiện tại
+              Theo dõi lịch sử mua bán vàng
             </p>
           </div>
         </div>
