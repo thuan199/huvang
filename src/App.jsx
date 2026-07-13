@@ -1314,7 +1314,7 @@ function App() {
           <div className="summary-icon">
             <Coins size={22} />
           </div>
-          <span>Tổng số vàng đang có</span>
+          <span>Tổng số vàng hiện có</span>
 
           <strong>
             {Number(summary.totalGoldQuantity || 0).toLocaleString('vi-VN', {
@@ -1327,16 +1327,16 @@ function App() {
           <div className="summary-icon wallet-icon">
             <Wallet size={22} />
           </div>
-          <span>Tổng vốn mua</span>
-          <strong>{formatMoney(summary.totalBuyCost)} VND</strong>
+          <span>Tổng vốn mua (VND)</span>
+          <strong>{formatMoney(summary.totalBuyCost)}</strong>
         </div>
 
         <div className="summary-card">
           <div className="summary-icon chart-icon">
             <BarChart3 size={22} />
           </div>
-          <span>Giá trị hiện tại</span>
-          <strong>{formatMoney(summary.totalCurrentValue)} VND</strong>
+          <span>Giá trị hiện tại (VND)</span>
+          <strong>{formatMoney(summary.totalCurrentValue)}</strong>
         </div>
 
         <div className="summary-card">
@@ -1347,9 +1347,9 @@ function App() {
               <TrendingDown size={22} />
             )}
           </div>
-          <span>Lời / lỗ</span>
+          <span>Lời / lỗ (VND)</span>
           <strong className={summary.profit >= 0 ? 'profit' : 'loss'}>
-            {formatMoney(summary.profit)} VND
+            {formatMoney(summary.profit)}
           </strong>
         </div>
 
