@@ -1721,3 +1721,20 @@ table td:last-child {
     grid-template-columns: 1fr;
   }
 }
+.message.success {
+    background: #ecfdf3;
+    border: 1px solid #86efac;
+    color: #166534;
+}
+
+.message.error {
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    color: #b91c1c;
+}
+
+.message.warning {
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    color: #92400e;
+}

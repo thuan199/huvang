@@ -60,6 +60,25 @@ function formatShortDate(value) {
   });
 }
 
+function getVietnamDateKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+
+  const values = {};
+
+  for (const part of parts) {
+    if (part.type !== 'literal') {
+      values[part.type] = part.value;
+    }
+  }
+
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
 function TradingViewGoldPriceWidget() {
   const containerRef = useRef(null);
 
@@ -242,6 +261,17 @@ function App() {
   }, [historyPage, historyTotalPages]);
 
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('success');
+  useEffect(() => {
+  if (!message) return;
+
+  const timer = setTimeout(() => {
+    setMessage('');
+  }, 5000);
+
+  return () => clearTimeout(timer);
+}, [message]);
+
   const [loading, setLoading] = useState(false);
 
   const [editingId, setEditingId] = useState(null);
@@ -639,6 +669,8 @@ function App() {
     const currentPrice = Number(priceForm.current_price_per_chi);
     const sellPrice = Number(priceForm.sell_price_per_chi);
     const goldType = priceForm.gold_type.trim();
+    const now = new Date().toISOString();
+    const priceDate = getVietnamDateKey();
 
     if (!goldType) {
       setMessage('Vui lòng nhập loại vàng.');
@@ -664,7 +696,7 @@ function App() {
           gold_type: goldType,
           current_price_per_chi: currentPrice,
           sell_price_per_chi: sellPrice,
-          updated_at: new Date().toISOString(),
+          updated_at: now,
         })
         .eq('id', editingPriceId)
         .eq('user_id', user.id);
@@ -679,7 +711,7 @@ function App() {
             gold_type: goldType,
             current_price_per_chi: currentPrice,
             sell_price_per_chi: sellPrice,
-            updated_at: new Date().toISOString(),
+            updated_at: now,
           },
           {
             onConflict: 'user_id,gold_type',
@@ -695,10 +727,8 @@ function App() {
     }
 
     /*
-     * Giá cửa hàng mua vào hiện tại chính là giá người dùng
+     * Giá cửa hàng mua vào hiện tại là giá người dùng
      * có thể bán vàng lại cho cửa hàng.
-     *
-     * Vì vậy cập nhật vào sell_price_per_chi của giao dịch.
      */
     const { error: transactionPriceError } = await supabase
       .from('gold_transactions')
@@ -715,18 +745,36 @@ function App() {
       return;
     }
 
+    /*
+     * Mỗi người dùng + loại vàng + ngày chỉ có một dòng lịch sử.
+     *
+     * - Chưa có ngày hôm nay: INSERT.
+     * - Đã có ngày hôm nay: UPDATE giá mới nhất.
+     *
+     * created_at được cập nhật lại để bảng và biểu đồ phản ánh
+     * thời điểm sửa giá gần nhất trong ngày.
+     */
     const { error: historyError } = await supabase
       .from('gold_price_history')
-      .insert({
-        user_id: user.id,
-        gold_type: goldType,
-        price_per_chi: currentPrice,
-        sell_price_per_chi: sellPrice,
-        note: priceForm.note.trim() || 'Cập nhật giá hiện tại',
-      });
+      .upsert(
+        {
+          user_id: user.id,
+          gold_type: goldType,
+          price_date: priceDate,
+          price_per_chi: currentPrice,
+          sell_price_per_chi: sellPrice,
+          note: priceForm.note.trim() || 'Cập nhật giá hiện tại',
+          created_at: now,
+        },
+        {
+          onConflict: 'user_id,gold_type,price_date',
+        }
+      );
 
     if (historyError) {
-      setMessage(historyError.message);
+      setMessage(
+        `Không lưu được lịch sử giá theo ngày: ${historyError.message}`
+      );
       return;
     }
 
@@ -739,8 +787,8 @@ function App() {
 
     setMessage(
       wasEditing
-        ? 'Đã sửa giá hiện tại, cập nhật giao dịch và lưu lịch sử giá.'
-        : 'Đã cập nhật giá vàng, danh sách giao dịch và lịch sử giá.'
+        ? 'Đã sửa giá hiện tại và cập nhật giá mới nhất của ngày hôm nay.'
+        : 'Đã cập nhật giá hiện tại và lưu giá mới nhất của ngày hôm nay.'
     );
   }
 
@@ -1507,7 +1555,7 @@ function App() {
           </h2>
 
           <p className="small-text">
-            Mỗi lần cập nhật giá sẽ được lưu lại vào lịch sử.
+            Mỗi ngày chỉ lưu một mức giá mới nhất cho từng loại vàng.
           </p>
 
           <label>Loại vàng</label>
@@ -1949,7 +1997,7 @@ function App() {
             <table>
               <thead>
                 <tr>
-                  <th>Thời gian</th>
+                  <th>Ngày cập nhật</th>
                   <th>Loại vàng</th>
                   <th>Giá mua</th>
                   <th>Giá bán </th>
