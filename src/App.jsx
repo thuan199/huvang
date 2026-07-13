@@ -1229,10 +1229,12 @@ function App() {
       <div className="topbar">
         <div className="app-title">
           <div className="app-logo">
+            <a href='https://gold-tracker-drab.vercel.app/'>
             <img
               src="/logo.png"
               className="login-logo"
             />
+            </a>
           </div>
 
           <div>
