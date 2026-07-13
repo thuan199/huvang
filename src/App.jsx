@@ -267,7 +267,7 @@ function App() {
 
   const timer = setTimeout(() => {
     setMessage('');
-  }, 5000);
+  }, 10000);
 
   return () => clearTimeout(timer);
 }, [message]);
@@ -1325,12 +1325,12 @@ function App() {
             </button>
           </div>
         </div>
-
-
       </div>
 
-      {message && <p className="message">{message}</p>}
-
+      {message &&  
+        <p className={`message ${messageType}`}>
+          {message}
+        </p>}
       <div
         className={isWorldGoldOpen ? 'world-gold-mini open' : 'world-gold-mini'}
       >
