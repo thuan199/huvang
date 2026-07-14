@@ -1456,7 +1456,7 @@ function App() {
           <label>Số lượng chỉ</label>
           <input
             type="number"
-            step="0.0001"
+            step="1"
             value={transactionForm.quantity_chi}
             onChange={(e) =>
               setTransactionForm({
@@ -1470,6 +1470,7 @@ function App() {
           <label>Giá mua vào</label>
           <input
             type="number"
+            step="10000"
             value={transactionForm.price_per_chi}
             onChange={(e) =>
               setTransactionForm({
@@ -1482,6 +1483,7 @@ function App() {
           <label>Giá bán ra mỗi chỉ</label>
           <input
             type="number"
+            step="10000"
             value={transactionForm.sell_price_per_chi}
             onChange={(e) =>
               setTransactionForm({
