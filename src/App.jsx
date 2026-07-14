@@ -1477,7 +1477,7 @@ function App() {
                 price_per_chi: e.target.value,
               })
             }
-            placeholder="Ví dụ: 8300000"
+            placeholder="Ví dụ: 14320000"
           />
           <label>Giá bán ra mỗi chỉ</label>
           <input
@@ -1489,7 +1489,7 @@ function App() {
                 sell_price_per_chi: e.target.value,
               })
             }
-            placeholder="Ví dụ: 8000000"
+            placeholder="Ví dụ: 14690000"
           />
 
 
@@ -1580,7 +1580,7 @@ function App() {
                 current_price_per_chi: e.target.value,
               })
             }
-            placeholder="Ví dụ: 8300000"
+            placeholder="Ví dụ: 14320000"
           />
 
           <label>Giá cửa hàng bán ra mỗi chỉ</label>
@@ -1593,7 +1593,7 @@ function App() {
                 sell_price_per_chi: e.target.value,
               })
             }
-            placeholder="Ví dụ: 14800000"
+            placeholder="Ví dụ: 14690000"
           />
 
           <label>Ghi chú giá</label>
@@ -2001,6 +2001,7 @@ function App() {
                   <th>Loại vàng</th>
                   <th>Giá mua</th>
                   <th>Giá bán </th>
+                  <th>Chênh lệch </th>
                   <th>Ghi chú</th>
                   <th>Thao tác</th>
                 </tr>
@@ -2019,6 +2020,10 @@ function App() {
 
                     <td>
                       {formatMoney(item.sell_price_per_chi)} VND
+                    </td>
+
+                    <td>
+                      {formatMoney(Number(item.sell_price_per_chi || 0) - Number(item.price_per_chi || 0))} VND
                     </td>
 
                     <td>{item.note || '-'}</td>
