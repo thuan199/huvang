@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from './supabaseClient';
-import './App.css';
-import Login from './components/Login';
 import { Smile, Frown } from 'lucide-react';
+import Login from './components/Login';
+import './App.css';
+
 
 import {
   LineChart,
@@ -124,12 +125,14 @@ function TradingViewGoldPriceWidget() {
 
 function TradingViewGoldChart({ theme }) {
   const containerRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const container = containerRef.current;
 
     if (!container) return;
 
+    setIsLoading(true);
     container.innerHTML = '';
 
     const widget = document.createElement('div');
@@ -167,19 +170,61 @@ function TradingViewGoldChart({ theme }) {
       support_host: 'https://www.tradingview.com',
     });
 
+    /*
+     * TradingView sẽ tự tạo iframe sau khi script chạy.
+     * MutationObserver dùng để theo dõi khi iframe xuất hiện.
+     */
+    const observer = new MutationObserver(() => {
+      const iframe = container.querySelector('iframe');
+
+      if (iframe) {
+        iframe.addEventListener(
+          'load',
+          () => {
+            setIsLoading(false);
+          },
+          { once: true }
+        );
+
+        observer.disconnect();
+      }
+    });
+
+    observer.observe(container, {
+      childList: true,
+      subtree: true,
+    });
+
+    script.onerror = () => {
+      setIsLoading(false);
+    };
+
     container.appendChild(widget);
     container.appendChild(script);
 
     return () => {
+      observer.disconnect();
       container.innerHTML = '';
     };
   }, [theme]);
 
   return (
-    <div
-      ref={containerRef}
-      className="tradingview-widget-container gold-chart-widget"
-    />
+    <div className="gold-chart-wrapper">
+      {isLoading && (
+        <div className="gold-chart-loading">
+          <div className="gold-chart-spinner" />
+
+          <span>Đang load dữ liệu...</span>
+        </div>
+      )}
+
+      <div
+        ref={containerRef}
+        className={`tradingview-widget-container gold-chart-widget ${
+          isLoading ? 'gold-chart-hidden' : ''
+        }`}
+      />
+    </div>
   );
 }
 
@@ -1392,11 +1437,7 @@ function App() {
 
         <div className="summary-card">
           <div className={`summary-icon ${summary.profit >= 0 ? 'profit-icon' : 'loss-icon'}`}>
-            {summary.profit >= 0 ? (
-              <Smile size={22} />
-            ) : (
-              <Frown size={22} />
-            )}
+            {summary.profit >= 0 ? (<Smile size={22} />) : (<Frown size={22} />)}
           </div>
           <span>Lời / lỗ (VND)</span>
           <strong className={summary.profit >= 0 ? 'profit' : 'loss'}>
