@@ -1764,3 +1764,13 @@ body.dark-theme .message.warning {
   text-align: center;
   line-height: 1.5;
 }
+
+.profit-icon {
+  color: #16a34a;
+  background-color: #dcfce7;
+}
+
+.loss-icon {
+  color: #dc2626;
+  background-color: #fee2e2;
+}

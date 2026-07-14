@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from './supabaseClient';
 import './App.css';
 import Login from './components/Login';
+import { Smile, Frown } from 'lucide-react';
 
 import {
   LineChart,
@@ -263,14 +264,14 @@ function App() {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('success');
   useEffect(() => {
-  if (!message) return;
+    if (!message) return;
 
-  const timer = setTimeout(() => {
-    setMessage('');
-  }, 10000);
+    const timer = setTimeout(() => {
+      setMessage('');
+    }, 10000);
 
-  return () => clearTimeout(timer);
-}, [message]);
+    return () => clearTimeout(timer);
+  }, [message]);
 
   const [loading, setLoading] = useState(false);
 
@@ -313,28 +314,28 @@ function App() {
   const [priceForm, setPriceForm] = useState(defaultPriceForm);
 
   useEffect(() => {
-  // Chỉ tự động lấy giá khi đang thêm giao dịch mới.
-  // Khi sửa giao dịch cũ thì giữ nguyên dữ liệu đã lưu.
-  if (editingId) return;
+    // Chỉ tự động lấy giá khi đang thêm giao dịch mới.
+    // Khi sửa giao dịch cũ thì giữ nguyên dữ liệu đã lưu.
+    if (editingId) return;
 
-  const currentBuybackPrice = getCurrentBuybackPrice(
-    transactionForm.gold_type
-  );
+    const currentBuybackPrice = getCurrentBuybackPrice(
+      transactionForm.gold_type
+    );
 
-  setTransactionForm((currentForm) => {
-    const newSellPrice =
-      currentBuybackPrice > 0 ? String(currentBuybackPrice) : '';
+    setTransactionForm((currentForm) => {
+      const newSellPrice =
+        currentBuybackPrice > 0 ? String(currentBuybackPrice) : '';
 
-    if (currentForm.sell_price_per_chi === newSellPrice) {
-      return currentForm;
-    }
+      if (currentForm.sell_price_per_chi === newSellPrice) {
+        return currentForm;
+      }
 
-    return {
-      ...currentForm,
-      sell_price_per_chi: newSellPrice,
-    };
-  });
-}, [transactionForm.gold_type, prices, editingId]);
+      return {
+        ...currentForm,
+        sell_price_per_chi: newSellPrice,
+      };
+    });
+  }, [transactionForm.gold_type, prices, editingId]);
 
   useEffect(() => {
     const userId = user?.id;
@@ -550,18 +551,18 @@ function App() {
   }
 
   function getCurrentBuybackPrice(goldType) {
-  const normalizedGoldType = String(goldType || '').trim().toLowerCase();
+    const normalizedGoldType = String(goldType || '').trim().toLowerCase();
 
-  const matchedPrice = prices.find(
-    (item) =>
-      String(item.gold_type || '').trim().toLowerCase() ===
-      normalizedGoldType
-  );
+    const matchedPrice = prices.find(
+      (item) =>
+        String(item.gold_type || '').trim().toLowerCase() ===
+        normalizedGoldType
+    );
 
-  return matchedPrice
-    ? Number(matchedPrice.current_price_per_chi || 0)
-    : 0;
-}
+    return matchedPrice
+      ? Number(matchedPrice.current_price_per_chi || 0)
+      : 0;
+  }
 
   async function saveTransaction(e) {
     e.preventDefault();
@@ -1273,15 +1274,15 @@ function App() {
     return <Login />;
   }
   return (
-    <div className="container">  
+    <div className="container">
       <div className="topbar">
         <div className="app-title">
           <div className="app-logo">
             <a href='https://gold-tracker-drab.vercel.app/'>
-            <img
-              src="/logo.png"
-              className="login-logo"
-            />
+              <img
+                src="/logo.png"
+                className="login-logo"
+              />
             </a>
           </div>
 
@@ -1327,7 +1328,7 @@ function App() {
         </div>
       </div>
 
-      {message &&  
+      {message &&
         <p className={`message ${messageType}`}>
           {message}
         </p>}
@@ -1390,11 +1391,11 @@ function App() {
         </div>
 
         <div className="summary-card">
-          <div className="summary-icon profit-icon">
+          <div className={`summary-icon ${summary.profit >= 0 ? 'profit-icon' : 'loss-icon'}`}>
             {summary.profit >= 0 ? (
-              <TrendingUp size={22} />
+              <Smile size={22} />
             ) : (
-              <TrendingDown size={22} />
+              <Frown size={22} />
             )}
           </div>
           <span>Lời / lỗ (VND)</span>
@@ -2075,7 +2076,7 @@ function App() {
             </div>
 
             <footer className="app-footer">
-            <p>© 2026 Phạm Ngọc Thuần</p>
+              <p>© 2026 Phạm Ngọc Thuần</p>
             </footer>
           </div>
         )}
