@@ -6,6 +6,7 @@ import {
 } from 'react';
 
 import { getGoldData } from '../services/goldDataService';
+import { supabase } from '../supabaseClient';
 
 const EMPTY_GOLD_DATA = {
   transactions: [],
@@ -23,10 +24,6 @@ function useGoldData(userId) {
   const [error, setError] =
     useState('');
 
-  /*
-   * Mỗi lần tải sẽ có một ID.
-   * Chỉ request mới nhất được quyền cập nhật state.
-   */
   const requestIdRef = useRef(0);
 
   const loadGoldData = useCallback(
@@ -54,10 +51,6 @@ function useGoldData(userId) {
           { force }
         );
 
-        /*
-         * Nếu trong lúc chờ đã có request mới hơn,
-         * không dùng kết quả cũ này nữa.
-         */
         if (
           requestId !== requestIdRef.current
         ) {
@@ -89,9 +82,6 @@ function useGoldData(userId) {
     [userId]
   );
 
-  /*
-   * Tự tải khi đăng nhập hoặc đổi tài khoản.
-   */
   useEffect(() => {
     if (!userId) {
       requestIdRef.current += 1;
@@ -102,18 +92,9 @@ function useGoldData(userId) {
       return;
     }
 
-    loadGoldData().catch(() => {
-      /*
-       * Lỗi đã được lưu vào state error.
-       * Không cần throw tiếp trong useEffect.
-       */
-    });
+    loadGoldData().catch(() => {});
   }, [userId, loadGoldData]);
 
-  /*
-   * Dùng sau khi thêm, sửa hoặc xóa.
-   * force = true để chắc chắn lấy dữ liệu mới.
-   */
   const reloadGoldData = useCallback(
     async () => {
       return loadGoldData({
@@ -122,6 +103,121 @@ function useGoldData(userId) {
     },
     [loadGoldData]
   );
+
+  /*
+   * Tự động tải lại dữ liệu khi Supabase phát hiện:
+   * - thêm
+   * - sửa
+   * - xóa
+   *
+   * từ thiết bị hoặc tab khác.
+   */
+  useEffect(() => {
+    if (!userId) return;
+
+    let reloadTimer;
+
+    function scheduleReload() {
+      clearTimeout(reloadTimer);
+
+      /*
+       * Gom các sự kiện xảy ra gần nhau thành một lần reload.
+       * Ví dụ cập nhật giá có thể thay đổi nhiều bảng cùng lúc.
+       */
+      reloadTimer = setTimeout(() => {
+        reloadGoldData().catch(() => {});
+      }, 300);
+    }
+
+    const channel = supabase
+      .channel(`gold-data-${userId}`)
+
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'gold_transactions',
+          filter: `user_id=eq.${userId}`,
+        },
+        scheduleReload
+      )
+
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'gold_prices',
+          filter: `user_id=eq.${userId}`,
+        },
+        scheduleReload
+      )
+
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'gold_price_history',
+          filter: `user_id=eq.${userId}`,
+        },
+        scheduleReload
+      )
+
+      .subscribe();
+
+    return () => {
+      clearTimeout(reloadTimer);
+      supabase.removeChannel(channel);
+    };
+  }, [
+    userId,
+    reloadGoldData,
+  ]);
+
+  /*
+   * Khi quay lại tab desktop, tải lại một lần để chắc chắn
+   * dữ liệu không bị cũ nếu Realtime từng bị mất kết nối.
+   */
+  useEffect(() => {
+    if (!userId) return;
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        reloadGoldData().catch(() => {});
+      }
+    }
+
+    function handleWindowFocus() {
+      reloadGoldData().catch(() => {});
+    }
+
+    document.addEventListener(
+      'visibilitychange',
+      handleVisibilityChange
+    );
+
+    window.addEventListener(
+      'focus',
+      handleWindowFocus
+    );
+
+    return () => {
+      document.removeEventListener(
+        'visibilitychange',
+        handleVisibilityChange
+      );
+
+      window.removeEventListener(
+        'focus',
+        handleWindowFocus
+      );
+    };
+  }, [
+    userId,
+    reloadGoldData,
+  ]);
 
   return {
     transactions: goldData.transactions,
