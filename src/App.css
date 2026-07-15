@@ -2565,10 +2565,3 @@ body.dark-theme .message.warning {
     padding: 0 0 10px;
   }
 }
-
-.transaction-mobile-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}

@@ -149,21 +149,6 @@ function TransactionTable({
                   key={transaction.id}
                   className="transaction-mobile-card"
                 >
-                  <div className="transaction-mobile-header">
-                    <strong>{transaction.gold_type}</strong>
-
-                    <span
-                      className={`transaction-type-badge ${transaction.transaction_type === 'BUY'
-                          ? 'transaction-type-buy'
-                          : 'transaction-type-sell'
-                        }`}
-                    >
-                      {transaction.transaction_type === 'BUY'
-                        ? 'Mua'
-                        : 'Bán'}
-                    </span>
-                  </div>
-
                   <div className="transaction-mobile-table-wrap">
                     <table className="transaction-mobile-table">
                       <tbody>
