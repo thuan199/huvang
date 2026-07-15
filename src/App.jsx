@@ -41,6 +41,39 @@ function formatMoney(value) {
   return number.toLocaleString('vi-VN');
 }
 
+function formatPriceChange(value) {
+  if (value === null || value === undefined) return '';
+
+  const number = Number(value || 0);
+  const sign = number > 0 ? '+' : '';
+
+  return `${sign}${formatMoney(number)}`;
+}
+
+function PriceWithChange({ price, change }) {
+  const hasChange = change !== null && change !== undefined;
+  const changeClass =
+    change > 0
+      ? 'price-change-positive'
+      : change < 0
+        ? 'price-change-negative'
+        : 'price-change-neutral';
+
+  return (
+    <div className="history-price-cell">
+      {hasChange && (
+        <span className={`history-price-change ${changeClass}`}>
+          {formatPriceChange(change)}
+        </span>
+      )}
+
+      <span className="history-price-value">
+        {formatMoney(price)} VND
+      </span>
+    </div>
+  );
+}
+
 function formatDateTime(value) {
   if (!value) return '-';
 
@@ -290,15 +323,62 @@ function App() {
   const [historyPage, setHistoryPage] = useState(1);
   const historyPageSize = 10;
 
+  /*
+   * Tính mức tăng/giảm trên TOÀN BỘ lịch sử trước khi phân trang.
+   *
+   * priceHistory đang được tải theo created_at giảm dần:
+   * dòng mới nhất nằm trước, dòng cũ hơn nằm sau.
+   *
+   * Mỗi dòng chỉ so sánh với lần cập nhật cũ hơn gần nhất
+   * của CÙNG loại vàng.
+   */
+  const priceHistoryWithChanges = useMemo(() => {
+    const previousPriceByGoldType = new Map();
+    const result = new Array(priceHistory.length);
+
+    for (let index = priceHistory.length - 1; index >= 0; index -= 1) {
+      const item = priceHistory[index];
+      const goldTypeKey = String(item.gold_type || '')
+        .trim()
+        .toLowerCase();
+
+      const previousItem = previousPriceByGoldType.get(goldTypeKey);
+
+      result[index] = {
+        ...item,
+        buyPriceChange: previousItem
+          ? Number(item.price_per_chi || 0) -
+            Number(previousItem.price_per_chi || 0)
+          : null,
+        sellPriceChange: previousItem
+          ? Number(item.sell_price_per_chi || 0) -
+            Number(previousItem.sell_price_per_chi || 0)
+          : null,
+      };
+
+      previousPriceByGoldType.set(goldTypeKey, item);
+    }
+
+    return result;
+  }, [priceHistory]);
+
   const historyTotalPages = Math.max(
     1,
-    Math.ceil(priceHistory.length / historyPageSize)
+    Math.ceil(priceHistoryWithChanges.length / historyPageSize)
   );
 
+  /*
+   * Chỉ phân trang SAU KHI đã tính xong mức tăng/giảm.
+   * Nhờ vậy dòng cuối trang 1 vẫn so sánh đúng với dòng đầu trang 2.
+   */
   const paginatedPriceHistory = useMemo(() => {
     const start = (historyPage - 1) * historyPageSize;
-    return priceHistory.slice(start, start + historyPageSize);
-  }, [priceHistory, historyPage]);
+
+    return priceHistoryWithChanges.slice(
+      start,
+      start + historyPageSize
+    );
+  }, [priceHistoryWithChanges, historyPage]);
 
   useEffect(() => {
     if (historyPage > historyTotalPages) {
@@ -2059,11 +2139,17 @@ function App() {
                     <td>{item.gold_type}</td>
 
                     <td>
-                      {formatMoney(item.price_per_chi)} VND
+                      <PriceWithChange
+                        price={item.price_per_chi}
+                        change={item.buyPriceChange}
+                      />
                     </td>
 
                     <td>
-                      {formatMoney(item.sell_price_per_chi)} VND
+                      <PriceWithChange
+                        price={item.sell_price_per_chi}
+                        change={item.sellPriceChange}
+                      />
                     </td>
 
                     <td>

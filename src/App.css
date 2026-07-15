@@ -1830,3 +1830,56 @@ body.dark-theme .message.warning {
   background: #1e1e1e;
   color: #dddddd;
 }
+
+/* ===== Mức tăng/giảm trong lịch sử giá PNJ ===== */
+
+.history-price-cell {
+  position: relative;
+  min-width: 130px;
+  min-height: 38px;
+  padding: 13px 8px 4px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.history-price-value {
+  white-space: nowrap;
+}
+
+.history-price-change {
+  position: absolute;
+  top: 2px;
+  right: 5px;
+
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.price-change-positive {
+  color: #16a34a;
+}
+
+.price-change-negative {
+  color: #dc2626;
+}
+
+.price-change-neutral {
+  color: #94a3b8;
+}
+
+/* Màu dễ nhìn hơn trong dark mode */
+.dark-theme .price-change-positive {
+  color: #4ade80;
+}
+
+.dark-theme .price-change-negative {
+  color: #f87171;
+}
+
+.dark-theme .price-change-neutral {
+  color: #94a3b8;
+}
