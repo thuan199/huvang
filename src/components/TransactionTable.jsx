@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
   ListChecks,
   MapPin,
@@ -14,6 +15,20 @@ function TransactionTable({
   onEdit,
   onDelete,
 }) {
+  const [mobilePage, setMobilePage] = useState(1);
+
+  const mobileTotalPages = Math.max(1, transactions.length);
+  const mobileTransaction = transactions[mobilePage - 1] || null;
+  const mobileResult = mobileTransaction
+    ? calculateTransactionResult(mobileTransaction)
+    : null;
+
+  useEffect(() => {
+    setMobilePage((currentPage) =>
+      Math.min(currentPage, mobileTotalPages)
+    );
+  }, [mobileTotalPages]);
+
   return (
     <div className="card">
       <h2 className="section-title">
@@ -71,9 +86,7 @@ function TransactionTable({
                           {formatMoney(transaction.price_per_chi)}
                         </td>
 
-                        <td>
-                          {formatMoney(result.currentPrice)}
-                        </td>
+                        <td>{formatMoney(result.currentPrice)}</td>
 
                         <td>
                           {transaction.location ? (
@@ -88,9 +101,7 @@ function TransactionTable({
 
                         <td
                           className={
-                            result.profit >= 0
-                              ? 'profit'
-                              : 'loss'
+                            result.profit >= 0 ? 'profit' : 'loss'
                           }
                         >
                           {formatMoney(result.profit)} VND
@@ -138,125 +149,153 @@ function TransactionTable({
           </div>
 
           <div className="transaction-mobile-list">
-            {transactions.map((transaction) => {
-              const result =
-                calculateTransactionResult(transaction);
+            {mobileTransaction && mobileResult && (
+              <article
+                key={mobileTransaction.id}
+                className="transaction-mobile-card"
+              >
+                <div className="transaction-mobile-table-wrap">
+                  <table className="transaction-mobile-table">
+                    <tbody>
+                      <tr>
+                        <th>Ngày</th>
+                        <td>{mobileTransaction.transaction_date}</td>
+                      </tr>
 
-              const isProfit = result.profit >= 0;
+                      <tr>
+                        <th>Loại</th>
+                        <td>
+                          {mobileTransaction.transaction_type === 'BUY'
+                            ? 'Mua'
+                            : 'Bán'}
+                        </td>
+                      </tr>
 
-              return (
-                <article
-                  key={transaction.id}
-                  className="transaction-mobile-card"
+                      <tr>
+                        <th>Vàng</th>
+                        <td>{mobileTransaction.gold_type}</td>
+                      </tr>
+
+                      <tr>
+                        <th>Số chỉ</th>
+                        <td>
+                          {Number(
+                            mobileTransaction.quantity_chi || 0
+                          )}{' '}
+                          chỉ
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th>Giá lúc mua</th>
+                        <td>
+                          {formatMoney(
+                            mobileTransaction.price_per_chi
+                          )}{' '}
+                          VND
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th>Giá hiện tại</th>
+                        <td>
+                          {formatMoney(mobileResult.currentPrice)} VND
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th>Nơi mua/bán</th>
+                        <td>{mobileTransaction.location || '-'}</td>
+                      </tr>
+
+                      <tr>
+                        <th>Lời/lỗ</th>
+                        <td
+                          className={
+                            mobileResult.profit >= 0
+                              ? 'profit'
+                              : 'loss'
+                          }
+                        >
+                          {formatMoney(mobileResult.profit)} VND
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th>Lời/lỗ %</th>
+                        <td
+                          className={
+                            mobileResult.profitPercent >= 0
+                              ? 'profit'
+                              : 'loss'
+                          }
+                        >
+                          {mobileResult.profitPercent >= 0
+                            ? '↑ +'
+                            : '↓ '}
+                          {mobileResult.profitPercent.toFixed(2)}%
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th>Ghi chú</th>
+                        <td>{mobileTransaction.note || '-'}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="transaction-mobile-actions">
+                  <button
+                    type="button"
+                    className="edit-button icon-button"
+                    onClick={() => onEdit(mobileTransaction)}
+                  >
+                    <Pencil size={15} />
+                    Sửa
+                  </button>
+
+                  <button
+                    type="button"
+                    className="danger-button icon-button"
+                    onClick={() => onDelete(mobileTransaction.id)}
+                  >
+                    <Trash2 size={15} />
+                    Xóa
+                  </button>
+                </div>
+              </article>
+            )}
+
+            {transactions.length > 1 && (
+              <div className="pagination transaction-mobile-pagination">
+                <button
+                  type="button"
+                  disabled={mobilePage === 1}
+                  onClick={() =>
+                    setMobilePage((page) => Math.max(1, page - 1))
+                  }
                 >
-                  <div className="transaction-mobile-table-wrap">
-                    <table className="transaction-mobile-table">
-                      <tbody>
-                        <tr>
-                          <th>Ngày</th>
-                          <td>{transaction.transaction_date}</td>
-                        </tr>
+                  Trang trước
+                </button>
 
-                        <tr>
-                          <th>Loại</th>
-                          <td>
-                            {transaction.transaction_type === 'BUY'
-                              ? 'Mua'
-                              : 'Bán'}
-                          </td>
-                        </tr>
+                <span>
+                  {mobilePage} / {mobileTotalPages}
+                </span>
 
-                        <tr>
-                          <th>Vàng</th>
-                          <td>{transaction.gold_type}</td>
-                        </tr>
-
-                        <tr>
-                          <th>Số chỉ</th>
-                          <td>
-                            {Number(transaction.quantity_chi || 0)} chỉ
-                          </td>
-                        </tr>
-
-                        <tr>
-                          <th>Giá lúc mua</th>
-                          <td>
-                            {formatMoney(
-                              transaction.price_per_chi
-                            )}{' '}
-                            VND
-                          </td>
-                        </tr>
-
-                        <tr>
-                          <th>Giá hiện tại</th>
-                          <td>
-                            {formatMoney(result.currentPrice)} VND
-                          </td>
-                        </tr>
-
-                        <tr>
-                          <th>Nơi mua/bán</th>
-                          <td>{transaction.location || '-'}</td>
-                        </tr>
-
-                        <tr>
-                          <th>Lời/lỗ</th>
-                          <td
-                            className={
-                              isProfit ? 'profit' : 'loss'
-                            }
-                          >
-                            {formatMoney(result.profit)} VND
-                          </td>
-                        </tr>
-
-                        <tr>
-                          <th>Lời/lỗ %</th>
-                          <td
-                            className={
-                              result.profitPercent >= 0
-                                ? 'profit'
-                                : 'loss'
-                            }
-                          >
-                            {result.profitPercent >= 0
-                              ? '↑ +'
-                              : '↓ '}
-                            {result.profitPercent.toFixed(2)}%
-                          </td>
-                        </tr>
-
-                        <tr>
-                          <th>Ghi chú</th>
-                          <td>{transaction.note || '-'}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="transaction-mobile-actions">
-                    <button
-                      type="button"
-                      className="edit-button icon-button"
-                      onClick={() => onEdit(transaction)}
-                    >
-                      <Pencil size={15} />
-                      Sửa
-                    </button>
-
-                    <button
-                      type="button"
-                      className="danger-button icon-button"
-                      onClick={() => onDelete(transaction.id)}
-                    >
-                      <Trash2 size={15} />
-                      Xóa
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
+                <button
+                  type="button"
+                  disabled={mobilePage === mobileTotalPages}
+                  onClick={() =>
+                    setMobilePage((page) =>
+                      Math.min(mobileTotalPages, page + 1)
+                    )
+                  }
+                >
+                  Trang sau
+                </button>
+              </div>
+            )}
           </div>
         </>
       )}
