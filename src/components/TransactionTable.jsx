@@ -280,30 +280,6 @@ function TransactionTable({
                     </div>
                   </div>
 
-                  <div
-                    className={`transaction-mobile-profit ${isProfit ? 'profit' : 'loss'
-                      }`}
-                  >
-                    <span>Lời/lỗ</span>
-
-                    <strong>
-                      {formatMoney(result.profit)} VND
-                    </strong>
-
-                    <small>
-                      {isProfit ? '↑' : '↓'}{' '}
-                      {result.profitPercent >= 0 ? '+' : ''}
-                      {result.profitPercent.toFixed(2)}%
-                    </small>
-                  </div>
-
-                  {transaction.note && (
-                    <div className="transaction-mobile-note">
-                      <span>Ghi chú</span>
-                      <p>{transaction.note}</p>
-                    </div>
-                  )}
-
                   <div className="transaction-mobile-actions">
                     <button
                       type="button"
