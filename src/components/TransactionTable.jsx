@@ -150,10 +150,7 @@ function TransactionTable({
                   className="transaction-mobile-card"
                 >
                   <div className="transaction-mobile-header">
-                    <div>
-                      <strong>{transaction.gold_type}</strong>
-                      <span>{transaction.transaction_date}</span>
-                    </div>
+                    <strong>{transaction.gold_type}</strong>
 
                     <span
                       className={`transaction-type-badge ${transaction.transaction_type === 'BUY'
@@ -167,117 +164,90 @@ function TransactionTable({
                     </span>
                   </div>
 
-                  <div className="transaction-mobile-table">
-                    <div className="transaction-mobile-row">
-                      <span className="transaction-mobile-label">
-                        Ngày
-                      </span>
+                  <div className="transaction-mobile-table-wrap">
+                    <table className="transaction-mobile-table">
+                      <tbody>
+                        <tr>
+                          <th>Ngày</th>
+                          <td>{transaction.transaction_date}</td>
+                        </tr>
 
-                      <strong className="transaction-mobile-value">
-                        {transaction.transaction_date}
-                      </strong>
-                    </div>
+                        <tr>
+                          <th>Loại</th>
+                          <td>
+                            {transaction.transaction_type === 'BUY'
+                              ? 'Mua'
+                              : 'Bán'}
+                          </td>
+                        </tr>
 
-                    <div className="transaction-mobile-row">
-                      <span className="transaction-mobile-label">
-                        Loại giao dịch
-                      </span>
+                        <tr>
+                          <th>Vàng</th>
+                          <td>{transaction.gold_type}</td>
+                        </tr>
 
-                      <strong className="transaction-mobile-value">
-                        {transaction.transaction_type === 'BUY'
-                          ? 'Mua'
-                          : 'Bán'}
-                      </strong>
-                    </div>
+                        <tr>
+                          <th>Số chỉ</th>
+                          <td>
+                            {Number(transaction.quantity_chi || 0)} chỉ
+                          </td>
+                        </tr>
 
-                    <div className="transaction-mobile-row">
-                      <span className="transaction-mobile-label">
-                        Loại vàng
-                      </span>
+                        <tr>
+                          <th>Giá lúc mua</th>
+                          <td>
+                            {formatMoney(
+                              transaction.price_per_chi
+                            )}{' '}
+                            VND
+                          </td>
+                        </tr>
 
-                      <strong className="transaction-mobile-value">
-                        {transaction.gold_type}
-                      </strong>
-                    </div>
+                        <tr>
+                          <th>Giá hiện tại</th>
+                          <td>
+                            {formatMoney(result.currentPrice)} VND
+                          </td>
+                        </tr>
 
-                    <div className="transaction-mobile-row">
-                      <span className="transaction-mobile-label">
-                        Số lượng
-                      </span>
+                        <tr>
+                          <th>Nơi mua/bán</th>
+                          <td>{transaction.location || '-'}</td>
+                        </tr>
 
-                      <strong className="transaction-mobile-value">
-                        {Number(transaction.quantity_chi || 0)} chỉ
-                      </strong>
-                    </div>
+                        <tr>
+                          <th>Lời/lỗ</th>
+                          <td
+                            className={
+                              isProfit ? 'profit' : 'loss'
+                            }
+                          >
+                            {formatMoney(result.profit)} VND
+                          </td>
+                        </tr>
 
-                    <div className="transaction-mobile-row">
-                      <span className="transaction-mobile-label">
-                        Giá tại thời điểm mua
-                      </span>
+                        <tr>
+                          <th>Lời/lỗ %</th>
+                          <td
+                            className={
+                              result.profitPercent >= 0
+                                ? 'profit'
+                                : 'loss'
+                            }
+                          >
+                            {result.profitPercent >= 0
+                              ? '↑ +'
+                              : '↓ '}
+                            {result.profitPercent.toFixed(2)}%
+                          </td>
+                        </tr>
 
-                      <strong className="transaction-mobile-value">
-                        {formatMoney(transaction.price_per_chi)} VND
-                      </strong>
-                    </div>
-
-                    <div className="transaction-mobile-row">
-                      <span className="transaction-mobile-label">
-                        Giá bán ra hiện tại
-                      </span>
-
-                      <strong className="transaction-mobile-value">
-                        {formatMoney(result.currentPrice)} VND
-                      </strong>
-                    </div>
-
-                    <div className="transaction-mobile-row">
-                      <span className="transaction-mobile-label">
-                        Nơi mua/bán
-                      </span>
-
-                      <strong className="transaction-mobile-value">
-                        {transaction.location || '-'}
-                      </strong>
-                    </div>
-
-                    <div className="transaction-mobile-row">
-                      <span className="transaction-mobile-label">
-                        Lời/lỗ
-                      </span>
-
-                      <strong
-                        className={`transaction-mobile-value ${isProfit ? 'profit' : 'loss'
-                          }`}
-                      >
-                        {formatMoney(result.profit)} VND
-                      </strong>
-                    </div>
-
-                    <div className="transaction-mobile-row">
-                      <span className="transaction-mobile-label">
-                        Lời/lỗ %
-                      </span>
-
-                      <strong
-                        className={`transaction-mobile-value ${result.profitPercent >= 0
-                            ? 'profit'
-                            : 'loss'
-                          }`}
-                      >
-                        {result.profitPercent >= 0 ? '↑ +' : '↓ '}
-                        {result.profitPercent.toFixed(2)}%
-                      </strong>
-                    </div>
-
-                    <div className="transaction-mobile-row">
-                      <span className="transaction-mobile-label">
-                        Ghi chú
-                      </span>
-
-                      <strong className="transaction-mobile-value">
-                        {transaction.note || '-'}
-                      </strong>
-                    </div>
+                        <tr>
+                          <th>Ghi chú</th>
+                          <td>{transaction.note || '-'}</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
 
                   <div className="transaction-mobile-actions">

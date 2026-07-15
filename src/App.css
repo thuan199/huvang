@@ -2366,3 +2366,93 @@ body.dark-theme .message.warning {
 .dark-theme .chart-swipe-hint {
   color: #94a3b8;
 }
+
+.transaction-mobile-table-wrap {
+  width: 100%;
+  margin-top: 12px;
+
+  overflow: hidden;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.transaction-mobile-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.transaction-mobile-table th,
+.transaction-mobile-table td {
+  padding: 11px 12px;
+  vertical-align: middle;
+
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.transaction-mobile-table tr:last-child th,
+.transaction-mobile-table tr:last-child td {
+  border-bottom: none;
+}
+
+.transaction-mobile-table th {
+  width: 42%;
+
+  color: #64748b;
+  background: #f8fafc;
+
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+
+  border-right: 1px solid #e2e8f0;
+}
+
+.transaction-mobile-table td {
+  width: 58%;
+
+  color: #0f172a;
+
+  font-size: 13px;
+  font-weight: 700;
+  text-align: right;
+
+  overflow-wrap: anywhere;
+}
+
+.transaction-mobile-table td.profit {
+  color: #16a34a;
+}
+
+.transaction-mobile-table td.loss {
+  color: #dc2626;
+}
+
+.dark-theme .transaction-mobile-table-wrap {
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+.dark-theme .transaction-mobile-table th,
+.dark-theme .transaction-mobile-table td {
+  border-bottom-color: rgba(148, 163, 184, 0.2);
+}
+
+.dark-theme .transaction-mobile-table th {
+  color: #94a3b8;
+  background: #1f2937;
+
+  border-right-color: rgba(148, 163, 184, 0.2);
+}
+
+.dark-theme .transaction-mobile-table td {
+  color: #f8fafc;
+}
+
+.dark-theme .transaction-mobile-table td.profit {
+  color: #4ade80;
+}
+
+.dark-theme .transaction-mobile-table td.loss {
+  color: #f87171;
+}
