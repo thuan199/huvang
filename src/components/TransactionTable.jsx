@@ -156,11 +156,10 @@ function TransactionTable({
                     </div>
 
                     <span
-                      className={`transaction-type-badge ${
-                        transaction.transaction_type === 'BUY'
+                      className={`transaction-type-badge ${transaction.transaction_type === 'BUY'
                           ? 'transaction-type-buy'
                           : 'transaction-type-sell'
-                      }`}
+                        }`}
                     >
                       {transaction.transaction_type === 'BUY'
                         ? 'Mua'
@@ -168,40 +167,122 @@ function TransactionTable({
                     </span>
                   </div>
 
-                  <div className="transaction-mobile-grid">
-                    <div>
-                      <span>Số lượng</span>
-                      <strong>
+                  <div className="transaction-mobile-table">
+                    <div className="transaction-mobile-row">
+                      <span className="transaction-mobile-label">
+                        Ngày
+                      </span>
+
+                      <strong className="transaction-mobile-value">
+                        {transaction.transaction_date}
+                      </strong>
+                    </div>
+
+                    <div className="transaction-mobile-row">
+                      <span className="transaction-mobile-label">
+                        Loại giao dịch
+                      </span>
+
+                      <strong className="transaction-mobile-value">
+                        {transaction.transaction_type === 'BUY'
+                          ? 'Mua'
+                          : 'Bán'}
+                      </strong>
+                    </div>
+
+                    <div className="transaction-mobile-row">
+                      <span className="transaction-mobile-label">
+                        Loại vàng
+                      </span>
+
+                      <strong className="transaction-mobile-value">
+                        {transaction.gold_type}
+                      </strong>
+                    </div>
+
+                    <div className="transaction-mobile-row">
+                      <span className="transaction-mobile-label">
+                        Số lượng
+                      </span>
+
+                      <strong className="transaction-mobile-value">
                         {Number(transaction.quantity_chi || 0)} chỉ
                       </strong>
                     </div>
 
-                    <div>
-                      <span>Giá mua</span>
-                      <strong>
+                    <div className="transaction-mobile-row">
+                      <span className="transaction-mobile-label">
+                        Giá tại thời điểm mua
+                      </span>
+
+                      <strong className="transaction-mobile-value">
                         {formatMoney(transaction.price_per_chi)} VND
                       </strong>
                     </div>
 
-                    <div>
-                      <span>Giá hiện tại</span>
-                      <strong>
+                    <div className="transaction-mobile-row">
+                      <span className="transaction-mobile-label">
+                        Giá bán ra hiện tại
+                      </span>
+
+                      <strong className="transaction-mobile-value">
                         {formatMoney(result.currentPrice)} VND
                       </strong>
                     </div>
 
-                    <div>
-                      <span>Nơi mua/bán</span>
-                      <strong>
+                    <div className="transaction-mobile-row">
+                      <span className="transaction-mobile-label">
+                        Nơi mua/bán
+                      </span>
+
+                      <strong className="transaction-mobile-value">
                         {transaction.location || '-'}
+                      </strong>
+                    </div>
+
+                    <div className="transaction-mobile-row">
+                      <span className="transaction-mobile-label">
+                        Lời/lỗ
+                      </span>
+
+                      <strong
+                        className={`transaction-mobile-value ${isProfit ? 'profit' : 'loss'
+                          }`}
+                      >
+                        {formatMoney(result.profit)} VND
+                      </strong>
+                    </div>
+
+                    <div className="transaction-mobile-row">
+                      <span className="transaction-mobile-label">
+                        Lời/lỗ %
+                      </span>
+
+                      <strong
+                        className={`transaction-mobile-value ${result.profitPercent >= 0
+                            ? 'profit'
+                            : 'loss'
+                          }`}
+                      >
+                        {result.profitPercent >= 0 ? '↑ +' : '↓ '}
+                        {result.profitPercent.toFixed(2)}%
+                      </strong>
+                    </div>
+
+                    <div className="transaction-mobile-row">
+                      <span className="transaction-mobile-label">
+                        Ghi chú
+                      </span>
+
+                      <strong className="transaction-mobile-value">
+                        {transaction.note || '-'}
                       </strong>
                     </div>
                   </div>
 
                   <div
-                    className={`transaction-mobile-profit ${
-                      isProfit ? 'profit' : 'loss'
-                    }`}
+                    className={`transaction-mobile-profit ${isProfit ? 'profit' : 'loss'
+                      }`}
                   >
                     <span>Lời/lỗ</span>
 
