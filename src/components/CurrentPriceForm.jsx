@@ -5,11 +5,11 @@ import {
 } from 'react';
 
 import {
-  RefreshCcw,
+  CloudDownload,
   Pencil,
   Trash2,
   XCircle,
-  Download,
+  RefreshCcw,
   CheckCircle2,
   Info,
   AlertCircle,
@@ -243,7 +243,7 @@ function CurrentPriceForm({
               onClick={handleGetPriceFromPnj}
               disabled={isLoadingPnjPrice}
             >
-              <Download size={17} />
+              <CloudDownload size={17} />
 
               {isLoadingPnjPrice
                 ? 'Đang lấy giá PNJ...'
