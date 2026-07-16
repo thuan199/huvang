@@ -2565,3 +2565,224 @@ body.dark-theme .message.warning {
     padding: 0 0 10px;
   }
 }
+
+.gold-price-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gold-price-actions button {
+  min-height: 38px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.gold-price-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.app-toast {
+  position: fixed;
+  top: 22px;
+  right: 22px;
+  z-index: 9999;
+
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+
+  width: min(390px, calc(100vw - 32px));
+  padding: 14px 14px 14px 16px;
+
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+
+  box-shadow:
+    0 14px 35px rgba(0, 0, 0, 0.2),
+    0 4px 10px rgba(0, 0, 0, 0.12);
+
+  animation: toast-slide-in 0.25s ease-out;
+}
+
+.app-toast-success {
+  background: linear-gradient(
+    135deg,
+    #15803d,
+    #16a34a
+  );
+}
+
+.app-toast-info {
+  background: linear-gradient(
+    135deg,
+    #1d4ed8,
+    #2563eb
+  );
+}
+
+.app-toast-error {
+  background: linear-gradient(
+    135deg,
+    #b91c1c,
+    #dc2626
+  );
+}
+
+.app-toast-icon {
+  display: flex;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+
+.app-toast-message {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.app-toast-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 26px;
+  height: 26px;
+  padding: 0;
+
+  color: inherit;
+  background: rgba(255, 255, 255, 0.14);
+  border: none;
+  border-radius: 7px;
+
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.app-toast-close:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(30px) translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+@media (max-width: 600px) {
+  .app-toast {
+    top: 14px;
+    right: 16px;
+    left: 16px;
+    width: auto;
+  }
+}
+
+/* =========================
+   Nút lấy giá từ PNJ
+   Theme sáng
+========================= */
+.pnj-button {
+  color: #5f4300;
+  background: linear-gradient(
+    135deg,
+    #ffe58a,
+    #f4bd22
+  );
+
+  border: 1px solid #dca900;
+  box-shadow:
+    0 5px 12px rgba(188, 137, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.pnj-button:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    #ffedaa,
+    #eeb20d
+  );
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 8px 18px rgba(188, 137, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.pnj-button:active:not(:disabled) {
+  transform: translateY(0);
+
+  box-shadow:
+    0 3px 8px rgba(188, 137, 0, 0.24);
+}
+
+.pnj-button:focus-visible {
+  outline: 3px solid rgba(229, 174, 0, 0.3);
+  outline-offset: 2px;
+}
+
+.pnj-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  transform: none;
+  box-shadow: none;
+}
+
+/* =========================
+   Nút PNJ - Theme tối
+========================= */
+.dark-theme .pnj-button {
+  color: #fff2b3;
+
+  background: linear-gradient(
+    135deg,
+    #755400,
+    #9b7100
+  );
+
+  border-color: #d6a91c;
+
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 232, 145, 0.16);
+}
+
+.dark-theme .pnj-button:hover:not(:disabled) {
+  color: #fff8d9;
+
+  background: linear-gradient(
+    135deg,
+    #8a6500,
+    #b18200
+  );
+
+  box-shadow:
+    0 9px 22px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 212, 77, 0.12);
+}
+
+.dark-theme .pnj-button:focus-visible {
+  outline-color: rgba(255, 211, 74, 0.4);
+}
+
+.dark-theme .pnj-button:disabled {
+  opacity: 0.5;
+}

@@ -6,6 +6,79 @@ import { supabase } from '../supabaseClient';
  */
 const pendingRequests = new Map();
 
+export async function syncGoldPriceFromPnj() {
+  const {
+    data: sessionData,
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    throw new Error(sessionError.message);
+  }
+
+  const accessToken =
+    sessionData.session?.access_token;
+
+  if (!accessToken) {
+    throw new Error(
+      'Không tìm thấy phiên đăng nhập. Vui lòng đăng nhập lại.'
+    );
+  }
+
+  const { data, error } =
+    await supabase.functions.invoke(
+      'get-pnj-gold-price',
+      {
+        method: 'POST',
+        body: {},
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+  if (error) {
+    console.error(
+      'Lỗi gọi Edge Function:',
+      error
+    );
+
+    let detailMessage = '';
+
+    try {
+      if (error.context) {
+        const errorBody =
+          await error.context.json();
+
+        detailMessage =
+          errorBody?.message ||
+          errorBody?.error ||
+          '';
+      }
+    } catch (parseError) {
+      console.error(
+        'Không đọc được nội dung lỗi:',
+        parseError
+      );
+    }
+
+    throw new Error(
+      detailMessage ||
+        error.message ||
+        'Không thể gọi Edge Function'
+    );
+  }
+
+  if (!data?.success) {
+    throw new Error(
+      data?.message ||
+        'Không thể đồng bộ giá PNJ'
+    );
+  }
+
+  return data;
+}
+
 async function fetchTransactions(userId) {
   const { data, error } = await supabase
     .from('gold_transactions')

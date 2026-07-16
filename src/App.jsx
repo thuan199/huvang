@@ -893,6 +893,7 @@ function App() {
           onCancel={cancelPriceEdit}
           onEdit={editCurrentPrice}
           onDelete={deleteCurrentPrice}
+          onPriceUpdated={reloadGoldData}
         />
       </div>
 
