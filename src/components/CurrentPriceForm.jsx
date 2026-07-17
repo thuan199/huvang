@@ -99,7 +99,7 @@ function CurrentPriceForm({
 
       showToast(
         result.message ||
-          'Đã cập nhật giá mới từ PNJ và lưu lịch sử.',
+        'Đã cập nhật giá mới từ PNJ và lưu lịch sử.',
         'success'
       );
     } catch (error) {
@@ -143,9 +143,19 @@ function CurrentPriceForm({
             {getToastIcon()}
           </div>
 
-          <span className="app-toast-message">
-            {toast.message}
-          </span>
+          <div className="app-toast-content">
+            <strong className="app-toast-title">
+              {toast.type === 'success'
+                ? 'Thành công'
+                : toast.type === 'error'
+                  ? 'Có lỗi xảy ra'
+                  : 'Thông tin'}
+            </strong>
+
+            <span className="app-toast-message">
+              {toast.message}
+            </span>
+          </div>
 
           <button
             type="button"
