@@ -25,7 +25,7 @@ function AppHeader({
     <div className="topbar">
       <div className="app-title">
         <div className="app-logo">
-          <a href="https://gold-tracker-drab.vercel.app/">
+          <a href="https://huvang.vercel.app/">
             <img
               src="/logo.png"
               className="login-logo"
