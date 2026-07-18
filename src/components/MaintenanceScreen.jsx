@@ -42,7 +42,7 @@ export default function MaintenanceScreen({
         </div>
 
         <h1>
-          Website đang bảo trì
+          Hệ thống đang bảo trì và nâng cấp
         </h1>
 
         <p>
@@ -80,11 +80,6 @@ export default function MaintenanceScreen({
               : "Đăng xuất"}
           </button>
         </div>
-
-        <p className="maintenance-login-note">
-          Đăng xuất để chuyển sang tài khoản
-          quản trị.
-        </p>
       </div>
     </div>
   );

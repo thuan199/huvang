@@ -6,7 +6,6 @@ import {
   deleteGoldTransaction,
   updateTransactionSellPriceByGoldType,
 } from './services/goldTransactionService';
-
 import useGoldData from './hooks/useGoldData';
 import MaintenanceScreen from "./components/MaintenanceScreen";
 import { useMaintenanceMode } from "./hooks/useMaintenanceMode";
@@ -45,11 +44,11 @@ import useConfirm from './hooks/useConfirm';
 
 function App() {
   const {
-  maintenance,
-  isAdmin,
-  loading: maintenanceLoading,
-  reloadMaintenance,
-} = useMaintenanceMode();
+    maintenance,
+    isAdmin,
+    loading: maintenanceLoading,
+    reloadMaintenance,
+  } = useMaintenanceMode();
 
   const {
     toasts,
@@ -345,24 +344,24 @@ function App() {
         const previousBuyPrice =
           previousItem
             ? Number(
-                previousItem.price_per_chi ??
-                previousItem
-                  .new_buy_price_per_chi ??
-                previousItem
-                  .buy_price_per_chi ??
-                0
-              )
+              previousItem.price_per_chi ??
+              previousItem
+                .new_buy_price_per_chi ??
+              previousItem
+                .buy_price_per_chi ??
+              0
+            )
             : 0;
 
         const previousSellPrice =
           previousItem
             ? Number(
-                previousItem
-                  .sell_price_per_chi ??
-                previousItem
-                  .new_sell_price_per_chi ??
-                0
-              )
+              previousItem
+                .sell_price_per_chi ??
+              previousItem
+                .new_sell_price_per_chi ??
+              0
+            )
             : 0;
 
         result[index] = {
@@ -381,13 +380,13 @@ function App() {
           buyPriceChange:
             previousItem
               ? currentBuyPrice -
-                previousBuyPrice
+              previousBuyPrice
               : null,
 
           sellPriceChange:
             previousItem
               ? currentSellPrice -
-                previousSellPrice
+              previousSellPrice
               : null,
         };
 
@@ -564,10 +563,10 @@ function App() {
 
     return matchedPrice
       ? Number(
-          matchedPrice
-            .current_price_per_chi ??
-          0
-        )
+        matchedPrice
+          .current_price_per_chi ??
+        0
+      )
       : 0;
   }
 
@@ -590,8 +589,8 @@ function App() {
         const newSellPrice =
           currentBuybackPrice > 0
             ? String(
-                currentBuybackPrice
-              )
+              currentBuybackPrice
+            )
             : '';
 
         if (
@@ -976,9 +975,8 @@ function App() {
       setMessageType('error');
 
       setMessage(
-        `Đã lưu giá hiện tại nhưng không cập nhật được giá trong danh sách giao dịch: ${
-          error?.message ||
-          'Lỗi không xác định'
+        `Đã lưu giá hiện tại nhưng không cập nhật được giá trong danh sách giao dịch: ${error?.message ||
+        'Lỗi không xác định'
         }`
       );
 
@@ -1211,29 +1209,29 @@ function App() {
   const shopSellPriceVndPerLuong =
     shopGold
       ? Number(
-          shopGold
-            .sell_price_per_chi ??
-          0
-        ) * 10
+        shopGold
+          .sell_price_per_chi ??
+        0
+      ) * 10
       : 0;
 
   const goldDifference =
     worldGold &&
-    shopSellPriceVndPerLuong
+      shopSellPriceVndPerLuong
       ? shopSellPriceVndPerLuong -
-        worldGold
-          .worldGoldVndPerLuong
+      worldGold
+        .worldGoldVndPerLuong
       : 0;
 
   const goldDifferencePercent =
     worldGold &&
-    worldGold
-      .worldGoldVndPerLuong > 0
+      worldGold
+        .worldGoldVndPerLuong > 0
       ? (
-          goldDifference /
-          worldGold
-            .worldGoldVndPerLuong
-        ) * 100
+        goldDifference /
+        worldGold
+          .worldGoldVndPerLuong
+      ) * 100
       : 0;
 
   /*
@@ -1264,25 +1262,25 @@ function App() {
  * vào màn hình đăng nhập, kể cả khi
  * hệ thống đang bảo trì.
  */
-if (!user) {
-  return <Login />;
-}
+  if (!user) {
+    return <Login />;
+  }
 
-/*
- * Sau khi đăng nhập:
- * - Admin vẫn được vào ứng dụng.
- * - User thường sẽ thấy màn hình bảo trì.
- */
-if (
-  maintenance.enabled &&
-  !isAdmin
-) {
-  return (
-    <MaintenanceScreen
-      maintenance={maintenance}
-    />
-  );
-}
+  /*
+   * Sau khi đăng nhập:
+   * - Admin vẫn được vào ứng dụng.
+   * - User thường sẽ thấy màn hình bảo trì.
+   */
+  if (
+    maintenance.enabled &&
+    !isAdmin
+  ) {
+    return (
+      <MaintenanceScreen
+        maintenance={maintenance}
+      />
+    );
+  }
 
   return (
     <div className="container">
@@ -1299,7 +1297,7 @@ if (
           setTheme(
             (currentTheme) =>
               currentTheme ===
-              'light'
+                'light'
                 ? 'dark'
                 : 'light'
           )

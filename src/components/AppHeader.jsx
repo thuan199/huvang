@@ -1,13 +1,18 @@
 import {
+  KeyRound,
   LogOut,
   Moon,
+  Pencil,
   Sun,
 } from 'lucide-react';
+
+import ChangePassword from './ChangePassword';
 
 function AppHeader({
   user,
   theme,
   onChangeDisplayName,
+  onPasswordChanged,
   onLogout,
   onToggleTheme,
 }) {
@@ -41,16 +46,27 @@ function AppHeader({
       <div className="topbar-right">
         <div className="topbar-actions">
           <div className="welcome-user">
-            Xin chào, <strong>{displayName}</strong>
+            Xin chào,{' '}
+            <strong>{displayName}</strong>
           </div>
 
           <button
             type="button"
             className="logout-button"
             onClick={onChangeDisplayName}
+            title="Đổi tên hiển thị"
           >
+            <Pencil size={16} />
             Đổi tên
           </button>
+
+          <ChangePassword
+            onSuccess={onPasswordChanged}
+            buttonClassName="logout-button"
+            buttonIcon={
+              <KeyRound size={16} />
+            }
+          />
 
           <button
             type="button"
