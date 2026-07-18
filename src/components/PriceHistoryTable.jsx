@@ -11,24 +11,34 @@ import {
 import PriceWithChange from './PriceWithChange';
 
 function PriceHistoryTable({
-  priceHistory,
-  paginatedPriceHistory,
-  historyPage,
-  historyTotalPages,
+  priceHistory = [],
+  paginatedPriceHistory = [],
+  historyPage = 1,
+  historyTotalPages = 1,
   onPreviousPage,
   onNextPage,
   onDelete,
 }) {
+  /*
+   * Chỉ hiển thị cột và nút xóa khi component
+   * thật sự nhận được hàm onDelete.
+   *
+   * Lịch sử PNJ dùng chung sẽ không truyền onDelete,
+   * vì vậy người dùng không thể xóa dữ liệu thị trường.
+   */
+  const canDelete =
+    typeof onDelete === 'function';
+
   return (
     <div className="card">
       <h2 className="section-title">
         <History size={20} />
-        Lịch sử cập nhật giá tại cửa hàng PNJ
+        Lịch sử cập nhật giá cửa hàng PNJ
       </h2>
 
       {priceHistory.length === 0 ? (
         <p className="small-text">
-          Chưa có lịch sử cập nhật giá.
+          Chưa có lịch sử cập nhật giá PNJ.
         </p>
       ) : (
         <div className="table-wrap">
@@ -41,86 +51,135 @@ function PriceHistoryTable({
                 <th>Giá bán</th>
                 <th>Chênh lệch</th>
                 <th>Ghi chú</th>
-                <th>Thao tác</th>
+
+                {canDelete && (
+                  <th>Thao tác</th>
+                )}
               </tr>
             </thead>
 
             <tbody>
-              {paginatedPriceHistory.map((item) => (
-                <tr key={item.id}>
-                  <td>
-                    {formatDateTime(item.created_at)}
-                  </td>
+              {paginatedPriceHistory.map(
+                (item) => {
+                  const updatedAt =
+                    item.source_updated_at ??
+                    item.updated_at ??
+                    item.created_at;
 
-                  <td>{item.gold_type}</td>
+                  const buyPrice = Number(
+                    item.price_per_chi ??
+                    item.new_buy_price_per_chi ??
+                    item.buy_price_per_chi ??
+                    0
+                  );
 
-                  <td>
-                    <PriceWithChange
-                      price={item.price_per_chi}
-                      change={item.buyPriceChange}
-                    />
-                  </td>
+                  const sellPrice = Number(
+                    item.sell_price_per_chi ??
+                    item.new_sell_price_per_chi ??
+                    0
+                  );
 
-                  <td>
-                    <PriceWithChange
-                      price={item.sell_price_per_chi}
-                      change={item.sellPriceChange}
-                    />
-                  </td>
+                  return (
+                    <tr key={item.id}>
+                      <td>
+                        {formatDateTime(
+                          updatedAt
+                        )}
+                      </td>
 
-                  <td>
-                    {formatMoney(
-                      Number(item.sell_price_per_chi || 0) -
-                      Number(item.price_per_chi || 0)
-                    )}{' '}
-                    VND
-                  </td>
+                      <td>
+                        {item.gold_type || '-'}
+                      </td>
 
-                  <td>{item.note || '-'}</td>
+                      <td>
+                        <PriceWithChange
+                          price={buyPrice}
+                          change={
+                            item.buyPriceChange
+                          }
+                        />
+                      </td>
 
-                  <td>
-                    <button
-                      type="button"
-                      className="danger-button icon-button table-icon-button"
-                      onClick={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        onDelete(item);
-                      }}
-                    >
-                      <Trash2 size={15} />
-                      Xóa
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                      <td>
+                        <PriceWithChange
+                          price={sellPrice}
+                          change={
+                            item.sellPriceChange
+                          }
+                        />
+                      </td>
+
+                      <td>
+                        {formatMoney(
+                          sellPrice -
+                          buyPrice
+                        )}{' '}
+                        VND
+                      </td>
+
+                      <td>
+                        {item.note || '-'}
+                      </td>
+
+                      {canDelete && (
+                        <td>
+                          <button
+                            type="button"
+                            className="danger-button icon-button table-icon-button"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              onDelete(item);
+                            }}
+                          >
+                            <Trash2 size={15} />
+                            Xóa
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                }
+              )}
             </tbody>
           </table>
 
-          <div className="pagination">
-            <button
-              type="button"
-              disabled={historyPage === 1}
-              onClick={onPreviousPage}
-            >
-              Trang trước
-            </button>
+          {historyTotalPages > 1 && (
+            <div className="pagination">
+              <button
+                type="button"
+                disabled={historyPage <= 1}
+                onClick={
+                  onPreviousPage
+                }
+              >
+                Trang trước
+              </button>
 
-            <span>
-              Trang {historyPage} / {historyTotalPages}
-            </span>
+              <span>
+                Trang {historyPage} /{' '}
+                {historyTotalPages}
+              </span>
 
-            <button
-              type="button"
-              disabled={historyPage >= historyTotalPages}
-              onClick={onNextPage}
-            >
-              Trang sau
-            </button>
-          </div>
+              <button
+                type="button"
+                disabled={
+                  historyPage >=
+                  historyTotalPages
+                }
+                onClick={
+                  onNextPage
+                }
+              >
+                Trang sau
+              </button>
+            </div>
+          )}
 
           <footer className="app-footer">
-            <p>© 2026 Phạm Ngọc Thuần</p>
+            <p>
+              © 2026 Phạm Ngọc Thuần
+            </p>
           </footer>
         </div>
       )}

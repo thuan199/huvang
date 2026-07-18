@@ -9,9 +9,15 @@ import { getGoldData } from '../services/goldDataService';
 import { supabase } from '../supabaseClient';
 
 const EMPTY_GOLD_DATA = {
+  // Dữ liệu cá nhân
   transactions: [],
   prices: [],
   priceHistory: [],
+  personalPriceHistory: [],
+
+  // Dữ liệu PNJ dùng chung
+  pnjCurrentPrice: null,
+  pnjPriceHistory: [],
 };
 
 function useGoldData(userId) {
@@ -30,6 +36,7 @@ function useGoldData(userId) {
     async ({ force = false } = {}) => {
       if (!userId) {
         requestIdRef.current += 1;
+
         setGoldData(EMPTY_GOLD_DATA);
         setLoading(false);
         setError('');
@@ -40,29 +47,66 @@ function useGoldData(userId) {
       const requestId =
         requestIdRef.current + 1;
 
-      requestIdRef.current = requestId;
+      requestIdRef.current =
+        requestId;
 
       setLoading(true);
       setError('');
 
       try {
-        const result = await getGoldData(
-          userId,
-          { force }
-        );
+        const result =
+          await getGoldData(
+            userId,
+            { force }
+          );
 
+        /*
+         * Nếu trong lúc request đang chạy đã có request mới hơn
+         * thì không ghi đè state bằng dữ liệu cũ.
+         */
         if (
-          requestId !== requestIdRef.current
+          requestId !==
+          requestIdRef.current
         ) {
           return result;
         }
 
-        setGoldData(result);
+        setGoldData({
+          transactions:
+            result?.transactions ?? [],
+
+          prices:
+            result?.prices ?? [],
+
+          /*
+           * Lịch sử cá nhân.
+           *
+           * Giữ priceHistory để tương thích
+           * với code cũ.
+           */
+          priceHistory:
+            result?.priceHistory ?? [],
+
+          personalPriceHistory:
+            result?.personalPriceHistory ??
+            result?.priceHistory ??
+            [],
+
+          /*
+           * Dữ liệu PNJ dùng chung.
+           */
+          pnjCurrentPrice:
+            result?.pnjCurrentPrice ?? null,
+
+          pnjPriceHistory:
+            result?.pnjPriceHistory ?? [],
+        });
 
         return result;
       } catch (loadError) {
         if (
-          requestId === requestIdRef.current
+          requestId ===
+          requestIdRef.current
         ) {
           setError(
             loadError?.message ||
@@ -73,7 +117,8 @@ function useGoldData(userId) {
         throw loadError;
       } finally {
         if (
-          requestId === requestIdRef.current
+          requestId ===
+          requestIdRef.current
         ) {
           setLoading(false);
         }
@@ -82,9 +127,13 @@ function useGoldData(userId) {
     [userId]
   );
 
+  /*
+   * Tải dữ liệu khi user thay đổi.
+   */
   useEffect(() => {
     if (!userId) {
       requestIdRef.current += 1;
+
       setGoldData(EMPTY_GOLD_DATA);
       setLoading(false);
       setError('');
@@ -93,8 +142,14 @@ function useGoldData(userId) {
     }
 
     loadGoldData().catch(() => {});
-  }, [userId, loadGoldData]);
+  }, [
+    userId,
+    loadGoldData,
+  ]);
 
+  /*
+   * Ép tải lại toàn bộ dữ liệu.
+   */
   const reloadGoldData = useCallback(
     async () => {
       return loadGoldData({
@@ -105,12 +160,7 @@ function useGoldData(userId) {
   );
 
   /*
-   * Tự động tải lại dữ liệu khi Supabase phát hiện:
-   * - thêm
-   * - sửa
-   * - xóa
-   *
-   * từ thiết bị hoặc tab khác.
+   * Tự động tải lại khi dữ liệu cá nhân thay đổi.
    */
   useEffect(() => {
     if (!userId) return;
@@ -120,17 +170,15 @@ function useGoldData(userId) {
     function scheduleReload() {
       clearTimeout(reloadTimer);
 
-      /*
-       * Gom các sự kiện xảy ra gần nhau thành một lần reload.
-       * Ví dụ cập nhật giá có thể thay đổi nhiều bảng cùng lúc.
-       */
       reloadTimer = setTimeout(() => {
         reloadGoldData().catch(() => {});
       }, 300);
     }
 
-    const channel = supabase
-      .channel(`gold-data-${userId}`)
+    const personalChannel = supabase
+      .channel(
+        `gold-personal-data-${userId}`
+      )
 
       .on(
         'postgres_changes',
@@ -169,7 +217,10 @@ function useGoldData(userId) {
 
     return () => {
       clearTimeout(reloadTimer);
-      supabase.removeChannel(channel);
+
+      supabase.removeChannel(
+        personalChannel
+      );
     };
   }, [
     userId,
@@ -177,14 +228,72 @@ function useGoldData(userId) {
   ]);
 
   /*
-   * Khi quay lại tab desktop, tải lại một lần để chắc chắn
-   * dữ liệu không bị cũ nếu Realtime từng bị mất kết nối.
+   * Tự động tải lại khi giá PNJ dùng chung thay đổi.
+   *
+   * Không dùng filter user_id vì đây là dữ liệu chung.
+   */
+  useEffect(() => {
+    if (!userId) return;
+
+    let reloadTimer;
+
+    function schedulePnjReload() {
+      clearTimeout(reloadTimer);
+
+      reloadTimer = setTimeout(() => {
+        reloadGoldData().catch(() => {});
+      }, 300);
+    }
+
+    const pnjChannel = supabase
+      .channel('shared-pnj-data')
+
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'pnj_current_price',
+        },
+        schedulePnjReload
+      )
+
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'pnj_price_history',
+        },
+        schedulePnjReload
+      )
+
+      .subscribe();
+
+    return () => {
+      clearTimeout(reloadTimer);
+
+      supabase.removeChannel(
+        pnjChannel
+      );
+    };
+  }, [
+    userId,
+    reloadGoldData,
+  ]);
+
+  /*
+   * Khi quay lại tab hoặc cửa sổ được focus,
+   * tải lại để tránh dữ liệu cũ.
    */
   useEffect(() => {
     if (!userId) return;
 
     function handleVisibilityChange() {
-      if (document.visibilityState === 'visible') {
+      if (
+        document.visibilityState ===
+        'visible'
+      ) {
         reloadGoldData().catch(() => {});
       }
     }
@@ -220,9 +329,25 @@ function useGoldData(userId) {
   ]);
 
   return {
-    transactions: goldData.transactions,
-    prices: goldData.prices,
-    priceHistory: goldData.priceHistory,
+    // Dữ liệu cá nhân
+    transactions:
+      goldData.transactions,
+
+    prices:
+      goldData.prices,
+
+    priceHistory:
+      goldData.priceHistory,
+
+    personalPriceHistory:
+      goldData.personalPriceHistory,
+
+    // Dữ liệu PNJ dùng chung
+    pnjCurrentPrice:
+      goldData.pnjCurrentPrice,
+
+    pnjPriceHistory:
+      goldData.pnjPriceHistory,
 
     loading,
     error,

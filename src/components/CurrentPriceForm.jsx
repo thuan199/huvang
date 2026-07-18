@@ -171,11 +171,11 @@ function CurrentPriceForm({
       <form className="card" onSubmit={onSubmit}>
         <h2 className="section-title">
           <RefreshCcw size={20} />
-          Cập nhật giá hiện tại
+          Cập nhật giá cá nhân
         </h2>
 
         <p className="small-text">
-          Mỗi ngày chỉ lưu một mức giá mới nhất cho từng loại vàng.
+          Giá cá nhân do bạn tự nhập và chỉ thuộc tài khoản của bạn.
         </p>
 
         <label>Loại vàng</label>
