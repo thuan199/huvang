@@ -1,12 +1,14 @@
+import { useState } from "react";
 import {
-  useState,
-} from "react";
+  Eye,
+  EyeOff,
+} from "lucide-react";
 
 import { supabase } from "../supabaseClient";
 
 export default function ChangePassword({
   onSuccess,
-  buttonClassName = '',
+  buttonClassName = "",
   buttonIcon = null,
 }) {
   const [
@@ -30,8 +32,18 @@ export default function ChangePassword({
   ] = useState("");
 
   const [
-    showPassword,
-    setShowPassword,
+    showCurrentPassword,
+    setShowCurrentPassword,
+  ] = useState(false);
+
+  const [
+    showNewPassword,
+    setShowNewPassword,
+  ] = useState(false);
+
+  const [
+    showConfirmPassword,
+    setShowConfirmPassword,
   ] = useState(false);
 
   const [
@@ -48,8 +60,17 @@ export default function ChangePassword({
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
+
+    setShowCurrentPassword(false);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
+
     setError("");
-    setShowPassword(false);
+  }
+
+  function openModal() {
+    resetForm();
+    setIsOpen(true);
   }
 
   function closeModal() {
@@ -61,21 +82,18 @@ export default function ChangePassword({
     setIsOpen(false);
   }
 
-  async function handleSubmit(
-    event
-  ) {
+  async function handleSubmit(event) {
     event.preventDefault();
-
     setError("");
 
-    if (!currentPassword) {
+    if (!currentPassword.trim()) {
       setError(
         "Vui lòng nhập mật khẩu hiện tại."
       );
       return;
     }
 
-    if (!newPassword) {
+    if (!newPassword.trim()) {
       setError(
         "Vui lòng nhập mật khẩu mới."
       );
@@ -85,6 +103,13 @@ export default function ChangePassword({
     if (newPassword.length < 8) {
       setError(
         "Mật khẩu mới phải có ít nhất 8 ký tự."
+      );
+      return;
+    }
+
+    if (!confirmPassword.trim()) {
+      setError(
+        "Vui lòng xác nhận mật khẩu mới."
       );
       return;
     }
@@ -122,8 +147,7 @@ export default function ChangePassword({
         throw userError;
       }
 
-      const user =
-        userData?.user;
+      const user = userData?.user;
 
       if (!user?.email) {
         throw new Error(
@@ -131,10 +155,6 @@ export default function ChangePassword({
         );
       }
 
-      /*
-       * Xác nhận mật khẩu hiện tại bằng cách
-       * đăng nhập lại với email hiện tại.
-       */
       const {
         error: signInError,
       } =
@@ -151,9 +171,6 @@ export default function ChangePassword({
         );
       }
 
-      /*
-       * Đổi mật khẩu cho user đang đăng nhập.
-       */
       const {
         error: updateError,
       } =
@@ -181,7 +198,7 @@ export default function ChangePassword({
 
       setError(
         err?.message ||
-        "Không thể đổi mật khẩu."
+          "Không thể đổi mật khẩu."
       );
     } finally {
       setSaving(false);
@@ -194,9 +211,9 @@ export default function ChangePassword({
         type="button"
         className={
           buttonClassName ||
-          'change-password-open-button'
+          "change-password-open-button"
         }
-        onClick={() => setIsOpen(true)}
+        onClick={openModal}
         title="Đổi mật khẩu"
       >
         {buttonIcon}
@@ -246,6 +263,7 @@ export default function ChangePassword({
                   saving
                 }
                 aria-label="Đóng"
+                title="Đóng"
               >
                 ×
               </button>
@@ -256,114 +274,216 @@ export default function ChangePassword({
                 handleSubmit
               }
             >
-              <label className="change-password-label">
+              <label
+                className="change-password-label"
+                htmlFor="current-password"
+              >
                 Mật khẩu hiện tại
               </label>
 
-              <input
-                type={
-                  showPassword
-                    ? "text"
-                    : "password"
-                }
-                className="change-password-input"
-                value={
-                  currentPassword
-                }
-                onChange={(
-                  event
-                ) =>
-                  setCurrentPassword(
-                    event.target
-                      .value
-                  )
-                }
-                autoComplete="current-password"
-                disabled={
-                  saving
-                }
-              />
-
-              <label className="change-password-label">
-                Mật khẩu mới
-              </label>
-
-              <input
-                type={
-                  showPassword
-                    ? "text"
-                    : "password"
-                }
-                className="change-password-input"
-                value={
-                  newPassword
-                }
-                onChange={(
-                  event
-                ) =>
-                  setNewPassword(
-                    event.target
-                      .value
-                  )
-                }
-                autoComplete="new-password"
-                disabled={
-                  saving
-                }
-              />
-
-              <label className="change-password-label">
-                Xác nhận mật khẩu mới
-              </label>
-
-              <input
-                type={
-                  showPassword
-                    ? "text"
-                    : "password"
-                }
-                className="change-password-input"
-                value={
-                  confirmPassword
-                }
-                onChange={(
-                  event
-                ) =>
-                  setConfirmPassword(
-                    event.target
-                      .value
-                  )
-                }
-                autoComplete="new-password"
-                disabled={
-                  saving
-                }
-              />
-
-              <label className="change-password-show">
+              <div className="password-input-wrapper">
                 <input
-                  type="checkbox"
-                  checked={
-                    showPassword
+                  id="current-password"
+                  type={
+                    showCurrentPassword
+                      ? "text"
+                      : "password"
+                  }
+                  className="change-password-input"
+                  value={
+                    currentPassword
                   }
                   onChange={(
                     event
                   ) =>
-                    setShowPassword(
+                    setCurrentPassword(
                       event.target
-                        .checked
+                        .value
+                    )
+                  }
+                  autoComplete="current-password"
+                  disabled={
+                    saving
+                  }
+                  autoFocus
+                />
+
+                <button
+                  type="button"
+                  className="password-eye-button"
+                  onClick={() =>
+                    setShowCurrentPassword(
+                      (current) =>
+                        !current
                     )
                   }
                   disabled={
                     saving
                   }
-                />
+                  title={
+                    showCurrentPassword
+                      ? "Ẩn mật khẩu"
+                      : "Hiện mật khẩu"
+                  }
+                  aria-label={
+                    showCurrentPassword
+                      ? "Ẩn mật khẩu hiện tại"
+                      : "Hiện mật khẩu hiện tại"
+                  }
+                >
+                  {showCurrentPassword ? (
+                    <EyeOff
+                      size={18}
+                    />
+                  ) : (
+                    <Eye
+                      size={18}
+                    />
+                  )}
+                </button>
+              </div>
 
-                Hiển thị mật khẩu
+              <label
+                className="change-password-label"
+                htmlFor="new-password"
+              >
+                Mật khẩu mới
               </label>
 
+              <div className="password-input-wrapper">
+                <input
+                  id="new-password"
+                  type={
+                    showNewPassword
+                      ? "text"
+                      : "password"
+                  }
+                  className="change-password-input"
+                  value={
+                    newPassword
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setNewPassword(
+                      event.target
+                        .value
+                    )
+                  }
+                  autoComplete="new-password"
+                  disabled={
+                    saving
+                  }
+                />
+
+                <button
+                  type="button"
+                  className="password-eye-button"
+                  onClick={() =>
+                    setShowNewPassword(
+                      (current) =>
+                        !current
+                    )
+                  }
+                  disabled={
+                    saving
+                  }
+                  title={
+                    showNewPassword
+                      ? "Ẩn mật khẩu"
+                      : "Hiện mật khẩu"
+                  }
+                  aria-label={
+                    showNewPassword
+                      ? "Ẩn mật khẩu mới"
+                      : "Hiện mật khẩu mới"
+                  }
+                >
+                  {showNewPassword ? (
+                    <EyeOff
+                      size={18}
+                    />
+                  ) : (
+                    <Eye
+                      size={18}
+                    />
+                  )}
+                </button>
+              </div>
+
+              <label
+                className="change-password-label"
+                htmlFor="confirm-password"
+              >
+                Xác nhận mật khẩu mới
+              </label>
+
+              <div className="password-input-wrapper">
+                <input
+                  id="confirm-password"
+                  type={
+                    showConfirmPassword
+                      ? "text"
+                      : "password"
+                  }
+                  className="change-password-input"
+                  value={
+                    confirmPassword
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setConfirmPassword(
+                      event.target
+                        .value
+                    )
+                  }
+                  autoComplete="new-password"
+                  disabled={
+                    saving
+                  }
+                />
+
+                <button
+                  type="button"
+                  className="password-eye-button"
+                  onClick={() =>
+                    setShowConfirmPassword(
+                      (current) =>
+                        !current
+                    )
+                  }
+                  disabled={
+                    saving
+                  }
+                  title={
+                    showConfirmPassword
+                      ? "Ẩn mật khẩu"
+                      : "Hiện mật khẩu"
+                  }
+                  aria-label={
+                    showConfirmPassword
+                      ? "Ẩn xác nhận mật khẩu mới"
+                      : "Hiện xác nhận mật khẩu mới"
+                  }
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff
+                      size={18}
+                    />
+                  ) : (
+                    <Eye
+                      size={18}
+                    />
+                  )}
+                </button>
+              </div>
+
               {error && (
-                <div className="change-password-error">
+                <div
+                  className="change-password-error"
+                  role="alert"
+                >
                   {error}
                 </div>
               )}
