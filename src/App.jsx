@@ -1346,8 +1346,28 @@ function App() {
         onPasswordChanged={(
           successMessage
         ) => {
-          setMessageType('success');
-          setMessage(successMessage);
+          setMessageType(
+            "success"
+          );
+
+          setMessage(
+            successMessage
+          );
+        }}
+        onAvatarChanged={(
+          updatedUser
+        ) => {
+          setUser(
+            updatedUser
+          );
+
+          setMessageType(
+            "success"
+          );
+
+          setMessage(
+            "Đã cập nhật ảnh đại diện."
+          );
         }}
         onLogout={
           handleLogout
@@ -1356,9 +1376,9 @@ function App() {
           setTheme(
             (currentTheme) =>
               currentTheme ===
-                'light'
-                ? 'dark'
-                : 'light'
+                "light"
+                ? "dark"
+                : "light"
           )
         }
       />
