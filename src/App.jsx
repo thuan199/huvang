@@ -6,6 +6,7 @@ import {
   deleteGoldTransaction,
   updateTransactionSellPriceByGoldType,
 } from './services/goldTransactionService';
+import OAuthCallback from "./components/OAuthCallback";
 import useGoldData from './hooks/useGoldData';
 import MaintenanceScreen from "./components/MaintenanceScreen";
 import { useMaintenanceMode } from "./hooks/useMaintenanceMode";
@@ -172,6 +173,47 @@ function App() {
 
     return () => {
       listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  /*
+   * Nhận thông báo đăng nhập thành công từ popup Google.
+   */
+  useEffect(() => {
+    async function handleOAuthMessage(event) {
+      if (event.origin !== window.location.origin) {
+        return;
+      }
+
+      if (event.data?.type !== 'GOOGLE_LOGIN_SUCCESS') {
+        return;
+      }
+
+      const { data, error } =
+        await supabase.auth.getSession();
+
+      if (error) {
+        console.error(
+          'Không thể lấy phiên đăng nhập Google:',
+          error
+        );
+        return;
+      }
+
+      setUser(data.session?.user ?? null);
+      setAuthLoading(false);
+    }
+
+    window.addEventListener(
+      'message',
+      handleOAuthMessage
+    );
+
+    return () => {
+      window.removeEventListener(
+        'message',
+        handleOAuthMessage
+      );
     };
   }, []);
 
@@ -1235,6 +1277,17 @@ function App() {
       : 0;
 
   /*
+   * Trang callback chạy trong popup Google.
+   */
+  const isOAuthCallback =
+    window.location.pathname ===
+    '/oauth-callback';
+
+  if (isOAuthCallback) {
+    return <OAuthCallback />;
+  }
+
+  /*
    * Chờ kiểm tra đăng nhập và trạng thái bảo trì.
    */
   if (
@@ -1290,6 +1343,12 @@ function App() {
         onChangeDisplayName={
           updateDisplayName
         }
+        onPasswordChanged={(
+          successMessage
+        ) => {
+          setMessageType('success');
+          setMessage(successMessage);
+        }}
         onLogout={
           handleLogout
         }

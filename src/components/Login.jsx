@@ -113,13 +113,89 @@ export default function Login() {
     }
   }
 
+  async function handleGoogleLogin() {
+    let popup = null;
+
+    try {
+      /*
+       * Mở popup rỗng ngay khi người dùng bấm.
+       * Làm vậy để trình duyệt không chặn popup.
+       */
+      popup = window.open(
+        "",
+        "google-login",
+        "width=500,height=650,left=500,top=100"
+      );
+
+      if (!popup) {
+        throw new Error(
+          "Trình duyệt đang chặn cửa sổ đăng nhập. Vui lòng cho phép popup."
+        );
+      }
+
+      popup.document.title =
+        "Đang mở đăng nhập Google...";
+
+      popup.document.body.innerHTML = `
+      <div style="
+        font-family: Arial, sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+      ">
+        Đang mở đăng nhập Google...
+      </div>
+    `;
+
+      const {
+        data,
+        error,
+      } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/oauth-callback`,
+          skipBrowserRedirect: true,
+          queryParams: {
+            prompt: "select_account",
+          },
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data?.url) {
+        throw new Error(
+          "Không lấy được đường dẫn đăng nhập Google."
+        );
+      }
+
+      popup.location.href = data.url;
+    } catch (err) {
+      popup?.close();
+
+      console.error(
+        "Lỗi đăng nhập Google:",
+        err
+      );
+
+      alert(
+        err?.message ||
+        "Không thể đăng nhập bằng Google."
+      );
+    }
+  }
+
   return (
     <div className="login-page">
       <form className="login-card" onSubmit={handleSubmit}>
         <div className="login-logo">
           <img
-          src="/logo.png"
-          className="login-logo"
+            src="/logo.png"
+            className="login-logo"
           />
         </div>
 
@@ -202,6 +278,24 @@ export default function Login() {
           {!loading && mode === 'forgot' && 'Gửi email khôi phục'}
         </button>
 
+        <div className="login-divider">
+          <span>hoặc</span>
+        </div>
+
+        <button
+          type="button"
+          className="google-login-button"
+          onClick={handleGoogleLogin}
+        >
+          <img
+            src="/google-icon.svg"
+            alt=""
+            className="google-login-icon"
+          />
+
+          Đăng nhập bằng Google
+        </button>
+
         <div className="login-links">
           {mode !== 'login' && (
             <button
@@ -232,9 +326,9 @@ export default function Login() {
           )}
         </div>
         <div className="login-footer">
-        <div className="login-footer-divider" />
-        <p>© 2026 Phạm Ngọc Thuần</p>
-      </div>
+          <div className="login-footer-divider" />
+          <p>© 2026 Phạm Ngọc Thuần</p>
+        </div>
       </form>
     </div>
   );

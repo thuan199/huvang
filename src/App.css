@@ -3513,3 +3513,74 @@ body.dark-theme .message.warning {
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: #8b8b8b;
+  font-size: 13px;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #dddddd;
+}
+
+.google-login-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 16px;
+
+  border: 1px solid #d6d6d6;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #333333;
+
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.google-login-button:hover {
+  background: #f7f7f7;
+  border-color: #bfbfbf;
+}
+
+.google-letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 22px;
+  height: 22px;
+
+  color: #4285f4;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.google-login-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.dark-theme .google-login-button {
+  border-color: #555555;
+  background: #292929;
+  color: #ffffff;
+}
+
+.dark-theme
+.google-login-button:hover {
+  background: #333333;
+}
