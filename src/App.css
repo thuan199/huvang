@@ -2974,3 +2974,48 @@ body.dark-theme .message.warning {
     width: auto;
   }
 }
+
+.login-footer {
+  margin-top: 32px;
+  text-align: center;
+}
+
+.login-footer-divider {
+  width: 52px;
+  height: 1px;
+  margin: 0 auto 16px;
+
+  background: rgba(15, 23, 42, 0.1);
+}
+
+.login-footer p {
+  margin: 0;
+
+  color: #8b919b;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.login-footer span {
+  display: block;
+  margin-top: 3px;
+
+  color: #b0b5bd;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* Theme tối */
+.dark-theme .login-footer-divider {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.dark-theme .login-footer p {
+  color: #9ca3af;
+}
+
+.dark-theme .login-footer span {
+  color: #6f7782;
+}

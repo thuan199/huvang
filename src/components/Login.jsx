@@ -231,6 +231,10 @@ export default function Login() {
             </button>
           )}
         </div>
+        <div className="login-footer">
+        <div className="login-footer-divider" />
+        <p>© 2026 Phạm Ngọc Thuần</p>
+      </div>
       </form>
     </div>
   );
