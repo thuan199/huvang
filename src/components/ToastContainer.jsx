@@ -1,70 +1,147 @@
 import {
-  AlertCircle,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
+
+import { createPortal } from "react-dom";
+
+import {
   CheckCircle2,
+  CircleAlert,
   Info,
   X,
-} from 'lucide-react';
+} from "lucide-react";
 
-function getToastIcon(type) {
-  if (type === 'error') {
-    return <AlertCircle size={20} />;
-  }
-
-  if (type === 'info') {
-    return <Info size={20} />;
-  }
-
-  return <CheckCircle2 size={20} />;
-}
-
-function ToastContainer({
-  toasts,
+function ToastItem({
+  toast,
   onRemove,
 }) {
-  if (!toasts.length) {
-    return null;
+  const [
+    isClosing,
+    setIsClosing,
+  ] = useState(false);
+
+  const closeToast = useCallback(() => {
+    setIsClosing(
+      (currentValue) => {
+        if (currentValue) {
+          return currentValue;
+        }
+
+        window.setTimeout(() => {
+          onRemove(toast.id);
+        }, 280);
+
+        return true;
+      }
+    );
+  }, [
+    onRemove,
+    toast.id,
+  ]);
+
+  useEffect(() => {
+    if (
+      !toast.duration ||
+      toast.duration <= 0
+    ) {
+      return undefined;
+    }
+
+    const timer =
+      window.setTimeout(
+        closeToast,
+        toast.duration
+      );
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [
+    closeToast,
+    toast.duration,
+  ]);
+
+  function renderIcon() {
+    if (toast.type === "error") {
+      return (
+        <CircleAlert size={20} />
+      );
+    }
+
+    if (toast.type === "info") {
+      return <Info size={20} />;
+    }
+
+    return (
+      <CheckCircle2 size={20} />
+    );
   }
 
   return (
     <div
-      className="toast-container"
+      className={[
+        "toast",
+        `toast-${toast.type}`,
+        isClosing
+          ? "toast-closing"
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      role="status"
       aria-live="polite"
-      aria-atomic="true"
     >
-      {toasts.map((toast) => (
-        <div
-          key={toast.id}
-          className={`app-toast app-toast-${toast.type}`}
-          role={
-            toast.type === 'error'
-              ? 'alert'
-              : 'status'
-          }
-        >
-          <div className="app-toast-icon">
-            {getToastIcon(toast.type)}
-          </div>
+      <div className="toast-icon">
+        {renderIcon()}
+      </div>
 
-          <div className="app-toast-content">
-            {toast.title && (
-              <strong>{toast.title}</strong>
-            )}
+      <div className="toast-content">
+        {toast.title && (
+          <strong className="toast-title">
+            {toast.title}
+          </strong>
+        )}
 
-            <p>{toast.message}</p>
-          </div>
-
-          <button
-            type="button"
-            className="app-toast-close"
-            onClick={() => onRemove(toast.id)}
-            aria-label="Đóng thông báo"
-          >
-            <X size={16} />
-          </button>
+        <div className="toast-message">
+          {toast.message}
         </div>
-      ))}
+      </div>
+
+      <button
+        type="button"
+        className="toast-close"
+        onClick={closeToast}
+        aria-label="Đóng thông báo"
+        title="Đóng"
+      >
+        <X size={17} />
+      </button>
     </div>
   );
 }
 
-export default ToastContainer;
+export default function ToastContainer({
+  toasts = [],
+  onRemove,
+}) {
+  if (
+    typeof document === "undefined"
+  ) {
+    return null;
+  }
+
+  return createPortal(
+    <div className="toast-container">
+      {toasts.map((toast) => (
+        <ToastItem
+          key={toast.id}
+          toast={toast}
+          onRemove={onRemove}
+        />
+      ))}
+    </div>,
+    document.body
+  );
+}

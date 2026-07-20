@@ -1,103 +1,107 @@
 import {
   useCallback,
-  useEffect,
-  useRef,
   useState,
-} from 'react';
+} from "react";
 
 function useToast() {
-  const [toasts, setToasts] = useState([]);
-  const timersRef = useRef(new Map());
+  const [toasts, setToasts] =
+    useState([]);
 
-  const removeToast = useCallback((id) => {
-    const timer = timersRef.current.get(id);
-
-    if (timer) {
-      clearTimeout(timer);
-      timersRef.current.delete(id);
-    }
-
-    setToasts((currentToasts) =>
-      currentToasts.filter((toast) => toast.id !== id)
-    );
-  }, []);
+  const removeToast = useCallback(
+    (id) => {
+      setToasts(
+        (currentToasts) =>
+          currentToasts.filter(
+            (toast) =>
+              toast.id !== id
+          )
+      );
+    },
+    []
+  );
 
   const addToast = useCallback(
     ({
       title,
       message,
-      type = 'success',
+      type = "success",
       duration = 4500,
     }) => {
-      const id = `${Date.now()}-${Math.random()}`;
+      const normalizedMessage =
+        String(message ?? "").trim();
+
+      if (!normalizedMessage) {
+        return null;
+      }
+
+      const id =
+        `${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}`;
 
       const toast = {
         id,
-        title,
-        message,
+        title:
+          title ?? "",
+        message:
+          normalizedMessage,
         type,
+        duration,
       };
 
-      setToasts((currentToasts) => [
-        ...currentToasts,
-        toast,
-      ]);
-
-      if (duration > 0) {
-        const timer = setTimeout(() => {
-          removeToast(id);
-        }, duration);
-
-        timersRef.current.set(id, timer);
-      }
+      setToasts(
+        (currentToasts) => [
+          ...currentToasts,
+          toast,
+        ]
+      );
 
       return id;
     },
-    [removeToast]
+    []
   );
 
   const success = useCallback(
-    (message, title = 'Thành công') =>
+    (
+      message,
+      title = "Thành công"
+    ) =>
       addToast({
         title,
         message,
-        type: 'success',
+        type: "success",
+        duration: 4500,
       }),
     [addToast]
   );
 
   const error = useCallback(
-    (message, title = 'Có lỗi xảy ra') =>
+    (
+      message,
+      title = "Có lỗi xảy ra"
+    ) =>
       addToast({
         title,
         message,
-        type: 'error',
+        type: "error",
         duration: 6500,
       }),
     [addToast]
   );
 
   const info = useCallback(
-    (message, title = 'Thông báo') =>
+    (
+      message,
+      title = "Thông báo"
+    ) =>
       addToast({
         title,
         message,
-        type: 'info',
+        type: "info",
+        duration: 4500,
       }),
     [addToast]
   );
-
-  useEffect(() => {
-    const timers = timersRef.current;
-
-    return () => {
-      for (const timer of timers.values()) {
-        clearTimeout(timer);
-      }
-
-      timers.clear();
-    };
-  }, []);
 
   return {
     toasts,

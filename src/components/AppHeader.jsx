@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -9,6 +10,9 @@ import {
   Moon,
   Pencil,
   Sun,
+  Settings2,
+  Users,
+  Wrench,
 } from "lucide-react";
 
 import ChangePassword from "./ChangePassword";
@@ -16,6 +20,9 @@ import ChangeAvatar from "./ChangeAvatar";
 function AppHeader({
   user,
   theme,
+  isAdmin,
+  onOpenMaintenance,
+  onOpenUserManager,
   onChangeDisplayName,
   onPasswordChanged,
   onAvatarChanged,
@@ -26,6 +33,13 @@ function AppHeader({
     avatarError,
     setAvatarError,
   ] = useState(false);
+
+  const [
+    isAdminMenuOpen,
+    setIsAdminMenuOpen,
+  ] = useState(false);
+
+  const adminMenuRef = useRef(null);
 
   const metadata =
     user?.user_metadata ?? {};
@@ -63,6 +77,31 @@ function AppHeader({
   const showAvatarImage =
     Boolean(avatarUrl) &&
     !avatarError;
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        adminMenuRef.current &&
+        !adminMenuRef.current.contains(event.target)
+      ) {
+        setIsAdminMenuOpen(false);
+      }
+    }
+
+    if (isAdminMenuOpen) {
+      document.addEventListener(
+        "mousedown",
+        handleClickOutside
+      );
+    }
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
+    };
+  }, [isAdminMenuOpen]);
 
   return (
     <div className="topbar">
@@ -120,12 +159,70 @@ function AppHeader({
                 Xin chào,
               </span>
 
-              <strong
-                className="header-display-name"
-                title={displayName}
-              >
-                {displayName}
-              </strong>
+              <div className="header-name-row">
+                <strong
+                  className="header-display-name"
+                  title={displayName}
+                >
+                  {displayName}
+                </strong>
+
+                {isAdmin && (
+                  <div className="header-admin-tools" ref={adminMenuRef}>
+                    <button
+                      type="button"
+                      className="header-maintenance-button"
+                      onClick={() =>
+                        setIsAdminMenuOpen(
+                          (current) => !current
+                        )
+                      }
+                      title="Bảng điều khiển quản trị"
+                      aria-label="Bảng điều khiển quản trị"
+                      aria-expanded={isAdminMenuOpen}
+                    >
+                      <Settings2
+                        size={17}
+                        strokeWidth={2.2}
+                      />
+                    </button>
+
+                    {isAdminMenuOpen && (
+                      <div className="header-admin-menu">
+                        <button
+                          type="button"
+                          className="header-admin-menu__item"
+                          onClick={() => {
+                            onOpenMaintenance();
+                            setIsAdminMenuOpen(false);
+                          }}
+                        >
+                          <Wrench size={17} />
+
+                          <span>
+                            Bảo trì hệ thống
+                          </span>
+                        </button>
+
+                        <button
+                          type="button"
+                          className="header-admin-menu__item"
+                          onClick={() => {
+                            onOpenUserManager();
+                            setIsAdminMenuOpen(false);
+                          }}
+                        >
+                          <Users size={17} />
+
+                          <span>
+                            Quản lý người dùng
+                          </span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

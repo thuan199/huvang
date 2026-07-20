@@ -6,6 +6,8 @@ import {
   deleteGoldTransaction,
   updateTransactionSellPriceByGoldType,
 } from './services/goldTransactionService';
+import AdminUserManager from "./components/AdminUserManager";
+import ChangeDisplayNameModal from "./components/ChangeDisplayNameModal";
 import OAuthCallback from "./components/OAuthCallback";
 import useGoldData from './hooks/useGoldData';
 import MaintenanceScreen from "./components/MaintenanceScreen";
@@ -34,6 +36,7 @@ import {
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
@@ -44,6 +47,26 @@ import useToast from './hooks/useToast';
 import useConfirm from './hooks/useConfirm';
 
 function App() {
+  const [
+    activeAdminPanel,
+    setActiveAdminPanel,
+  ] = useState(false);
+
+  const [
+    isDisplayNameOpen,
+    setIsDisplayNameOpen,
+  ] = useState(false);
+
+  const [
+    displayNameSaving,
+    setDisplayNameSaving,
+  ] = useState(false);
+
+  const [
+    displayNameError,
+    setDisplayNameError,
+  ] = useState("");
+
   const {
     maintenance,
     isAdmin,
@@ -55,6 +78,8 @@ function App() {
     toasts,
     addToast,
     removeToast,
+    success: showSuccessToast,
+    error: showErrorToast,
   } = useToast();
 
   const {
@@ -67,6 +92,14 @@ function App() {
 
   const [authLoading, setAuthLoading] =
     useState(true);
+
+  const [
+    appInitialized,
+    setAppInitialized,
+  ] = useState(false);
+
+  const authInitializedRef =
+    useRef(false);
 
   const [
     activeGoldTab,
@@ -145,18 +178,47 @@ function App() {
 
   /*
    * Kiểm tra trạng thái đăng nhập.
+   *
+   * USER_UPDATED xảy ra khi đổi tên hoặc avatar.
+   * Sự kiện này chỉ cập nhật user, không bật lại màn hình
+   * "Đang kiểm tra hệ thống...".
    */
   useEffect(() => {
+    let mounted = true;
+
     async function checkUser() {
-      const {
-        data,
-      } = await supabase.auth.getSession();
+      try {
+        const {
+          data,
+          error,
+        } = await supabase.auth.getSession();
 
-      setUser(
-        data.session?.user ?? null
-      );
+        if (error) {
+          throw error;
+        }
 
-      setAuthLoading(false);
+        if (!mounted) {
+          return;
+        }
+
+        setUser(
+          data.session?.user ?? null
+        );
+      } catch (error) {
+        console.error(
+          'Không thể kiểm tra phiên đăng nhập:',
+          error
+        );
+
+        if (mounted) {
+          setUser(null);
+        }
+      } finally {
+        if (mounted) {
+          authInitializedRef.current = true;
+          setAuthLoading(false);
+        }
+      }
     }
 
     checkUser();
@@ -164,14 +226,36 @@ function App() {
     const {
       data: listener,
     } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
+        if (!mounted) {
+          return;
+        }
+
         setUser(
           session?.user ?? null
         );
+
+        if (event === 'SIGNED_OUT') {
+          setActiveAdminPanel(null);
+          setIsDisplayNameOpen(false);
+          setIsWorldGoldOpen(false);
+          setUser(null);
+        }
+
+        /*
+         * Không gọi setAuthLoading(true) tại đây.
+         * Đổi tên sẽ phát USER_UPDATED; nếu bật loading lại,
+         * App bị unmount và Toast vừa tạo sẽ biến mất.
+         */
+        if (!authInitializedRef.current) {
+          authInitializedRef.current = true;
+          setAuthLoading(false);
+        }
       }
     );
 
     return () => {
+      mounted = false;
       listener.subscription.unsubscribe();
     };
   }, []);
@@ -216,6 +300,26 @@ function App() {
       );
     };
   }, []);
+
+  /*
+   * Chỉ chờ auth và maintenance trong lần khởi tạo đầu tiên.
+   * Sau đó USER_UPDATED không được thay toàn bộ giao diện.
+   */
+  useEffect(() => {
+    if (
+      appInitialized ||
+      authLoading ||
+      maintenanceLoading
+    ) {
+      return;
+    }
+
+    setAppInitialized(true);
+  }, [
+    appInitialized,
+    authLoading,
+    maintenanceLoading,
+  ]);
 
   const [message, setMessage] =
     useState('');
@@ -277,41 +381,97 @@ function App() {
     addToast,
   ]);
 
-  async function updateDisplayName() {
-    const name = window.prompt(
-      'Nhập tên hiển thị:'
-    );
+  async function updateDisplayName(
+    name
+  ) {
+    const trimmedName =
+      name?.trim();
 
-    if (!name?.trim()) {
+    setDisplayNameError("");
+
+    if (!trimmedName) {
+      setDisplayNameError(
+        "Vui lòng nhập tên hiển thị."
+      );
       return;
     }
 
-    const {
-      data,
-      error,
-    } = await supabase.auth.updateUser({
-      data: {
-        display_name:
-          name.trim(),
-      },
-    });
-
-    if (error) {
-      setMessageType('error');
-      setMessage(error.message);
+    if (trimmedName.length < 2) {
+      setDisplayNameError(
+        "Tên hiển thị phải có ít nhất 2 ký tự."
+      );
       return;
     }
 
-    setUser(data.user);
+    try {
+      setDisplayNameSaving(true);
 
-    setMessageType('success');
-    setMessage(
-      'Đã cập nhật tên hiển thị.'
-    );
+      const {
+        data,
+        error,
+      } =
+        await supabase.auth
+          .updateUser({
+            data: {
+              display_name:
+                trimmedName,
+            },
+          });
+
+      if (error) {
+        throw error;
+      }
+
+      setUser(
+        (currentUser) => ({
+          ...currentUser,
+          ...data.user,
+          user_metadata: {
+            ...currentUser
+              ?.user_metadata,
+            ...data.user
+              ?.user_metadata,
+            display_name:
+              trimmedName,
+          },
+        })
+      );
+
+      setDisplayNameError("");
+      setIsDisplayNameOpen(false);
+
+      setMessageType("success");
+      setMessage(
+        "Đã cập nhật tên hiển thị."
+      );
+    } catch (error) {
+      console.error(
+        "Lỗi đổi tên hiển thị:",
+        error
+      );
+
+      const errorMessage =
+        error?.message ||
+        "Không thể cập nhật tên hiển thị.";
+
+      setDisplayNameError(
+        errorMessage
+      );
+
+      setMessageType("error");
+      setMessage(errorMessage);
+    } finally {
+      setDisplayNameSaving(false);
+    }
   }
 
   async function handleLogout() {
+    setActiveAdminPanel(null);
+    setIsDisplayNameOpen(false);
+    setIsWorldGoldOpen(false);
+
     await supabase.auth.signOut();
+
     setUser(null);
   }
 
@@ -1290,10 +1450,7 @@ function App() {
   /*
    * Chờ kiểm tra đăng nhập và trạng thái bảo trì.
    */
-  if (
-    authLoading ||
-    maintenanceLoading
-  ) {
+  if (!appInitialized) {
     return (
       <div className="auth-loading">
         <div className="auth-spinner" />
@@ -1336,245 +1493,294 @@ function App() {
   }
 
   return (
-    <div className="container">
-      <AppHeader
-        user={user}
-        theme={theme}
-        onChangeDisplayName={
-          updateDisplayName
-        }
-        onPasswordChanged={(
-          successMessage
-        ) => {
-          setMessageType(
-            "success"
-          );
-
-          setMessage(
+    <>
+      <div className="container">
+        <AppHeader
+          user={user}
+          theme={theme}
+          isAdmin={isAdmin}
+          onOpenMaintenance={() =>
+            setActiveAdminPanel(
+              (current) =>
+                current === "maintenance"
+                  ? null
+                  : "maintenance"
+            )
+          }
+          onOpenUserManager={() =>
+            setActiveAdminPanel(
+              (current) =>
+                current === "users"
+                  ? null
+                  : "users"
+            )
+          }
+          onChangeDisplayName={() => {
+            setDisplayNameError("");
+            setIsDisplayNameOpen(true);
+          }}
+          onChangeDisplayName={() => {
+            setDisplayNameError("");
+            setIsDisplayNameOpen(true);
+          }}
+          onPasswordChanged={(
             successMessage
-          );
-        }}
-        onAvatarChanged={(
-          updatedUser
-        ) => {
-          setUser(
+          ) => {
+            setMessageType(
+              "success"
+            );
+
+            setMessage(
+              successMessage
+            );
+          }}
+          onAvatarChanged={(
             updatedUser
-          );
+          ) => {
+            setUser(
+              updatedUser
+            );
 
-          setMessageType(
-            "success"
-          );
+            setMessageType(
+              "success"
+            );
 
-          setMessage(
-            "Đã cập nhật ảnh đại diện."
-          );
-        }}
-        onLogout={
-          handleLogout
-        }
-        onToggleTheme={() =>
-          setTheme(
-            (currentTheme) =>
-              currentTheme ===
-                "light"
-                ? "dark"
-                : "light"
-          )
-        }
-      />
-
-      {/*
-       * Chỉ tài khoản có trong bảng app_admins
-       * mới nhìn thấy giao diện bật/tắt bảo trì.
-       */}
-      {isAdmin && (
-        <MaintenanceControl
-          maintenance={
-            maintenance
+            setMessage(
+              "Đã cập nhật ảnh đại diện."
+            );
+          }}
+          onLogout={
+            handleLogout
           }
-          reloadMaintenance={
-            reloadMaintenance
-          }
-        />
-      )}
-
-      <WorldGoldMiniWidget
-        isOpen={
-          isWorldGoldOpen
-        }
-        onOpen={() =>
-          setIsWorldGoldOpen(
-            true
-          )
-        }
-        onClose={() =>
-          setIsWorldGoldOpen(
-            false
-          )
-        }
-      />
-
-      <SummaryCards
-        summary={summary}
-      />
-
-      <div className="grid">
-        <TransactionForm
-          editingId={
-            editingId
-          }
-          transactionForm={
-            transactionForm
-          }
-          setTransactionForm={
-            setTransactionForm
-          }
-          onSubmit={
-            saveTransaction
-          }
-          onCancel={
-            cancelEdit
+          onToggleTheme={() =>
+            setTheme(
+              (currentTheme) =>
+                currentTheme ===
+                  "light"
+                  ? "dark"
+                  : "light"
+            )
           }
         />
 
-        <CurrentPriceForm
-          editingPriceId={
-            editingPriceId
+        <ChangeDisplayNameModal
+          isOpen={isDisplayNameOpen}
+          currentName={
+            user?.user_metadata?.display_name ||
+            user?.user_metadata?.full_name ||
+            user?.user_metadata?.name ||
+            user?.email?.split("@")[0] ||
+            ""
           }
-          priceForm={
-            priceForm
+          saving={displayNameSaving}
+          error={displayNameError}
+          onClose={() => {
+            if (displayNameSaving) {
+              return;
+            }
+
+            setDisplayNameError("");
+            setIsDisplayNameOpen(false);
+          }}
+          onSubmit={updateDisplayName}
+        />
+
+        {isAdmin &&
+          activeAdminPanel === "maintenance" && (
+            <div className="maintenance-admin-area">
+              <MaintenanceControl
+                maintenance={maintenance}
+                reloadMaintenance={reloadMaintenance}
+                onClose={() =>
+                  setActiveAdminPanel(null)
+                }
+              />
+            </div>
+          )}
+
+        {isAdmin &&
+          activeAdminPanel === "users" && (
+            <AdminUserManager
+              confirm={confirm}
+              onClose={() =>
+                setActiveAdminPanel(null)
+              }
+            />
+          )}
+
+        <WorldGoldMiniWidget
+          isOpen={isWorldGoldOpen}
+          onOpen={() =>
+            setIsWorldGoldOpen(true)
           }
-          setPriceForm={
-            setPriceForm
+          onClose={() =>
+            setIsWorldGoldOpen(false)
           }
-          prices={
-            prices
+        />
+
+        <SummaryCards
+          summary={summary}
+        />
+
+        <div className="grid">
+          <TransactionForm
+            editingId={
+              editingId
+            }
+            transactionForm={
+              transactionForm
+            }
+            setTransactionForm={
+              setTransactionForm
+            }
+            onSubmit={
+              saveTransaction
+            }
+            onCancel={
+              cancelEdit
+            }
+          />
+
+          <CurrentPriceForm
+            editingPriceId={
+              editingPriceId
+            }
+            priceForm={
+              priceForm
+            }
+            setPriceForm={
+              setPriceForm
+            }
+            prices={
+              prices
+            }
+            pnjCurrentPrice={
+              shopGold
+            }
+            onSubmit={
+              saveCurrentPrice
+            }
+            onCancel={
+              cancelPriceEdit
+            }
+            onEdit={
+              editCurrentPrice
+            }
+            onDelete={
+              deleteCurrentPrice
+            }
+            onPriceUpdated={
+              reloadGoldData
+            }
+          />
+        </div>
+
+        <LocalGoldChart
+          activeGoldTab={
+            activeGoldTab
           }
-          pnjCurrentPrice={
+          setActiveGoldTab={
+            setActiveGoldTab
+          }
+          chartRange={
+            chartRange
+          }
+          setChartRange={
+            setChartRange
+          }
+          priceChartData={
+            priceChartData
+          }
+          theme={
+            theme
+          }
+        />
+
+        <WorldGoldComparison
+          worldGold={
+            worldGold
+          }
+          worldGoldLoading={
+            worldGoldLoading
+          }
+          worldGoldError={
+            worldGoldError
+          }
+          worldGoldMarketMessage={
+            worldGoldMarketMessage
+          }
+          shopGold={
             shopGold
           }
-          onSubmit={
-            saveCurrentPrice
+          shopSellPriceVndPerLuong={
+            shopSellPriceVndPerLuong
           }
-          onCancel={
-            cancelPriceEdit
+          goldDifference={
+            goldDifference
           }
-          onEdit={
-            editCurrentPrice
-          }
-          onDelete={
-            deleteCurrentPrice
-          }
-          onPriceUpdated={
-            reloadGoldData
+          goldDifferencePercent={
+            goldDifferencePercent
           }
         />
-      </div>
 
-      <LocalGoldChart
-        activeGoldTab={
-          activeGoldTab
-        }
-        setActiveGoldTab={
-          setActiveGoldTab
-        }
-        chartRange={
-          chartRange
-        }
-        setChartRange={
-          setChartRange
-        }
-        priceChartData={
-          priceChartData
-        }
-        theme={
-          theme
-        }
-      />
+        <TransactionTable
+          loading={
+            loading
+          }
+          transactions={
+            transactions
+          }
+          calculateTransactionResult={
+            calculateTransactionResult
+          }
+          onEdit={
+            editTransaction
+          }
+          onDelete={
+            deleteTransaction
+          }
+        />
 
-      <WorldGoldComparison
-        worldGold={
-          worldGold
-        }
-        worldGoldLoading={
-          worldGoldLoading
-        }
-        worldGoldError={
-          worldGoldError
-        }
-        worldGoldMarketMessage={
-          worldGoldMarketMessage
-        }
-        shopGold={
-          shopGold
-        }
-        shopSellPriceVndPerLuong={
-          shopSellPriceVndPerLuong
-        }
-        goldDifference={
-          goldDifference
-        }
-        goldDifferencePercent={
-          goldDifferencePercent
-        }
-      />
-
-      <TransactionTable
-        loading={
-          loading
-        }
-        transactions={
-          transactions
-        }
-        calculateTransactionResult={
-          calculateTransactionResult
-        }
-        onEdit={
-          editTransaction
-        }
-        onDelete={
-          deleteTransaction
-        }
-      />
-
-      {/*
+        {/*
        * Đây là lịch sử PNJ dùng chung.
        *
        * Không truyền onDelete vì người dùng
        * không được xóa dữ liệu thị trường chung.
        */}
-      <PriceHistoryTable
-        priceHistory={
-          priceHistoryWithChanges
-        }
-        paginatedPriceHistory={
-          paginatedPriceHistory
-        }
-        historyPage={
-          historyPage
-        }
-        historyTotalPages={
-          historyTotalPages
-        }
-        onPreviousPage={() =>
-          setHistoryPage(
-            (page) =>
-              Math.max(
-                1,
-                page - 1
-              )
-          )
-        }
-        onNextPage={() =>
-          setHistoryPage(
-            (page) =>
-              Math.min(
-                historyTotalPages,
-                page + 1
-              )
-          )
-        }
-      />
+        <PriceHistoryTable
+          priceHistory={
+            priceHistoryWithChanges
+          }
+          paginatedPriceHistory={
+            paginatedPriceHistory
+          }
+          historyPage={
+            historyPage
+          }
+          historyTotalPages={
+            historyTotalPages
+          }
+          onPreviousPage={() =>
+            setHistoryPage(
+              (page) =>
+                Math.max(
+                  1,
+                  page - 1
+                )
+            )
+          }
+          onNextPage={() =>
+            setHistoryPage(
+              (page) =>
+                Math.min(
+                  historyTotalPages,
+                  page + 1
+                )
+            )
+          }
+        />
+
+      </div>
 
       <ToastContainer
         toasts={
@@ -1588,7 +1794,7 @@ function App() {
       <ConfirmModal
         {...confirmModalProps}
       />
-    </div>
+    </>
   );
 }
 

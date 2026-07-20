@@ -1,17 +1,21 @@
 import {
   AlertTriangle,
+  CheckCircle2,
   HelpCircle,
+  LockKeyhole,
   Trash2,
+  UnlockKeyhole,
   X,
-} from 'lucide-react';
+} from "lucide-react";
 
 function ConfirmModal({
   isOpen,
-  title,
-  message,
-  confirmText,
-  cancelText,
-  type = 'danger',
+  title = "Xác nhận",
+  message = "",
+  confirmText = "Xác nhận",
+  cancelText = "Hủy",
+  type = "default",
+  icon,
   onConfirm,
   onCancel,
 }) {
@@ -19,33 +23,83 @@ function ConfirmModal({
     return null;
   }
 
-  const Icon =
-    type === 'danger'
-      ? Trash2
-      : type === 'warning'
-        ? AlertTriangle
-        : HelpCircle;
+  function getIconComponent() {
+    switch (icon) {
+      case "lock":
+        return LockKeyhole;
+
+      case "unlock":
+        return UnlockKeyhole;
+
+      case "success":
+        return CheckCircle2;
+
+      case "warning":
+        return AlertTriangle;
+
+      case "delete":
+        return Trash2;
+
+      default:
+        if (type === "danger") {
+          return Trash2;
+        }
+
+        if (type === "warning") {
+          return AlertTriangle;
+        }
+
+        if (type === "success") {
+          return CheckCircle2;
+        }
+
+        return HelpCircle;
+    }
+  }
+
+  const IconComponent =
+    getIconComponent();
+
+  function handleBackdropMouseDown(
+    event,
+  ) {
+    if (
+      event.target ===
+      event.currentTarget
+    ) {
+      onCancel?.();
+    }
+  }
+
+  function handleConfirm() {
+    onConfirm?.();
+  }
+
+  function handleCancel() {
+    onCancel?.();
+  }
 
   return (
     <div
       className="confirm-modal-backdrop"
-      onMouseDown={onCancel}
+      onMouseDown={
+        handleBackdropMouseDown
+      }
       role="presentation"
     >
       <div
-        className="confirm-modal"
+        className={`confirm-modal confirm-modal-${type}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-modal-title"
-        onMouseDown={(event) =>
-          event.stopPropagation()
-        }
+        aria-describedby="confirm-modal-message"
       >
         <button
           type="button"
           className="confirm-modal-close"
-          onClick={onCancel}
+          onClick={handleCancel}
           aria-label="Đóng"
+          title="Đóng"
         >
           <X size={18} />
         </button>
@@ -53,20 +107,25 @@ function ConfirmModal({
         <div
           className={`confirm-modal-icon confirm-modal-icon-${type}`}
         >
-          <Icon size={22} />
+          <IconComponent size={22} />
         </div>
 
         <h3 id="confirm-modal-title">
           {title}
         </h3>
 
-        <p>{message}</p>
+        <div
+          id="confirm-modal-message"
+          className="confirm-modal-message"
+        >
+          {message}
+        </div>
 
         <div className="confirm-modal-actions">
           <button
             type="button"
             className="confirm-cancel-button"
-            onClick={onCancel}
+            onClick={handleCancel}
           >
             {cancelText}
           </button>
@@ -74,7 +133,7 @@ function ConfirmModal({
           <button
             type="button"
             className={`confirm-submit-button confirm-submit-${type}`}
-            onClick={onConfirm}
+            onClick={handleConfirm}
             autoFocus
           >
             {confirmText}

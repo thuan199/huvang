@@ -4,6 +4,7 @@ import { updateMaintenanceStatus } from "../services/appSettingsService";
 export default function MaintenanceControl({
   maintenance,
   reloadMaintenance,
+  onClose,
 }) {
   const [message, setMessage] = useState(
     maintenance?.message ||
@@ -55,17 +56,30 @@ export default function MaintenanceControl({
           </p>
         </div>
 
-        <span
-          className={
-            maintenance.enabled
-              ? "maintenance-status maintenance-status--on"
-              : "maintenance-status maintenance-status--off"
-          }
-        >
-          {maintenance.enabled
-            ? "Đang bảo trì"
-            : "Đang hoạt động"}
-        </span>
+        <div className="maintenance-control__actions">
+          <span
+            className={
+              maintenance.enabled
+                ? "maintenance-status maintenance-status--on"
+                : "maintenance-status maintenance-status--off"
+            }
+          >
+            {maintenance.enabled
+              ? "Đang bảo trì"
+              : "Đang hoạt động"}
+          </span>
+
+          <button
+            type="button"
+            className="maintenance-control__close"
+            onClick={onClose}
+            disabled={saving}
+            aria-label="Đóng khung bảo trì"
+            title="Đóng"
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
       <label className="maintenance-control__label">

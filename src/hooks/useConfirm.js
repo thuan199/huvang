@@ -1,87 +1,79 @@
 import {
   useCallback,
-  useEffect,
   useRef,
   useState,
-} from 'react';
+} from "react";
 
-const INITIAL_STATE = {
+const initialConfirmState = {
   isOpen: false,
-  title: '',
-  message: '',
-  confirmText: 'Xác nhận',
-  cancelText: 'Hủy',
-  type: 'danger',
+  title: "",
+  message: "",
+  confirmText: "Xác nhận",
+  cancelText: "Hủy",
+  type: "default",
+  icon: null,
 };
 
-function useConfirm() {
-  const [confirmState, setConfirmState] =
-    useState(INITIAL_STATE);
+export default function useConfirm() {
+  const [
+    confirmState,
+    setConfirmState,
+  ] = useState(initialConfirmState);
 
-  const resolveRef = useRef(null);
+  const resolverRef =
+    useRef(null);
 
-  const confirm = useCallback((options = {}) => {
-    return new Promise((resolve) => {
-      /*
-       * Nếu modal cũ vẫn còn mở, đóng modal cũ trước.
-       */
-      if (resolveRef.current) {
-        resolveRef.current(false);
-      }
+  const confirm =
+    useCallback((options = {}) => {
+      return new Promise(
+        (resolve) => {
+          resolverRef.current =
+            resolve;
 
-      resolveRef.current = resolve;
+          setConfirmState({
+            ...initialConfirmState,
+            ...options,
+            isOpen: true,
 
-      setConfirmState({
-        isOpen: true,
-        title: options.title || 'Xác nhận thao tác',
-        message:
-          options.message ||
-          'Bạn có chắc muốn thực hiện thao tác này?',
-        confirmText:
-          options.confirmText || 'Xác nhận',
-        cancelText:
-          options.cancelText || 'Hủy',
-        type: options.type || 'danger',
-      });
-    });
-  }, []);
+            /*
+             * Bảo đảm icon được giữ lại.
+             */
+            icon:
+              options.icon ??
+              null,
+          });
+        },
+      );
+    }, []);
 
-  const closeWithResult = useCallback((result) => {
-    const resolve = resolveRef.current;
+  const handleConfirm =
+    useCallback(() => {
+      resolverRef.current?.(true);
+      resolverRef.current = null;
 
-    resolveRef.current = null;
-    setConfirmState(INITIAL_STATE);
+      setConfirmState(
+        initialConfirmState,
+      );
+    }, []);
 
-    if (resolve) {
-      resolve(result);
-    }
-  }, []);
+  const handleCancel =
+    useCallback(() => {
+      resolverRef.current?.(false);
+      resolverRef.current = null;
 
-  const handleConfirm = useCallback(() => {
-    closeWithResult(true);
-  }, [closeWithResult]);
+      setConfirmState(
+        initialConfirmState,
+      );
+    }, []);
 
-  const handleCancel = useCallback(() => {
-    closeWithResult(false);
-  }, [closeWithResult]);
-
-  useEffect(() => {
-    return () => {
-      if (resolveRef.current) {
-        resolveRef.current(false);
-        resolveRef.current = null;
-      }
-    };
-  }, []);
+  const confirmModalProps = {
+    ...confirmState,
+    onConfirm: handleConfirm,
+    onCancel: handleCancel,
+  };
 
   return {
     confirm,
-    confirmModalProps: {
-      ...confirmState,
-      onConfirm: handleConfirm,
-      onCancel: handleCancel,
-    },
+    confirmModalProps,
   };
 }
-
-export default useConfirm;
