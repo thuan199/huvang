@@ -4812,3 +4812,21 @@ body.dark-theme .toast-info {
   font-size: 12px;
   line-height: 1.4;
 }
+
+.login-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.login-logo__image {
+  display: block;
+
+  width: 90px;
+  height: 90px;
+
+  object-fit: contain;
+}

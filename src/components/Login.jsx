@@ -1,56 +1,56 @@
 import {
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
 import {
-  Mail,
-  Lock,
-  UserPlus,
-  KeyRound,
+  Clock3,
   Eye,
   EyeOff,
-  Clock3,
+  KeyRound,
+  Lock,
+  Mail,
+  UserPlus,
 } from "lucide-react";
 
-import { supabase } from "../supabaseClient";
+import {
+  supabase,
+} from "../supabaseClient";
 
-/*
- * Chuyển lỗi kỹ thuật của Supabase
- * thành thông báo tiếng Việt dễ hiểu.
- */
 function getAuthErrorMessage(
   error,
-  fallbackMessage = "Có lỗi xảy ra. Vui lòng thử lại.",
+  fallbackMessage =
+    "Có lỗi xảy ra. Vui lòng thử lại.",
 ) {
-  const errorCode = String(
-    error?.code || "",
-  ).toLowerCase();
+  const errorCode =
+    String(
+      error?.code || "",
+    ).toLowerCase();
 
-  const errorMessage = String(
-    error?.message || "",
-  ).toLowerCase();
+  const errorMessage =
+    String(
+      error?.message || "",
+    ).toLowerCase();
 
-  /*
-   * Tài khoản đã bị admin khóa.
-   */
   if (
     errorCode === "user_banned" ||
-    errorMessage.includes("user is banned") ||
-    errorMessage.includes("banned")
+    errorMessage.includes(
+      "user is banned",
+    ) ||
+    errorMessage.includes(
+      "banned",
+    )
   ) {
     return (
-      "Tài khoản của bạn đã bị khóa. " +
-      "Vui lòng liên hệ quản trị viên để được hỗ trợ."
+      "Tài khoản của bạn đang bị khóa. " +
+      "Vui lòng liên hệ quản trị viên."
     );
   }
 
-  /*
-   * Sai email hoặc mật khẩu.
-   */
   if (
     errorCode ===
-    "invalid_credentials" ||
+      "invalid_credentials" ||
     errorMessage.includes(
       "invalid login credentials",
     )
@@ -58,28 +58,22 @@ function getAuthErrorMessage(
     return "Email hoặc mật khẩu không đúng.";
   }
 
-  /*
-   * Email chưa được xác nhận.
-   */
   if (
     errorCode ===
-    "email_not_confirmed" ||
+      "email_not_confirmed" ||
     errorMessage.includes(
       "email not confirmed",
     )
   ) {
     return (
       "Email chưa được xác nhận. " +
-      "Vui lòng kiểm tra hộp thư của bạn."
+      "Vui lòng kiểm tra hộp thư."
     );
   }
 
-  /*
-   * Email đã tồn tại khi đăng ký.
-   */
   if (
     errorCode ===
-    "user_already_exists" ||
+      "user_already_exists" ||
     errorMessage.includes(
       "user already registered",
     ) ||
@@ -90,12 +84,11 @@ function getAuthErrorMessage(
     return "Email này đã được đăng ký.";
   }
 
-  /*
-   * Gửi yêu cầu quá nhiều lần.
-   */
   if (
     errorCode ===
-    "over_request_rate_limit" ||
+      "over_request_rate_limit" ||
+    errorCode ===
+      "too_many_attempts" ||
     errorMessage.includes(
       "rate limit",
     )
@@ -119,13 +112,18 @@ function formatRemainingTime(
     return "";
   }
 
+  const targetTimestamp =
+    new Date(
+      targetTime,
+    ).getTime();
+
   const remainingMilliseconds =
-    new Date(targetTime).getTime() -
+    targetTimestamp -
     Date.now();
 
   if (
     !Number.isFinite(
-      remainingMilliseconds,
+      targetTimestamp,
     ) ||
     remainingMilliseconds <= 0
   ) {
@@ -134,7 +132,8 @@ function formatRemainingTime(
 
   const totalSeconds =
     Math.floor(
-      remainingMilliseconds / 1000,
+      remainingMilliseconds /
+        1000,
     );
 
   const days =
@@ -145,13 +144,13 @@ function formatRemainingTime(
   const hours =
     Math.floor(
       (totalSeconds % 86400) /
-      3600,
+        3600,
     );
 
   const minutes =
     Math.floor(
       (totalSeconds % 3600) /
-      60,
+        60,
     );
 
   const seconds =
@@ -160,35 +159,65 @@ function formatRemainingTime(
   const parts = [];
 
   if (days > 0) {
-    parts.push(`${days} ngày`);
+    parts.push(
+      `${days} ngày`,
+    );
   }
 
   parts.push(
-    `${String(hours).padStart(2, "0")} giờ`,
+    `${String(hours).padStart(
+      2,
+      "0",
+    )} giờ`,
   );
 
   parts.push(
-    `${String(minutes).padStart(2, "0")} phút`,
+    `${String(minutes).padStart(
+      2,
+      "0",
+    )} phút`,
   );
 
   parts.push(
-    `${String(seconds).padStart(2, "0")} giây`,
+    `${String(seconds).padStart(
+      2,
+      "0",
+    )} giây`,
   );
 
   return parts.join(" ");
 }
 
+async function readJsonResponse(
+  response,
+) {
+  const contentType =
+    response.headers.get(
+      "content-type",
+    ) || "";
+
+  if (
+    !contentType.includes(
+      "application/json",
+    )
+  ) {
+    const text =
+      await response.text();
+
+    return {
+      success: false,
+      code:
+        "invalid_server_response",
+      error:
+        text ||
+        "Máy chủ trả về dữ liệu không hợp lệ.",
+    };
+  }
+
+  return response.json();
+}
+
 export default function Login() {
-  const [
-    bannedUntil,
-    setBannedUntil,
-  ] = useState(null);
-
-  const [
-    remainingLockTime,
-    setRemainingLockTime,
-  ] = useState("");
-
   const [
     mode,
     setMode,
@@ -224,11 +253,78 @@ export default function Login() {
     setShowPassword,
   ] = useState(false);
 
-  function changeMode(nextMode) {
+  const [
+    bannedUntil,
+    setBannedUntil,
+  ] = useState(null);
+
+  const [
+    remainingLockTime,
+    setRemainingLockTime,
+  ] = useState("");
+
+  const supabaseUrl =
+    import.meta.env
+      .VITE_SUPABASE_URL;
+
+  const supabasePublicKey =
+    import.meta.env
+      .VITE_SUPABASE_ANON_KEY ||
+    import.meta.env
+      .VITE_SUPABASE_PUBLISHABLE_KEY;
+
+  const bannedUntilText =
+    useMemo(() => {
+      if (!bannedUntil) {
+        return "";
+      }
+
+      const date =
+        new Date(
+          bannedUntil,
+        );
+
+      if (
+        Number.isNaN(
+          date.getTime(),
+        )
+      ) {
+        return "";
+      }
+
+      return new Intl.DateTimeFormat(
+        "vi-VN",
+        {
+          dateStyle:
+            "short",
+          timeStyle:
+            "medium",
+          timeZone:
+            "Asia/Ho_Chi_Minh",
+        },
+      ).format(date);
+    }, [bannedUntil]);
+
+  function clearBanStatus() {
+    setBannedUntil(null);
+    setRemainingLockTime("");
+  }
+
+  function changeMode(
+    nextMode,
+  ) {
     setMode(nextMode);
     setMessage("");
     setPassword("");
     setShowPassword(false);
+    clearBanStatus();
+
+    if (
+      nextMode !==
+      "register"
+    ) {
+      setDisplayName("");
+    }
   }
 
   useEffect(() => {
@@ -247,11 +343,8 @@ export default function Login() {
         remaining,
       );
 
-      /*
-       * Hết thời gian khóa.
-       */
       if (!remaining) {
-        setBannedUntil(null);
+        clearBanStatus();
 
         setMessage(
           "Thời gian khóa đã kết thúc. Bạn có thể đăng nhập lại.",
@@ -274,210 +367,316 @@ export default function Login() {
     };
   }, [bannedUntil]);
 
-  async function handleSubmit(event) {
+  async function loginWithPassword(
+    normalizedEmail,
+  ) {
+    if (!password) {
+      setMessage(
+        "Vui lòng nhập mật khẩu.",
+      );
+
+      return;
+    }
+
+    if (
+      !supabaseUrl ||
+      !supabasePublicKey
+    ) {
+      throw new Error(
+        "Thiếu cấu hình Supabase ở frontend.",
+      );
+    }
+
+    const functionUrl =
+      `${supabaseUrl}/functions/v1/login-with-status`;
+
+    const response =
+      await fetch(
+        functionUrl,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            apikey:
+              supabasePublicKey,
+          },
+
+          body: JSON.stringify({
+            email:
+              normalizedEmail,
+
+            /*
+             * Không trim mật khẩu.
+             * Khoảng trắng có thể là
+             * một phần của mật khẩu.
+             */
+            password,
+          }),
+        },
+      );
+
+    const result =
+      await readJsonResponse(
+        response,
+      );
+
+    console.log(
+      "login-with-status:",
+      {
+        status:
+          response.status,
+        code:
+          result?.code,
+        success:
+          result?.success,
+      },
+    );
+
+    if (!response.ok) {
+      if (
+        result?.code ===
+        "user_banned"
+      ) {
+        setMessage(
+          result?.error ||
+          "Tài khoản của bạn đang bị khóa.",
+        );
+
+        setBannedUntil(
+          result?.bannedUntil ||
+          null,
+        );
+
+        return;
+      }
+
+      if (
+        result?.code ===
+        "too_many_attempts"
+      ) {
+        clearBanStatus();
+
+        const retryAfter =
+          Number(
+            result?.retryAfter,
+          );
+
+        setMessage(
+          Number.isFinite(
+            retryAfter,
+          )
+            ? `Bạn đã đăng nhập sai quá nhiều lần. Vui lòng thử lại sau ${retryAfter} giây.`
+            : "Bạn đã đăng nhập sai quá nhiều lần. Vui lòng thử lại sau.",
+        );
+
+        return;
+      }
+
+      clearBanStatus();
+
+      setMessage(
+        result?.error ||
+        "Email hoặc mật khẩu không đúng.",
+      );
+
+      return;
+    }
+
+    const accessToken =
+      result?.session
+        ?.accessToken;
+
+    const refreshToken =
+      result?.session
+        ?.refreshToken;
+
+    if (
+      !accessToken ||
+      !refreshToken
+    ) {
+      throw new Error(
+        "Máy chủ không trả về phiên đăng nhập hợp lệ.",
+      );
+    }
+
+    const {
+      error:
+        sessionError,
+    } =
+      await supabase.auth
+        .setSession({
+          access_token:
+            accessToken,
+
+          refresh_token:
+            refreshToken,
+        });
+
+    if (sessionError) {
+      throw sessionError;
+    }
+
+    clearBanStatus();
+    setMessage("");
+  }
+
+  async function registerUser(
+    normalizedEmail,
+  ) {
+    const normalizedDisplayName =
+      displayName.trim();
+
+    if (
+      !normalizedDisplayName
+    ) {
+      setMessage(
+        "Vui lòng nhập tên hiển thị.",
+      );
+
+      return;
+    }
+
+    if (
+      password.length < 6
+    ) {
+      setMessage(
+        "Mật khẩu phải từ 6 ký tự trở lên.",
+      );
+
+      return;
+    }
+
+    const {
+      error,
+    } =
+      await supabase.auth
+        .signUp({
+          email:
+            normalizedEmail,
+
+          password,
+
+          options: {
+            data: {
+              display_name:
+                normalizedDisplayName,
+            },
+          },
+        });
+
+    if (error) {
+      setMessage(
+        getAuthErrorMessage(
+          error,
+          "Không thể đăng ký tài khoản.",
+        ),
+      );
+
+      return;
+    }
+
+    setMessage(
+      "Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản.",
+    );
+  }
+
+  async function sendPasswordReset(
+    normalizedEmail,
+  ) {
+    const {
+      error,
+    } =
+      await supabase.auth
+        .resetPasswordForEmail(
+          normalizedEmail,
+          {
+            redirectTo:
+              window.location
+                .origin,
+          },
+        );
+
+    if (error) {
+      setMessage(
+        getAuthErrorMessage(
+          error,
+          "Không thể gửi email khôi phục mật khẩu.",
+        ),
+      );
+
+      return;
+    }
+
+    setMessage(
+      "Đã gửi email đặt lại mật khẩu. Vui lòng kiểm tra hộp thư.",
+    );
+  }
+
+  async function handleSubmit(
+    event,
+  ) {
     event.preventDefault();
+
+    if (loading) {
+      return;
+    }
 
     setMessage("");
     setLoading(true);
 
     try {
       const normalizedEmail =
-        email.trim();
+        email
+          .trim()
+          .toLowerCase();
 
-      if (!normalizedEmail) {
+      if (
+        !normalizedEmail
+      ) {
         setMessage(
           "Vui lòng nhập email.",
         );
-        return;
-      }
-
-      /*
-       * Đăng nhập bằng email và mật khẩu.
-       */
-      if (mode === "login") {
-        if (!password.trim()) {
-          setMessage(
-            "Vui lòng nhập mật khẩu.",
-          );
-          return;
-        }
-
-        const functionUrl =
-          `${import.meta.env.VITE_SUPABASE_URL}` +
-          "/functions/v1/login-with-status";
-
-        const response =
-          await fetch(
-            functionUrl,
-            {
-              method: "POST",
-
-              headers: {
-                "Content-Type":
-                  "application/json",
-
-                apikey:
-                  import.meta.env
-                    .VITE_SUPABASE_ANON_KEY,
-              },
-
-              body: JSON.stringify({
-                email:
-                  normalizedEmail,
-                password,
-              }),
-            },
-          );
-
-        const result =
-          await response.json();
-
-        if (!response.ok) {
-          if (
-            result?.code ===
-            "user_banned"
-          ) {
-            setMessage(
-              result.error ||
-              "Tài khoản của bạn đang bị khóa.",
-            );
-
-            setBannedUntil(
-              result.bannedUntil ??
-              null,
-            );
-
-            return;
-          }
-
-          setBannedUntil(null);
-
-          setMessage(
-            result?.error ||
-            "Không thể đăng nhập.",
-          );
-
-          return;
-        }
-
-        const {
-          error: sessionError,
-        } =
-          await supabase.auth
-            .setSession({
-              access_token:
-                result.session
-                  .accessToken,
-
-              refresh_token:
-                result.session
-                  .refreshToken,
-            });
-
-        if (sessionError) {
-          throw sessionError;
-        }
-
-        setBannedUntil(null);
-        setRemainingLockTime("");
 
         return;
       }
 
-      /*
-       * Đăng ký tài khoản.
-       */
-      if (mode === "register") {
-        const normalizedDisplayName =
-          displayName.trim();
-
-        if (
-          !normalizedDisplayName
-        ) {
-          setMessage(
-            "Vui lòng nhập tên hiển thị.",
-          );
-          return;
-        }
-
-        if (password.length < 6) {
-          setMessage(
-            "Mật khẩu phải từ 6 ký tự trở lên.",
-          );
-          return;
-        }
-
-        const {
-          error,
-        } =
-          await supabase.auth
-            .signUp({
-              email:
-                normalizedEmail,
-
-              password,
-
-              options: {
-                data: {
-                  display_name:
-                    normalizedDisplayName,
-                },
-              },
-            });
-
-        if (error) {
-          setMessage(
-            getAuthErrorMessage(
-              error,
-              "Không thể đăng ký tài khoản.",
-            ),
-          );
-        } else {
-          setMessage(
-            "Đăng ký thành công. " +
-            "Vui lòng kiểm tra email để xác nhận tài khoản.",
-          );
-        }
+      if (
+        mode === "login"
+      ) {
+        await loginWithPassword(
+          normalizedEmail,
+        );
 
         return;
       }
 
-      /*
-       * Quên mật khẩu.
-       */
-      if (mode === "forgot") {
-        const {
-          error,
-        } =
-          await supabase.auth
-            .resetPasswordForEmail(
-              normalizedEmail,
-              {
-                redirectTo:
-                  window.location
-                    .origin,
-              },
-            );
+      if (
+        mode === "register"
+      ) {
+        await registerUser(
+          normalizedEmail,
+        );
 
-        if (error) {
-          setMessage(
-            getAuthErrorMessage(
-              error,
-              "Không thể gửi email khôi phục mật khẩu.",
-            ),
-          );
-        } else {
-          setMessage(
-            "Đã gửi email đặt lại mật khẩu. " +
-            "Vui lòng kiểm tra hộp thư.",
-          );
-        }
+        return;
+      }
+
+      if (
+        mode === "forgot"
+      ) {
+        await sendPasswordReset(
+          normalizedEmail,
+        );
       }
     } catch (error) {
       console.error(
         "Lỗi xác thực:",
         error,
       );
+
+      clearBanStatus();
 
       setMessage(
         getAuthErrorMessage(
@@ -490,25 +689,26 @@ export default function Login() {
   }
 
   async function handleGoogleLogin() {
+    if (loading) {
+      return;
+    }
+
     let popup = null;
 
     setMessage("");
+    clearBanStatus();
 
     try {
-      /*
-       * Mở popup ngay khi người dùng bấm
-       * để tránh bị trình duyệt chặn.
-       */
-      popup = window.open(
-        "",
-        "google-login",
-        "width=500,height=650,left=500,top=100",
-      );
+      popup =
+        window.open(
+          "",
+          "google-login",
+          "width=500,height=650,left=500,top=100",
+        );
 
       if (!popup) {
         throw new Error(
-          "Trình duyệt đang chặn cửa sổ đăng nhập. " +
-          "Vui lòng cho phép popup.",
+          "Trình duyệt đang chặn cửa sổ đăng nhập. Vui lòng cho phép popup.",
         );
       }
 
@@ -534,7 +734,8 @@ export default function Login() {
       } =
         await supabase.auth
           .signInWithOAuth({
-            provider: "google",
+            provider:
+              "google",
 
             options: {
               redirectTo:
@@ -583,17 +784,21 @@ export default function Login() {
     <div className="login-page">
       <form
         className="login-card"
-        onSubmit={handleSubmit}
+        onSubmit={
+          handleSubmit
+        }
       >
         <div className="login-logo">
           <img
             src="/logo.png"
-            className="login-logo"
+            className="login-logo__image"
             alt="Hũ vàng"
           />
         </div>
 
-        <h1>Hũ vàng</h1>
+        <h1>
+          Hũ vàng
+        </h1>
 
         <p>
           {mode === "login" &&
@@ -616,7 +821,9 @@ export default function Login() {
           remainingLockTime && (
             <div className="login-ban-countdown">
               <div className="login-ban-countdown__icon">
-                <Clock3 size={22} />
+                <Clock3
+                  size={22}
+                />
               </div>
 
               <div>
@@ -625,41 +832,48 @@ export default function Login() {
                 </strong>
 
                 <span>
-                  {remainingLockTime}
+                  {
+                    remainingLockTime
+                  }
                 </span>
 
-                <small>
-                  Tự động mở khóa lúc{" "}
-                  {new Intl.DateTimeFormat(
-                    "vi-VN",
+                {bannedUntilText && (
+                  <small>
+                    Tự động mở khóa lúc{" "}
                     {
-                      dateStyle: "short",
-                      timeStyle: "medium",
-                      timeZone:
-                        "Asia/Ho_Chi_Minh",
-                    },
-                  ).format(
-                    new Date(bannedUntil),
-                  )}
-                </small>
+                      bannedUntilText
+                    }
+                  </small>
+                )}
               </div>
             </div>
           )}
 
-        {mode === "register" && (
+        {mode ===
+          "register" && (
           <div className="input-group">
-            <UserPlus size={18} />
+            <UserPlus
+              size={18}
+            />
 
             <input
               type="text"
               placeholder="Tên hiển thị"
-              value={displayName}
-              onChange={(event) =>
+              value={
+                displayName
+              }
+              onChange={(
+                event,
+              ) =>
                 setDisplayName(
-                  event.target.value,
+                  event.target
+                    .value,
                 )
               }
               autoComplete="name"
+              disabled={
+                loading
+              }
             />
           </div>
         )}
@@ -671,16 +885,23 @@ export default function Login() {
             type="email"
             placeholder="Email"
             value={email}
-            onChange={(event) =>
+            onChange={(
+              event,
+            ) =>
               setEmail(
-                event.target.value,
+                event.target
+                  .value,
               )
             }
             autoComplete="email"
+            disabled={
+              loading
+            }
           />
         </div>
 
-        {mode !== "forgot" && (
+        {mode !==
+          "forgot" && (
           <div className="input-group password-input-group">
             <Lock size={18} />
 
@@ -692,15 +913,22 @@ export default function Login() {
               }
               placeholder="Mật khẩu"
               value={password}
-              onChange={(event) =>
+              onChange={(
+                event,
+              ) =>
                 setPassword(
-                  event.target.value,
+                  event.target
+                    .value,
                 )
               }
               autoComplete={
-                mode === "register"
+                mode ===
+                "register"
                   ? "new-password"
                   : "current-password"
+              }
+              disabled={
+                loading
               }
             />
 
@@ -723,11 +951,18 @@ export default function Login() {
                   ? "Ẩn mật khẩu"
                   : "Hiện mật khẩu"
               }
+              disabled={
+                loading
+              }
             >
               {showPassword ? (
-                <EyeOff size={19} />
+                <EyeOff
+                  size={19}
+                />
               ) : (
-                <Eye size={19} />
+                <Eye
+                  size={19}
+                />
               )}
             </button>
           </div>
@@ -742,50 +977,71 @@ export default function Login() {
             "Đang xử lý..."}
 
           {!loading &&
-            mode === "login" &&
+            mode ===
+              "login" &&
             "Đăng nhập"}
 
           {!loading &&
-            mode === "register" &&
+            mode ===
+              "register" &&
             "Đăng ký"}
 
           {!loading &&
-            mode === "forgot" &&
+            mode ===
+              "forgot" &&
             "Gửi email khôi phục"}
         </button>
 
-        <div className="login-divider">
-          <span>hoặc</span>
-        </div>
+        {mode ===
+          "login" && (
+          <>
+            <div className="login-divider">
+              <span>
+                hoặc
+              </span>
+            </div>
 
-        <button
-          type="button"
-          className="google-login-button"
-          onClick={handleGoogleLogin}
-          disabled={loading}
-        >
-          <img
-            src="/google-icon.svg"
-            alt=""
-            className="google-login-icon"
-          />
+            <button
+              type="button"
+              className="google-login-button"
+              onClick={
+                handleGoogleLogin
+              }
+              disabled={
+                loading
+              }
+            >
+              <img
+                src="/google-icon.svg"
+                alt=""
+                className="google-login-icon"
+              />
 
-          Đăng nhập bằng Google
-        </button>
+              Đăng nhập bằng Google
+            </button>
+          </>
+        )}
 
         <div className="login-links">
-          {mode !== "login" && (
+          {mode !==
+            "login" && (
             <button
               type="button"
               onClick={() =>
-                changeMode("login")
+                changeMode(
+                  "login",
+                )
+              }
+              disabled={
+                loading
               }
             >
               Đã có tài khoản? Đăng nhập
             </button>
           )}
 
-          {mode !== "register" && (
+          {mode !==
+            "register" && (
             <button
               type="button"
               onClick={() =>
@@ -793,19 +1049,31 @@ export default function Login() {
                   "register",
                 )
               }
+              disabled={
+                loading
+              }
             >
               Chưa có tài khoản? Đăng ký
             </button>
           )}
 
-          {mode !== "forgot" && (
+          {mode !==
+            "forgot" && (
             <button
               type="button"
               onClick={() =>
-                changeMode("forgot")
+                changeMode(
+                  "forgot",
+                )
+              }
+              disabled={
+                loading
               }
             >
-              <KeyRound size={14} />
+              <KeyRound
+                size={14}
+              />
+
               Quên mật khẩu?
             </button>
           )}
