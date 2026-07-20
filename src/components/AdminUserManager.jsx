@@ -1,6 +1,5 @@
 import {
   useCallback,
-  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -49,6 +48,21 @@ const LOCK_DURATION_OPTIONS = [
 
 const DEFAULT_LOCK_DURATION = "168h";
 
+const STATUS_FILTER_OPTIONS = [
+  {
+    value: "all",
+    label: "Tất cả",
+  },
+  {
+    value: "active",
+    label: "Hoạt động",
+  },
+  {
+    value: "banned",
+    label: "Đã khóa",
+  },
+];
+
 function formatDateTime(
   value,
   emptyText = "-",
@@ -57,10 +71,15 @@ function formatDateTime(
     return emptyText;
   }
 
-  const date = new Date(value);
+  const date =
+    new Date(value);
 
-  if (Number.isNaN(date.getTime())) {
-    return "-";
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
+    return emptyText;
   }
 
   return new Intl.DateTimeFormat(
@@ -68,7 +87,8 @@ function formatDateTime(
     {
       dateStyle: "short",
       timeStyle: "short",
-      timeZone: "Asia/Ho_Chi_Minh",
+      timeZone:
+        "Asia/Ho_Chi_Minh",
     },
   ).format(date);
 }
@@ -79,13 +99,72 @@ function getLockDurationLabel(
   return (
     LOCK_DURATION_OPTIONS.find(
       (option) =>
-        option.value === duration,
+        option.value ===
+        duration,
     )?.label || duration
+  );
+}
+
+/*
+ * Tạo thời gian hết khóa tạm thời ở frontend.
+ *
+ * Dùng trong trường hợp service không trả về bannedUntil.
+ */
+function createLocalBannedUntil(
+  duration,
+) {
+  const matched =
+    /^(\d+)h$/.exec(
+      String(duration),
+    );
+
+  if (!matched) {
+    return null;
+  }
+
+  const hours =
+    Number(matched[1]);
+
+  if (
+    !Number.isFinite(hours) ||
+    hours <= 0
+  ) {
+    return null;
+  }
+
+  return new Date(
+    Date.now() +
+      hours *
+        60 *
+        60 *
+        1000,
+  ).toISOString();
+}
+
+function isUserCurrentlyBanned(
+  user,
+) {
+  if (!user?.bannedUntil) {
+    return false;
+  }
+
+  const bannedUntilTime =
+    new Date(
+      user.bannedUntil,
+    ).getTime();
+
+  return (
+    Number.isFinite(
+      bannedUntilTime,
+    ) &&
+    bannedUntilTime >
+      Date.now()
   );
 }
 
 export default function AdminUserManager({
   confirm,
+  showToast,
   onClose,
 }) {
   const [
@@ -96,7 +175,12 @@ export default function AdminUserManager({
   const [
     loading,
     setLoading,
-  ] = useState(true);
+  ] = useState(false);
+
+  const [
+    hasLoaded,
+    setHasLoaded,
+  ] = useState(false);
 
   const [
     actionUserId,
@@ -109,51 +193,129 @@ export default function AdminUserManager({
   ] = useState("");
 
   const [
+    statusFilter,
+    setStatusFilter,
+  ] = useState("all");
+
+  const [
     error,
     setError,
   ] = useState("");
 
+  const [
+    currentPage,
+    setCurrentPage,
+  ] = useState(1);
+
+  const [
+    perPage,
+    setPerPage,
+  ] = useState(10);
+
+  const [
+    totalUsers,
+    setTotalUsers,
+  ] = useState(0);
+
   /*
-   * Lưu thời gian khóa riêng cho từng người dùng.
+   * Trang đã được tải gần nhất.
+   *
+   * currentPage có thể thay đổi khi bấm Trang trước/Trang sau,
+   * nhưng dữ liệu chỉ tải khi bấm Làm mới.
+   */
+  const [
+    loadedPage,
+    setLoadedPage,
+  ] = useState(0);
+
+  /*
+   * Số dòng đã được tải gần nhất.
+   */
+  const [
+    loadedPerPage,
+    setLoadedPerPage,
+  ] = useState(0);
+
+  /*
+   * Lưu thời gian khóa được chọn riêng
+   * cho từng người dùng.
    */
   const [
     lockDurations,
     setLockDurations,
   ] = useState({});
 
+  /*
+   * Hàm này chỉ được gọi khi người dùng
+   * chủ động bấm nút Làm mới.
+   */
   const loadUsers =
-    useCallback(async () => {
-      try {
-        setLoading(true);
-        setError("");
+    useCallback(
+      async () => {
+        try {
+          setLoading(true);
+          setError("");
 
-        const result =
-          await getAdminUsers({
-            page: 1,
-            perPage: 100,
-          });
+          const result =
+            await getAdminUsers({
+              page: currentPage,
+              perPage,
+            });
 
-        setUsers(
-          result.users ?? [],
-        );
-      } catch (err) {
-        console.error(
-          "Lỗi tải danh sách người dùng:",
-          err,
-        );
+          const nextUsers =
+            Array.isArray(
+              result?.users,
+            )
+              ? result.users
+              : [];
 
-        setError(
-          err?.message ||
-            "Không thể tải danh sách người dùng.",
-        );
-      } finally {
-        setLoading(false);
-      }
-    }, []);
+          setUsers(
+            nextUsers,
+          );
 
-  useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+          setTotalUsers(
+            Number(
+              result?.total ?? 0,
+            ),
+          );
+
+          setLoadedPage(
+            currentPage,
+          );
+
+          setLoadedPerPage(
+            perPage,
+          );
+
+          setHasLoaded(true);
+        } catch (err) {
+          console.error(
+            "Lỗi tải danh sách người dùng:",
+            err,
+          );
+
+          const errorMessage =
+            err?.message ||
+            "Không thể tải danh sách người dùng.";
+
+          setError(
+            errorMessage,
+          );
+
+          showToast?.(
+            errorMessage,
+            "error",
+          );
+        } finally {
+          setLoading(false);
+        }
+      },
+      [
+        currentPage,
+        perPage,
+        showToast,
+      ],
+    );
 
   const filteredUsers =
     useMemo(() => {
@@ -162,23 +324,114 @@ export default function AdminUserManager({
           .trim()
           .toLowerCase();
 
-      if (!keyword) {
-        return users;
-      }
-
       return users.filter(
-        (item) =>
-          item.email
-            ?.toLowerCase()
-            .includes(keyword) ||
-          item.displayName
-            ?.toLowerCase()
-            .includes(keyword),
+        (item) => {
+          const email =
+            String(
+              item?.email ?? "",
+            ).toLowerCase();
+
+          const displayName =
+            String(
+              item?.displayName ??
+                "",
+            ).toLowerCase();
+
+          const phone =
+            String(
+              item?.phone ?? "",
+            ).toLowerCase();
+
+          const matchesSearch =
+            !keyword ||
+            email.includes(
+              keyword,
+            ) ||
+            displayName.includes(
+              keyword,
+            ) ||
+            phone.includes(
+              keyword,
+            );
+
+          const isBanned =
+            isUserCurrentlyBanned(
+              item,
+            );
+
+          const matchesStatus =
+            statusFilter ===
+              "all" ||
+            (
+              statusFilter ===
+                "active" &&
+              !isBanned
+            ) ||
+            (
+              statusFilter ===
+                "banned" &&
+              isBanned
+            ) ||
+            (
+              statusFilter ===
+                "admin" &&
+              Boolean(
+                item?.isAdmin,
+              )
+            );
+
+          return (
+            matchesSearch &&
+            matchesStatus
+          );
+        },
       );
     }, [
       users,
       searchText,
+      statusFilter,
     ]);
+
+  const totalPages =
+    Math.max(
+      1,
+      Math.ceil(
+        totalUsers /
+          perPage,
+      ),
+    );
+
+  const startItem =
+    !hasLoaded ||
+    totalUsers === 0
+      ? 0
+      : (
+          loadedPage - 1
+        ) *
+          loadedPerPage +
+        1;
+
+  const endItem =
+    !hasLoaded
+      ? 0
+      : Math.min(
+          loadedPage *
+            loadedPerPage,
+          totalUsers,
+        );
+
+  /*
+   * true khi người dùng đã chọn trang hoặc số dòng mới
+   * nhưng chưa bấm Làm mới.
+   */
+  const hasPendingPagination =
+    hasLoaded &&
+    (
+      currentPage !==
+        loadedPage ||
+      perPage !==
+        loadedPerPage
+    );
 
   function getSelectedLockDuration(
     userId,
@@ -196,14 +449,80 @@ export default function AdminUserManager({
     setLockDurations(
       (current) => ({
         ...current,
-        [userId]: duration,
+        [userId]:
+          duration,
       }),
+    );
+  }
+
+  function handlePreviousPage() {
+    setCurrentPage(
+      (current) =>
+        Math.max(
+          1,
+          current - 1,
+        ),
+    );
+  }
+
+  function handleNextPage() {
+    setCurrentPage(
+      (current) =>
+        Math.min(
+          totalPages,
+          current + 1,
+        ),
+    );
+  }
+
+  function handlePerPageChange(
+    event,
+  ) {
+    const nextPerPage =
+      Number(
+        event.target.value,
+      );
+
+    if (
+      !Number.isFinite(
+        nextPerPage,
+      ) ||
+      nextPerPage < 1
+    ) {
+      return;
+    }
+
+    setPerPage(
+      nextPerPage,
+    );
+
+    setCurrentPage(1);
+  }
+
+  function handleSearchChange(
+    event,
+  ) {
+    setSearchText(
+      event.target.value,
+    );
+  }
+
+  function handleStatusFilterChange(
+    event,
+  ) {
+    setStatusFilter(
+      event.target.value,
     );
   }
 
   async function handleToggleLock(
     user,
   ) {
+    const isBanned =
+      isUserCurrentlyBanned(
+        user,
+      );
+
     const selectedDuration =
       getSelectedLockDuration(
         user.id,
@@ -215,7 +534,7 @@ export default function AdminUserManager({
       );
 
     const confirmMessage =
-      user.isBanned ? (
+      isBanned ? (
         <>
           Bạn có chắc muốn mở khóa tài khoản{" "}
           <strong>
@@ -238,32 +557,38 @@ export default function AdminUserManager({
           </strong>
           ?
           <br />
-          Trong thời gian này, người dùng sẽ không thể đăng
-          nhập vào hệ thống.
+          Trong thời gian này, người dùng sẽ không thể
+          đăng nhập vào hệ thống.
         </>
       );
 
     const confirmed =
       await confirm({
-        title: user.isBanned
-          ? "Mở khóa tài khoản?"
-          : "Khóa tài khoản?",
+        title:
+          isBanned
+            ? "Mở khóa tài khoản?"
+            : "Khóa tài khoản?",
 
-        message: confirmMessage,
+        message:
+          confirmMessage,
 
-        confirmText: user.isBanned
-          ? "Mở khóa"
-          : "Khóa tài khoản",
+        confirmText:
+          isBanned
+            ? "Mở khóa"
+            : "Khóa tài khoản",
 
-        cancelText: "Hủy",
+        cancelText:
+          "Hủy",
 
-        type: user.isBanned
-          ? "warning"
-          : "danger",
+        type:
+          isBanned
+            ? "warning"
+            : "danger",
 
-        icon: user.isBanned
-          ? "unlock"
-          : "lock",
+        icon:
+          isBanned
+            ? "unlock"
+            : "lock",
       });
 
     if (!confirmed) {
@@ -277,30 +602,94 @@ export default function AdminUserManager({
 
       setError("");
 
-      if (user.isBanned) {
+      if (isBanned) {
         await unlockAdminUser(
           user.id,
         );
+
+        /*
+         * Cập nhật đúng tài khoản vừa mở khóa.
+         * Không tải lại toàn bộ danh sách.
+         */
+        setUsers(
+          (currentUsers) =>
+            currentUsers.map(
+              (item) =>
+                item.id ===
+                user.id
+                  ? {
+                      ...item,
+                      bannedUntil:
+                        null,
+                    }
+                  : item,
+            ),
+        );
+
+        showToast?.(
+          `Đã mở khóa tài khoản ${user.email}.`,
+          "success",
+        );
       } else {
-        await lockAdminUser(
-          user.id,
-          selectedDuration,
+        const result =
+          await lockAdminUser(
+            user.id,
+            selectedDuration,
+          );
+
+        const bannedUntil =
+          result?.user
+            ?.bannedUntil ??
+          result?.bannedUntil ??
+          createLocalBannedUntil(
+            selectedDuration,
+          );
+
+        /*
+         * Cập nhật đúng tài khoản vừa khóa.
+         * Không tải lại toàn bộ danh sách.
+         */
+        setUsers(
+          (currentUsers) =>
+            currentUsers.map(
+              (item) =>
+                item.id ===
+                user.id
+                  ? {
+                      ...item,
+                      bannedUntil,
+                    }
+                  : item,
+            ),
+        );
+
+        showToast?.(
+          `Đã khóa tài khoản ${user.email} trong ${durationLabel}.`,
+          "success",
         );
       }
-
-      await loadUsers();
     } catch (err) {
       console.error(
         "Lỗi cập nhật tài khoản:",
         err,
       );
 
-      setError(
+      const errorMessage =
         err?.message ||
-          "Không thể cập nhật tài khoản.",
+        "Không thể cập nhật tài khoản.";
+
+      setError(
+        errorMessage,
+      );
+
+      showToast?.(
+        errorMessage,
+        "error",
       );
     } finally {
-      setActionUserId("");
+      setActionUserId(
+        "",
+      );
     }
   }
 
@@ -331,19 +720,45 @@ export default function AdminUserManager({
       </div>
 
       <div className="admin-user-manager__toolbar">
-        <div className="admin-user-manager__search">
-          <Search size={17} />
+        <div className="admin-user-manager__filters">
+          <div className="admin-user-manager__search">
+            <Search size={17} />
 
-          <input
-            type="text"
-            value={searchText}
-            onChange={(event) =>
-              setSearchText(
-                event.target.value,
-              )
+            <input
+              type="text"
+              value={searchText}
+              onChange={
+                handleSearchChange
+              }
+              placeholder="Tìm theo tên hoặc email"
+            />
+          </div>
+
+          <select
+            className="admin-user-manager__status-filter"
+            value={statusFilter}
+            onChange={
+              handleStatusFilterChange
             }
-            placeholder="Tìm theo tên hoặc email"
-          />
+            aria-label="Lọc người dùng"
+          >
+            {STATUS_FILTER_OPTIONS.map(
+              (option) => (
+                <option
+                  key={
+                    option.value
+                  }
+                  value={
+                    option.value
+                  }
+                >
+                  {
+                    option.label
+                  }
+                </option>
+              ),
+            )}
+          </select>
         </div>
 
         <button
@@ -361,9 +776,18 @@ export default function AdminUserManager({
             }
           />
 
-          Làm mới
+          {loading
+            ? "Đang tải..."
+            : "Làm mới"}
         </button>
       </div>
+
+      {hasPendingPagination && (
+        <div className="admin-user-manager__notice">
+          Đã chọn trang {currentPage} với {perPage} dòng.
+          Nhấn <strong>Làm mới</strong> để tải dữ liệu.
+        </div>
+      )}
 
       {error && (
         <div className="admin-user-manager__error">
@@ -392,11 +816,20 @@ export default function AdminUserManager({
                   </div>
                 </td>
               </tr>
-            ) : filteredUsers.length === 0 ? (
+            ) : !hasLoaded ? (
               <tr>
                 <td colSpan={5}>
                   <div className="admin-user-manager__empty">
-                    Không tìm thấy người dùng.
+                    Nhấn “Làm mới” để tải danh sách người dùng.
+                  </div>
+                </td>
+              </tr>
+            ) : filteredUsers.length ===
+              0 ? (
+              <tr>
+                <td colSpan={5}>
+                  <div className="admin-user-manager__empty">
+                    Không tìm thấy người dùng phù hợp.
                   </div>
                 </td>
               </tr>
@@ -406,6 +839,11 @@ export default function AdminUserManager({
                   const isProcessing =
                     actionUserId ===
                     item.id;
+
+                  const isBanned =
+                    isUserCurrentlyBanned(
+                      item,
+                    );
 
                   const selectedDuration =
                     getSelectedLockDuration(
@@ -419,7 +857,9 @@ export default function AdminUserManager({
                           <div className="admin-user-manager__avatar">
                             {item.avatarUrl ? (
                               <img
-                                src={item.avatarUrl}
+                                src={
+                                  item.avatarUrl
+                                }
                                 alt={`Ảnh đại diện của ${
                                   item.displayName ||
                                   item.email
@@ -440,10 +880,18 @@ export default function AdminUserManager({
                           </div>
 
                           <div className="admin-user-manager__user-text">
-                            <strong className="admin-user-manager__name">
-                              {item.displayName ||
-                                "Chưa đặt tên"}
-                            </strong>
+                            <div className="admin-user-manager__name-row">
+                              <strong className="admin-user-manager__name">
+                                {item.displayName ||
+                                  "Chưa đặt tên"}
+                              </strong>
+
+                              {item.isAdmin && (
+                                <span className="admin-user-manager__admin-badge">
+                                  Admin
+                                </span>
+                              )}
+                            </div>
 
                             <span className="admin-user-manager__email">
                               {item.email}
@@ -469,17 +917,17 @@ export default function AdminUserManager({
                         <div className="admin-user-manager__status-wrapper">
                           <span
                             className={
-                              item.isBanned
+                              isBanned
                                 ? "admin-user-status admin-user-status--locked"
                                 : "admin-user-status admin-user-status--active"
                             }
                           >
-                            {item.isBanned
+                            {isBanned
                               ? "Đã khóa"
                               : "Hoạt động"}
                           </span>
 
-                          {item.isBanned &&
+                          {isBanned &&
                             item.bannedUntil && (
                               <small className="admin-user-manager__banned-until">
                                 - Đến:{" "}
@@ -493,7 +941,7 @@ export default function AdminUserManager({
 
                       <td>
                         <div className="admin-user-manager__actions">
-                          {!item.isBanned && (
+                          {!isBanned && (
                             <select
                               className="admin-user-manager__lock-duration"
                               value={
@@ -516,9 +964,7 @@ export default function AdminUserManager({
                               aria-label={`Chọn thời gian khóa cho ${item.email}`}
                             >
                               {LOCK_DURATION_OPTIONS.map(
-                                (
-                                  option,
-                                ) => (
+                                (option) => (
                                   <option
                                     key={
                                       option.value
@@ -539,7 +985,7 @@ export default function AdminUserManager({
                           <button
                             type="button"
                             className={
-                              item.isBanned
+                              isBanned
                                 ? "admin-user-action admin-user-action--unlock"
                                 : "admin-user-action admin-user-action--lock"
                             }
@@ -555,14 +1001,14 @@ export default function AdminUserManager({
                             title={
                               item.isCurrentUser
                                 ? "Không thể tự khóa tài khoản đang đăng nhập"
-                                : item.isBanned
+                                : isBanned
                                   ? "Mở khóa tài khoản"
                                   : `Khóa tài khoản trong ${getLockDurationLabel(
                                       selectedDuration,
                                     )}`
                             }
                           >
-                            {item.isBanned ? (
+                            {isBanned ? (
                               <UnlockKeyhole
                                 size={16}
                               />
@@ -574,7 +1020,7 @@ export default function AdminUserManager({
 
                             {isProcessing
                               ? "Đang xử lý..."
-                              : item.isBanned
+                              : isBanned
                                 ? "Mở khóa"
                                 : "Khóa"}
                           </button>
@@ -587,6 +1033,101 @@ export default function AdminUserManager({
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="admin-user-manager__pagination">
+        <div className="admin-user-manager__pagination-info">
+          {hasLoaded &&
+          totalUsers > 0 ? (
+            <>
+              Hiển thị{" "}
+              <strong>
+                {startItem}
+              </strong>
+              {" - "}
+              <strong>
+                {endItem}
+              </strong>
+              {" trên "}
+              <strong>
+                {totalUsers}
+              </strong>
+              {" người dùng"}
+            </>
+          ) : (
+            "Chưa tải danh sách"
+          )}
+        </div>
+
+        <div className="admin-user-manager__pagination-controls">
+          <label>
+            <span>
+              Số dòng:
+            </span>
+
+            <select
+              value={perPage}
+              onChange={
+                handlePerPageChange
+              }
+              disabled={loading}
+            >
+              <option value={10}>
+                10
+              </option>
+
+              <option value={20}>
+                20
+              </option>
+
+              <option value={50}>
+                50
+              </option>
+
+              <option value={100}>
+                100
+              </option>
+            </select>
+          </label>
+
+          <button
+            type="button"
+            onClick={
+              handlePreviousPage
+            }
+            disabled={
+              loading ||
+              currentPage <= 1
+            }
+          >
+            Trang trước
+          </button>
+
+          <span>
+            Trang{" "}
+            <strong>
+              {currentPage}
+            </strong>
+            {" / "}
+            <strong>
+              {totalPages}
+            </strong>
+          </span>
+
+          <button
+            type="button"
+            onClick={
+              handleNextPage
+            }
+            disabled={
+              loading ||
+              currentPage >=
+                totalPages
+            }
+          >
+            Trang sau
+          </button>
+        </div>
       </div>
     </section>
   );

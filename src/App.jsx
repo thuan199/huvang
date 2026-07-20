@@ -6,6 +6,7 @@ import {
   deleteGoldTransaction,
   updateTransactionSellPriceByGoldType,
 } from './services/goldTransactionService';
+import Toast from "./components/Toast";
 import AdminUserManager from "./components/AdminUserManager";
 import ChangeDisplayNameModal from "./components/ChangeDisplayNameModal";
 import OAuthCallback from "./components/OAuthCallback";
@@ -47,6 +48,56 @@ import useToast from './hooks/useToast';
 import useConfirm from './hooks/useConfirm';
 
 function App() {
+  const [
+    toast,
+    setToast,
+  ] = useState({
+    isOpen: false,
+    message: "",
+    type: "success",
+  });
+
+  function showToast(
+    message,
+    type = "success",
+  ) {
+    setToast({
+      isOpen: true,
+      message,
+      type,
+    });
+  }
+
+  function closeToast() {
+    setToast((current) => ({
+      ...current,
+      isOpen: false,
+    }));
+  }
+
+  useEffect(() => {
+    if (!toast.isOpen) {
+      return undefined;
+    }
+
+    const timeoutId =
+      window.setTimeout(() => {
+        setToast((current) => ({
+          ...current,
+          isOpen: false,
+        }));
+      }, 3000);
+
+    return () => {
+      window.clearTimeout(
+        timeoutId,
+      );
+    };
+  }, [
+    toast.isOpen,
+    toast.message,
+  ]);
+
   const [
     activeAdminPanel,
     setActiveAdminPanel,
@@ -1602,6 +1653,7 @@ function App() {
           activeAdminPanel === "users" && (
             <AdminUserManager
               confirm={confirm}
+              showToast={showToast}
               onClose={() =>
                 setActiveAdminPanel(null)
               }
@@ -1789,6 +1841,12 @@ function App() {
         onRemove={
           removeToast
         }
+      />
+      <Toast
+        isOpen={toast.isOpen}
+        message={toast.message}
+        type={toast.type}
+        onClose={closeToast}
       />
 
       <ConfirmModal
