@@ -103,11 +103,7 @@ export function useMaintenanceMode() {
         return false;
       }
 
-      console.log(
-        "User đang đăng nhập:",
-        user.id,
-        user.email
-      );
+
 
       const {
         data,
@@ -130,12 +126,6 @@ export function useMaintenanceMode() {
 
       const adminResult =
         Boolean(data?.user_id);
-
-      console.log(
-        "Kết quả kiểm tra admin:",
-        adminResult,
-        data
-      );
 
       setIsAdmin(adminResult);
 

@@ -1844,6 +1844,7 @@ function App() {
       />
       <Toast
         isOpen={toast.isOpen}
+        title={toast.title}
         message={toast.message}
         type={toast.type}
         onClose={closeToast}
