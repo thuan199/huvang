@@ -747,18 +747,38 @@ function App() {
       chartRange
     );
 
-  const [savedTheme, setSavedTheme] =
-    useState(() => {
-      return (
-        localStorage.getItem(
-          "app-theme"
-        ) || "light"
-      );
-    });
+  const [
+    savedTheme,
+    setSavedTheme,
+  ] = useState("light");
 
   const displayTheme =
     user ? savedTheme : "light";
 
+  /*
+   * Khi user đăng nhập hoặc chuyển tài khoản,
+   * lấy theme riêng của tài khoản đó.
+   */
+  useEffect(() => {
+    if (!user?.id) {
+      setSavedTheme("light");
+      return;
+    }
+
+    const themeKey =
+      `app-theme-${user.id}`;
+
+    const userTheme =
+      localStorage.getItem(themeKey) ||
+      "light";
+
+    setSavedTheme(userTheme);
+  }, [user?.id]);
+
+  /*
+   * Áp dụng theme lên giao diện.
+   * Khi đăng xuất, displayTheme luôn là light.
+   */
   useEffect(() => {
     document.body.classList.toggle(
       "dark-theme",
@@ -772,6 +792,10 @@ function App() {
   }, [displayTheme]);
 
   function handleToggleTheme() {
+    if (!user?.id) {
+      return;
+    }
+
     setSavedTheme(
       (currentTheme) => {
         const nextTheme =
@@ -779,8 +803,11 @@ function App() {
             ? "light"
             : "dark";
 
+        const themeKey =
+          `app-theme-${user.id}`;
+
         localStorage.setItem(
-          "app-theme",
+          themeKey,
           nextTheme
         );
 
