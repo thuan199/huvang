@@ -255,6 +255,8 @@ input,
 select,
 textarea {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   border: 1px solid #dfd1b7;
   border-radius: 10px;
   background: #fffdf7;
@@ -265,6 +267,16 @@ textarea {
   outline: none;
   transition: border-color 0.18s ease, box-shadow 0.18s ease,
     background-color 0.18s ease;
+}
+
+input[type="date"] {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 input::placeholder,
@@ -5895,4 +5907,388 @@ body.dark-theme .header-admin-menu__item:disabled .header-admin-menu__item-icon,
 .dark-theme .topbar .theme-toggle:hover {
   background: #1e293b;
   border-color: #475569;
+}
+/* =========================================================
+   RESPONSIVE OVERRIDES - HEADER, FORMS, MOBILE & TABLET
+   Keep this block at the END of App.css so it wins the cascade.
+========================================================= */
+
+/* Prevent flex/grid children and native form controls from forcing overflow. */
+.container,
+.topbar,
+.topbar-right,
+.topbar-actions,
+.header-navigation,
+.header-user-info,
+.header-user-text,
+.header-name-row,
+.grid,
+.grid > *,
+.card,
+form,
+form > * {
+  min-width: 0;
+}
+
+input,
+select,
+textarea {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* iOS Safari can give date inputs an intrinsic width wider than the card. */
+input[type="date"] {
+  inline-size: 100%;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  box-sizing: border-box;
+}
+
+/* Tablet: allow the right side to wrap instead of escaping the header. */
+@media (max-width: 1024px) {
+  .topbar {
+    align-items: center;
+    gap: 16px;
+    padding: 16px 18px;
+  }
+
+  .app-title {
+    flex: 1 1 280px;
+    min-width: 0;
+  }
+
+  .topbar-right {
+    flex: 1 1 520px;
+    width: auto;
+    min-width: 0;
+    margin-left: 0;
+    align-items: stretch;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .header-navigation {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .header-nav-button {
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .header-user-info {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .header-display-name {
+    max-width: 110px;
+  }
+
+  .logout-button,
+  .theme-toggle.small {
+    flex: 0 0 auto;
+  }
+}
+
+/* Phones and small tablets. */
+@media (max-width: 768px) {
+  .container {
+    width: 100%;
+    max-width: 100%;
+    padding: 12px 10px 28px;
+    overflow-x: clip;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+
+    width: 100%;
+    max-width: 100%;
+    margin: 0 0 16px;
+    padding: 14px 12px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+
+    border-radius: 18px;
+    overflow: visible;
+  }
+
+  .app-title {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .app-logo {
+    width: 58px;
+    height: 58px;
+    flex: 0 0 58px;
+    border-radius: 14px;
+  }
+
+  .app-logo-button,
+  .app-logo-button img,
+  .app-logo-button .login-logo {
+    width: 100%;
+    height: 100%;
+  }
+
+  .app-title > div:last-child {
+    min-width: 0;
+  }
+
+  .app-title h1 {
+    margin-bottom: 2px;
+    font-size: clamp(22px, 6vw, 27px);
+    line-height: 1.15;
+  }
+
+  .app-title .user-email {
+    margin-bottom: 0;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .topbar-right {
+    width: 100%;
+    min-width: 0;
+    margin-left: 0;
+    align-items: stretch;
+  }
+
+  /* Two stable rows:
+     row 1: Home, Chat, Theme
+     row 2: User area, Logout */
+  .topbar-actions {
+    width: 100%;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "nav theme"
+      "user logout";
+    align-items: center;
+    gap: 9px 8px;
+  }
+
+  .header-navigation {
+    grid-area: nav;
+    width: 100%;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .header-nav-button {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    margin: 0;
+    padding: 8px 10px;
+    gap: 6px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .header-user-info {
+    grid-area: user;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    gap: 7px;
+  }
+
+  .header-avatar-wrapper {
+    flex: 0 0 auto;
+    padding-right: 7px;
+    padding-bottom: 7px;
+  }
+
+  .header-avatar {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+  }
+
+  .header-user-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-right: 30px;
+  }
+
+  .header-welcome {
+    font-size: 11px;
+  }
+
+  .header-display-name {
+    max-width: 100%;
+    font-size: 13px;
+  }
+
+  .logout-button,
+  .topbar-actions .logout-button {
+    grid-area: logout;
+    width: auto;
+    max-width: 100%;
+    min-height: 38px;
+    margin: 0;
+    padding: 7px 11px;
+    justify-self: end;
+    white-space: nowrap;
+    font-size: 12px;
+  }
+
+  .theme-toggle.small {
+    grid-area: theme;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    margin: 0;
+    justify-self: end;
+  }
+
+  .header-admin-menu {
+    right: 0;
+    width: min(320px, calc(100vw - 28px));
+    max-height: min(70vh, 560px);
+  }
+
+  .grid {
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 14px;
+    overflow: hidden;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px; /* prevents automatic zoom on iOS */
+  }
+
+  input[type="date"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .form-actions {
+    width: 100%;
+  }
+
+  .form-actions > button {
+    flex: 1 1 140px;
+    min-width: 0;
+  }
+}
+
+/* Narrow phones: iPhone SE and compact Android devices. */
+@media (max-width: 390px) {
+  .container {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .topbar {
+    padding: 12px 9px;
+    border-radius: 16px;
+  }
+
+  .app-logo {
+    width: 52px;
+    height: 52px;
+    flex-basis: 52px;
+  }
+
+  .app-title {
+    justify-content: flex-start;
+  }
+
+  .app-title h1 {
+    font-size: 22px;
+  }
+
+  .app-title .user-email {
+    font-size: 11px;
+  }
+
+  .header-nav-button {
+    padding-inline: 7px;
+    font-size: 12px;
+  }
+
+  .header-nav-button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .header-avatar {
+    width: 35px;
+    height: 35px;
+    min-width: 35px;
+  }
+
+  .header-welcome {
+    display: none;
+  }
+
+  .header-display-name {
+    font-size: 12px;
+  }
+
+  .logout-button span {
+    font-size: 11px;
+  }
+
+  .card {
+    padding: 12px;
+  }
+
+  .header-admin-menu {
+    position: fixed;
+    top: 132px;
+    right: 8px;
+    left: 8px;
+    width: auto;
+    max-height: calc(100dvh - 150px);
+  }
+}
+
+/* Landscape phones: reduce header height and keep all actions accessible. */
+@media (max-width: 900px) and (orientation: landscape) {
+  .topbar {
+    position: relative;
+  }
+
+  .header-admin-menu {
+    max-height: calc(100dvh - 32px);
+  }
 }
