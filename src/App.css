@@ -6292,3 +6292,34 @@ input[type="date"] {
     max-height: calc(100dvh - 32px);
   }
 }
+
+/* =========================================================
+   HEADER STICKY CHỈ DÀNH CHO DESKTOP
+========================================================= */
+
+@media (min-width: 769px) {
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+}
+
+/* =========================================================
+   MOBILE / TABLET NHỎ: HEADER CUỘN THEO TRANG
+========================================================= */
+
+@media (max-width: 768px) {
+  .topbar {
+    position: relative;
+    top: auto;
+    z-index: 100;
+
+    width: 100%;
+    margin-bottom: 16px;
+  }
+
+  .header-admin-menu {
+    z-index: 2000;
+  }
+}
