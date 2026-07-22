@@ -28,6 +28,7 @@ import WorldGoldMiniWidget from './components/WorldGoldMiniWidget';
 import ToastContainer from './components/ToastContainer';
 import ConfirmModal from './components/ConfirmModal';
 import PublicChat from './components/public-chat/PublicChat';
+import ExchangeRatePage from "./components/ExchangeRatePage";
 
 import { supabase } from './supabaseClient';
 
@@ -1644,7 +1645,6 @@ function App() {
           onChangePage={(page) => {
             setActivePage(page);
 
-            // Đóng các bảng phụ khi chuyển trang
             setActiveAdminPanel(null);
             setIsWorldGoldOpen(false);
           }}
@@ -1671,32 +1671,20 @@ function App() {
           onPasswordChanged={(
             successMessage
           ) => {
-            setMessageType(
-              "success"
-            );
-
-            setMessage(
-              successMessage
-            );
+            setMessageType("success");
+            setMessage(successMessage);
           }}
           onAvatarChanged={(
             updatedUser
           ) => {
-            setUser(
-              updatedUser
-            );
+            setUser(updatedUser);
 
-            setMessageType(
-              "success"
-            );
-
+            setMessageType("success");
             setMessage(
               "Đã cập nhật ảnh đại diện."
             );
           }}
-          onLogout={
-            handleLogout
-          }
+          onLogout={handleLogout}
           onToggleTheme={
             handleToggleTheme
           }
@@ -1705,9 +1693,12 @@ function App() {
         <ChangeDisplayNameModal
           isOpen={isDisplayNameOpen}
           currentName={
-            user?.user_metadata?.display_name ||
-            user?.user_metadata?.full_name ||
-            user?.user_metadata?.name ||
+            user?.user_metadata
+              ?.display_name ||
+            user?.user_metadata
+              ?.full_name ||
+            user?.user_metadata
+              ?.name ||
             user?.email?.split("@")[0] ||
             ""
           }
@@ -1725,30 +1716,40 @@ function App() {
         />
 
         {isAdmin &&
-          activeAdminPanel === "maintenance" && (
+          activeAdminPanel ===
+          "maintenance" && (
             <div className="maintenance-admin-area">
               <MaintenanceControl
-                maintenance={maintenance}
-                reloadMaintenance={reloadMaintenance}
+                maintenance={
+                  maintenance
+                }
+                reloadMaintenance={
+                  reloadMaintenance
+                }
                 onClose={() =>
-                  setActiveAdminPanel(null)
+                  setActiveAdminPanel(
+                    null
+                  )
                 }
               />
             </div>
           )}
 
         {isAdmin &&
-          activeAdminPanel === "users" && (
+          activeAdminPanel ===
+          "users" && (
             <AdminUserManager
               confirm={confirm}
               showToast={showToast}
               onClose={() =>
-                setActiveAdminPanel(null)
+                setActiveAdminPanel(
+                  null
+                )
               }
             />
           )}
 
-        {activePage === 'home' ? (
+        {activePage === "home" ? (
           <>
             <WorldGoldMiniWidget
               isOpen={isWorldGoldOpen}
@@ -1766,9 +1767,7 @@ function App() {
 
             <div className="grid">
               <TransactionForm
-                editingId={
-                  editingId
-                }
+                editingId={editingId}
                 transactionForm={
                   transactionForm
                 }
@@ -1793,9 +1792,7 @@ function App() {
                 setPriceForm={
                   setPriceForm
                 }
-                prices={
-                  prices
-                }
+                prices={prices}
                 pnjCurrentPrice={
                   shopGold
                 }
@@ -1833,15 +1830,11 @@ function App() {
               priceChartData={
                 priceChartData
               }
-              theme={
-                displayTheme
-              }
+              theme={displayTheme}
             />
 
             <WorldGoldComparison
-              worldGold={
-                worldGold
-              }
+              worldGold={worldGold}
               worldGoldLoading={
                 worldGoldLoading
               }
@@ -1851,9 +1844,7 @@ function App() {
               worldGoldMarketMessage={
                 worldGoldMarketMessage
               }
-              shopGold={
-                shopGold
-              }
+              shopGold={shopGold}
               shopSellPriceVndPerLuong={
                 shopSellPriceVndPerLuong
               }
@@ -1866,29 +1857,19 @@ function App() {
             />
 
             <TransactionTable
-              loading={
-                loading
-              }
+              loading={loading}
               transactions={
                 transactions
               }
               calculateTransactionResult={
                 calculateTransactionResult
               }
-              onEdit={
-                editTransaction
-              }
+              onEdit={editTransaction}
               onDelete={
                 deleteTransaction
               }
             />
 
-            {/*
-       * Đây là lịch sử PNJ dùng chung.
-       *
-       * Không truyền onDelete vì người dùng
-       * không được xóa dữ liệu thị trường chung.
-       */}
             <PriceHistoryTable
               priceHistory={
                 priceHistoryWithChanges
@@ -1896,9 +1877,7 @@ function App() {
               paginatedPriceHistory={
                 paginatedPriceHistory
               }
-              historyPage={
-                historyPage
-              }
+              historyPage={historyPage}
               historyTotalPages={
                 historyTotalPages
               }
@@ -1922,27 +1901,26 @@ function App() {
               }
             />
           </>
+        ) : activePage ===
+          "exchange" ? (
+          <ExchangeRatePage />
         ) : (
           <div
             style={{
-              width: '100%',
+              width: "100%",
               minWidth: 0,
             }}
           >
             <PublicChat />
           </div>
         )}
-
       </div>
 
       <ToastContainer
-        toasts={
-          toasts
-        }
-        onRemove={
-          removeToast
-        }
+        toasts={toasts}
+        onRemove={removeToast}
       />
+
       <Toast
         isOpen={toast.isOpen}
         title={toast.title}

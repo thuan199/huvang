@@ -15,6 +15,7 @@ import {
   Sun,
   Users,
   Wrench,
+  BadgeDollarSign,
 } from "lucide-react";
 
 import ChangePassword from "./ChangePassword";
@@ -146,18 +147,18 @@ function AppHeader({
     onOpenUserManager?.();
   }
 
-async function handleLogout() {
-  closeSettingsMenu();
+  async function handleLogout() {
+    closeSettingsMenu();
 
-  try {
-    await onLogout?.();
-  } catch (error) {
-    console.error(
-      "Logout error:",
-      error
-    );
+    try {
+      await onLogout?.();
+    } catch (error) {
+      console.error(
+        "Logout error:",
+        error
+      );
+    }
   }
-}
 
   return (
     <div className="topbar">
@@ -219,6 +220,33 @@ async function handleLogout() {
 
               <span>
                 Trang chủ
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className={
+                activePage === "exchange"
+                  ? "header-nav-button header-nav-button--active"
+                  : "header-nav-button"
+              }
+              onClick={() =>
+                changePage("exchange")
+              }
+              aria-current={
+                activePage === "exchange"
+                  ? "page"
+                  : undefined
+              }
+              title="Tỷ giá ngoại tệ"
+            >
+              <BadgeDollarSign
+                size={17}
+                strokeWidth={2.2}
+              />
+
+              <span>
+                Tỷ giá
               </span>
             </button>
 

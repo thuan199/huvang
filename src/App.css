@@ -6361,3 +6361,625 @@ input[type="date"] {
     min-height: 0;
   }
 }
+
+/* =========================================================
+   EXCHANGE RATE PAGE
+========================================================= */
+
+.exchange-page {
+  width: 100%;
+  min-width: 0;
+}
+
+.exchange-heading {
+  margin-bottom: 22px;
+}
+
+.exchange-heading h2 {
+  margin-bottom: 5px;
+  padding-bottom: 0;
+  color: #a94f08;
+  font-size: 28px;
+}
+
+.exchange-heading h2::after {
+  display: none;
+}
+
+.exchange-heading p {
+  margin: 0;
+  color: #7b8494;
+  font-size: 14px;
+}
+
+.exchange-bank-tabs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  width: 100%;
+  margin-bottom: 20px;
+  padding-bottom: 4px;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.exchange-bank-tab {
+  flex: 0 0 auto;
+
+  min-height: 40px;
+  margin: 0;
+  padding: 9px 17px;
+
+  border: 1px solid #e3e6eb;
+  border-radius: 999px;
+
+  background: #ffffff;
+  color: #536071;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  box-shadow: none;
+  white-space: nowrap;
+}
+
+.exchange-bank-tab:hover {
+  border-color: #d98924;
+  background: #fff8ee;
+  color: #a94f08;
+  transform: none;
+  box-shadow: none;
+}
+
+.exchange-bank-tab--active {
+  border-color: #dc7200;
+  background: #dc7200;
+  color: #ffffff;
+}
+
+.exchange-bank-tab--active:hover {
+  background: #c86400;
+  color: #ffffff;
+}
+
+.exchange-meta-card,
+.exchange-table-card {
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.05);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.92);
+
+  box-shadow:
+    0 10px 28px rgba(15, 23, 42, 0.06);
+}
+
+.exchange-meta-card {
+  margin-bottom: 16px;
+  padding: 16px 18px 0;
+}
+
+.exchange-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+
+  padding-bottom: 14px;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.exchange-updated {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  color: #475569;
+  font-size: 13px;
+}
+
+.exchange-status-dot {
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+  background: #6ee7a5;
+
+  box-shadow:
+    0 0 0 4px rgba(110, 231, 165, 0.14);
+}
+
+.exchange-unit {
+  color: #98a2b3;
+  font-size: 12px;
+}
+
+.exchange-table-header,
+.exchange-row {
+  display: grid;
+  grid-template-columns:
+    minmax(200px, 1.7fr)
+    repeat(3, minmax(130px, 1fr));
+
+  align-items: center;
+  gap: 16px;
+}
+
+.exchange-table-header {
+  padding: 14px 0;
+  color: #7b8494;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.exchange-table-header span:not(:first-child) {
+  text-align: center;
+}
+
+.exchange-table-card {
+  padding: 12px 28px;
+}
+
+.exchange-row {
+  min-height: 76px;
+  padding: 12px 0;
+
+  border-bottom: 1px solid #edf0f4;
+}
+
+.exchange-row:last-child {
+  border-bottom: 0;
+}
+
+.exchange-currency {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.exchange-currency strong {
+  color: #1f2937;
+  font-size: 15px;
+}
+
+.exchange-currency span {
+  color: #98a2b3;
+  font-size: 11px;
+}
+
+.exchange-rate-value {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.exchange-rate-value strong {
+  color: #111827;
+  font-size: 14px;
+  font-variant-numeric:
+    tabular-nums;
+}
+
+.exchange-change {
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.exchange-change--positive {
+  color: #16a34a;
+}
+
+.exchange-change--negative {
+  color: #ef4444;
+}
+
+.exchange-mobile-list {
+  display: none;
+}
+
+/* Dark mode */
+.dark-theme .exchange-heading h2 {
+  color: #f4b35e;
+}
+
+.dark-theme .exchange-heading p {
+  color: #94a3b8;
+}
+
+.dark-theme .exchange-bank-tab {
+  border-color: #334155;
+  background: #111827;
+  color: #cbd5e1;
+}
+
+.dark-theme .exchange-bank-tab--active {
+  border-color: #d97706;
+  background: #d97706;
+  color: #ffffff;
+}
+
+.dark-theme .exchange-meta-card,
+.dark-theme .exchange-table-card {
+  border-color: #334155;
+  background: #111827;
+}
+
+.dark-theme .exchange-meta-row,
+.dark-theme .exchange-row {
+  border-color: #293548;
+}
+
+.dark-theme .exchange-table-header,
+.dark-theme .exchange-unit,
+.dark-theme .exchange-currency span {
+  color: #94a3b8;
+}
+
+.dark-theme .exchange-currency strong,
+.dark-theme .exchange-rate-value strong,
+.dark-theme .exchange-updated strong {
+  color: #f8fafc;
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .exchange-table-header,
+  .exchange-row {
+    grid-template-columns:
+      minmax(150px, 1.4fr)
+      repeat(3, minmax(110px, 1fr));
+  }
+
+  .exchange-table-card {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .exchange-heading h2 {
+    font-size: 22px;
+  }
+
+  .exchange-bank-tabs {
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .exchange-bank-tab {
+    min-height: 36px;
+    padding: 7px 13px;
+    font-size: 12px;
+  }
+
+  .exchange-meta-card {
+    padding: 13px 14px;
+  }
+
+  .exchange-meta-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .exchange-table-header {
+    display: none;
+  }
+
+  .exchange-table-card {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .exchange-desktop-table {
+    display: none;
+  }
+
+  .exchange-mobile-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .exchange-mobile-card {
+    padding: 14px;
+
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+
+    background: #fffdf8;
+
+    box-shadow:
+      0 8px 22px rgba(75, 58, 24, 0.08);
+  }
+
+  .exchange-mobile-card__header {
+    margin-bottom: 12px;
+  }
+
+  .exchange-mobile-card__header > div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .exchange-mobile-card__header strong {
+    color: #111827;
+    font-size: 16px;
+  }
+
+  .exchange-mobile-card__header span {
+    color: #94a3b8;
+    font-size: 11px;
+  }
+
+  .exchange-mobile-card__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .exchange-mobile-card__grid > div {
+    min-width: 0;
+    padding: 10px 6px;
+
+    border: 1px solid #eee4cf;
+    border-radius: 12px;
+
+    background: #fffaf0;
+    text-align: center;
+  }
+
+  .exchange-mobile-card__grid > div > span {
+    display: block;
+    margin-bottom: 6px;
+
+    color: #7b8494;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .exchange-rate-value strong {
+    font-size: 12px;
+  }
+
+  .exchange-change {
+    font-size: 9px;
+  }
+
+  .dark-theme .exchange-mobile-card {
+    border-color: #334155;
+    background: #111827;
+  }
+
+  .dark-theme .exchange-mobile-card__header strong {
+    color: #f8fafc;
+  }
+
+  .dark-theme .exchange-mobile-card__grid > div {
+    border-color: #334155;
+    background: #0f172a;
+  }
+}
+
+/* iPhone SE và Android nhỏ */
+@media (max-width: 390px) {
+  .exchange-mobile-card__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .exchange-rate-value {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-navigation {
+    display: grid;
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+
+    width: 100%;
+    gap: 7px;
+  }
+
+  .header-nav-button {
+    width: 100%;
+    min-width: 0;
+    padding: 7px 8px;
+  }
+
+  .header-nav-button span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 390px) {
+  .header-nav-button {
+    gap: 4px;
+    padding: 7px 5px;
+    font-size: 12px;
+  }
+
+  .header-nav-button svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+.exchange-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 18px 0 12px;
+}
+
+.exchange-bank-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.exchange-bank-title strong {
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+.exchange-bank-title span {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.exchange-search {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(100%, 280px);
+}
+
+.exchange-search span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.exchange-search input {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 13px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  outline: none;
+  background: var(--card-background);
+  color: var(--text-primary);
+}
+
+.exchange-search input:focus {
+  border-color: #d5a318;
+  box-shadow:
+    0 0 0 3px
+    rgba(213, 163, 24, 0.14);
+}
+
+.exchange-refresh-button,
+.exchange-retry-button {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  background: #d5a318;
+  color: #fff;
+}
+
+.exchange-refresh-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.exchange-loading,
+.exchange-empty,
+.exchange-error {
+  padding: 32px 20px;
+  text-align: center;
+}
+
+.exchange-error {
+  color: #b42318;
+}
+
+.exchange-error p {
+  margin: 8px 0 16px;
+}
+
+.exchange-status-dot--error {
+  background: #ef4444;
+}
+
+.exchange-source {
+  padding: 14px 18px;
+  border-top: 1px solid
+    var(--border-color);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.exchange-source a {
+  color: inherit;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .exchange-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .exchange-search {
+    width: 100%;
+  }
+
+  .exchange-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .exchange-refresh-button {
+    width: 100%;
+  }
+}
+
+.exchange-currency {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.exchange-currency strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 64px;
+  padding: 6px 14px;
+
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 1px;
+
+  color: #0d6efd;
+  background: rgba(13, 110, 253, 0.1);
+
+  border: 1px solid rgba(13, 110, 253, 0.2);
+  border-radius: 8px;
+}
+
+.exchange-currency span {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+
+  color: #7f8798;
+  text-transform: uppercase;
+}
