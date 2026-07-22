@@ -534,9 +534,26 @@ function App() {
     setIsWorldGoldOpen(false);
     setActivePage('home');
 
-    await supabase.auth.signOut();
+    try {
+      const { error } =
+        await supabase.auth.signOut();
 
-    setUser(null);
+      if (error) {
+        throw error;
+      }
+
+      // Không thay đổi savedTheme.
+      // Không xóa app-theme.
+      // Khi user trở thành null,
+      // displayTheme tự chuyển sang light.
+
+      setUser(null);
+    } catch (error) {
+      console.error(
+        "Logout error:",
+        error
+      );
+    }
   }
 
   /*
@@ -730,15 +747,48 @@ function App() {
       chartRange
     );
 
-  const [theme, setTheme] =
-    useState('light');
+  const [savedTheme, setSavedTheme] =
+    useState(() => {
+      return (
+        localStorage.getItem(
+          "app-theme"
+        ) || "light"
+      );
+    });
+
+  const displayTheme =
+    user ? savedTheme : "light";
 
   useEffect(() => {
-    document.body.className =
-      theme === 'dark'
-        ? 'dark-theme'
-        : '';
-  }, [theme]);
+    document.body.classList.toggle(
+      "dark-theme",
+      displayTheme === "dark"
+    );
+
+    document.body.classList.toggle(
+      "light-theme",
+      displayTheme === "light"
+    );
+  }, [displayTheme]);
+
+  function handleToggleTheme() {
+    setSavedTheme(
+      (currentTheme) => {
+        const nextTheme =
+          currentTheme === "dark"
+            ? "light"
+            : "dark";
+
+        localStorage.setItem(
+          "app-theme",
+          nextTheme
+        );
+
+        return nextTheme;
+      }
+    );
+  }
+
 
   const {
     worldGold,
@@ -1561,7 +1611,7 @@ function App() {
       <div className="container">
         <AppHeader
           user={user}
-          theme={theme}
+          theme={displayTheme}
           isAdmin={isAdmin}
           activePage={activePage}
           onChangePage={(page) => {
@@ -1620,14 +1670,8 @@ function App() {
           onLogout={
             handleLogout
           }
-          onToggleTheme={() =>
-            setTheme(
-              (currentTheme) =>
-                currentTheme ===
-                  "light"
-                  ? "dark"
-                  : "light"
-            )
+          onToggleTheme={
+            handleToggleTheme
           }
         />
 
@@ -1763,7 +1807,7 @@ function App() {
                 priceChartData
               }
               theme={
-                theme
+                displayTheme
               }
             />
 

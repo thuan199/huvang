@@ -146,10 +146,18 @@ function AppHeader({
     onOpenUserManager?.();
   }
 
-  function handleLogout() {
-    closeSettingsMenu();
-    onLogout?.();
+async function handleLogout() {
+  closeSettingsMenu();
+
+  try {
+    await onLogout?.();
+  } catch (error) {
+    console.error(
+      "Logout error:",
+      error
+    );
   }
+}
 
   return (
     <div className="topbar">
