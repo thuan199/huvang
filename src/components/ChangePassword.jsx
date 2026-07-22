@@ -198,7 +198,7 @@ export default function ChangePassword({
 
       setError(
         err?.message ||
-          "Không thể đổi mật khẩu."
+        "Không thể đổi mật khẩu."
       );
     } finally {
       setSaving(false);
@@ -217,7 +217,12 @@ export default function ChangePassword({
         title="Đổi mật khẩu"
       >
         {buttonIcon}
-        Đổi mật khẩu
+
+        <span className="header-admin-menu__item-content">
+          <span className="header-admin-menu__item-title">
+            Đổi mật khẩu
+          </span>
+        </span>
       </button>
 
       {isOpen && (

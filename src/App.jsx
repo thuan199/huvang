@@ -27,6 +27,7 @@ import AppHeader from './components/AppHeader';
 import WorldGoldMiniWidget from './components/WorldGoldMiniWidget';
 import ToastContainer from './components/ToastContainer';
 import ConfirmModal from './components/ConfirmModal';
+import PublicChat from './components/public-chat/PublicChat';
 
 import { supabase } from './supabaseClient';
 
@@ -156,6 +157,16 @@ function App() {
     activeGoldTab,
     setActiveGoldTab,
   ] = useState('local');
+
+  /*
+   * Điều hướng nội bộ:
+   * - home: giao diện Hũ vàng hiện tại.
+   * - chat: khung trò chuyện cộng đồng.
+   */
+  const [
+    activePage,
+    setActivePage,
+  ] = useState('home');
 
   /*
    * useGoldData trả về hai nhóm dữ liệu:
@@ -290,6 +301,7 @@ function App() {
           setActiveAdminPanel(null);
           setIsDisplayNameOpen(false);
           setIsWorldGoldOpen(false);
+          setActivePage('home');
           setUser(null);
         }
 
@@ -520,6 +532,7 @@ function App() {
     setActiveAdminPanel(null);
     setIsDisplayNameOpen(false);
     setIsWorldGoldOpen(false);
+    setActivePage('home');
 
     await supabase.auth.signOut();
 
@@ -1550,6 +1563,14 @@ function App() {
           user={user}
           theme={theme}
           isAdmin={isAdmin}
+          activePage={activePage}
+          onChangePage={(page) => {
+            setActivePage(page);
+
+            // Đóng các bảng phụ khi chuyển trang
+            setActiveAdminPanel(null);
+            setIsWorldGoldOpen(false);
+          }}
           onOpenMaintenance={() =>
             setActiveAdminPanel(
               (current) =>
@@ -1566,10 +1587,6 @@ function App() {
                   : "users"
             )
           }
-          onChangeDisplayName={() => {
-            setDisplayNameError("");
-            setIsDisplayNameOpen(true);
-          }}
           onChangeDisplayName={() => {
             setDisplayNameError("");
             setIsDisplayNameOpen(true);
@@ -1660,177 +1677,190 @@ function App() {
             />
           )}
 
-        <WorldGoldMiniWidget
-          isOpen={isWorldGoldOpen}
-          onOpen={() =>
-            setIsWorldGoldOpen(true)
-          }
-          onClose={() =>
-            setIsWorldGoldOpen(false)
-          }
-        />
+        {activePage === 'home' ? (
+          <>
+            <WorldGoldMiniWidget
+              isOpen={isWorldGoldOpen}
+              onOpen={() =>
+                setIsWorldGoldOpen(true)
+              }
+              onClose={() =>
+                setIsWorldGoldOpen(false)
+              }
+            />
 
-        <SummaryCards
-          summary={summary}
-        />
+            <SummaryCards
+              summary={summary}
+            />
 
-        <div className="grid">
-          <TransactionForm
-            editingId={
-              editingId
-            }
-            transactionForm={
-              transactionForm
-            }
-            setTransactionForm={
-              setTransactionForm
-            }
-            onSubmit={
-              saveTransaction
-            }
-            onCancel={
-              cancelEdit
-            }
-          />
+            <div className="grid">
+              <TransactionForm
+                editingId={
+                  editingId
+                }
+                transactionForm={
+                  transactionForm
+                }
+                setTransactionForm={
+                  setTransactionForm
+                }
+                onSubmit={
+                  saveTransaction
+                }
+                onCancel={
+                  cancelEdit
+                }
+              />
 
-          <CurrentPriceForm
-            editingPriceId={
-              editingPriceId
-            }
-            priceForm={
-              priceForm
-            }
-            setPriceForm={
-              setPriceForm
-            }
-            prices={
-              prices
-            }
-            pnjCurrentPrice={
-              shopGold
-            }
-            onSubmit={
-              saveCurrentPrice
-            }
-            onCancel={
-              cancelPriceEdit
-            }
-            onEdit={
-              editCurrentPrice
-            }
-            onDelete={
-              deleteCurrentPrice
-            }
-            onPriceUpdated={
-              reloadGoldData
-            }
-          />
-        </div>
+              <CurrentPriceForm
+                editingPriceId={
+                  editingPriceId
+                }
+                priceForm={
+                  priceForm
+                }
+                setPriceForm={
+                  setPriceForm
+                }
+                prices={
+                  prices
+                }
+                pnjCurrentPrice={
+                  shopGold
+                }
+                onSubmit={
+                  saveCurrentPrice
+                }
+                onCancel={
+                  cancelPriceEdit
+                }
+                onEdit={
+                  editCurrentPrice
+                }
+                onDelete={
+                  deleteCurrentPrice
+                }
+                onPriceUpdated={
+                  reloadGoldData
+                }
+              />
+            </div>
 
-        <LocalGoldChart
-          activeGoldTab={
-            activeGoldTab
-          }
-          setActiveGoldTab={
-            setActiveGoldTab
-          }
-          chartRange={
-            chartRange
-          }
-          setChartRange={
-            setChartRange
-          }
-          priceChartData={
-            priceChartData
-          }
-          theme={
-            theme
-          }
-        />
+            <LocalGoldChart
+              activeGoldTab={
+                activeGoldTab
+              }
+              setActiveGoldTab={
+                setActiveGoldTab
+              }
+              chartRange={
+                chartRange
+              }
+              setChartRange={
+                setChartRange
+              }
+              priceChartData={
+                priceChartData
+              }
+              theme={
+                theme
+              }
+            />
 
-        <WorldGoldComparison
-          worldGold={
-            worldGold
-          }
-          worldGoldLoading={
-            worldGoldLoading
-          }
-          worldGoldError={
-            worldGoldError
-          }
-          worldGoldMarketMessage={
-            worldGoldMarketMessage
-          }
-          shopGold={
-            shopGold
-          }
-          shopSellPriceVndPerLuong={
-            shopSellPriceVndPerLuong
-          }
-          goldDifference={
-            goldDifference
-          }
-          goldDifferencePercent={
-            goldDifferencePercent
-          }
-        />
+            <WorldGoldComparison
+              worldGold={
+                worldGold
+              }
+              worldGoldLoading={
+                worldGoldLoading
+              }
+              worldGoldError={
+                worldGoldError
+              }
+              worldGoldMarketMessage={
+                worldGoldMarketMessage
+              }
+              shopGold={
+                shopGold
+              }
+              shopSellPriceVndPerLuong={
+                shopSellPriceVndPerLuong
+              }
+              goldDifference={
+                goldDifference
+              }
+              goldDifferencePercent={
+                goldDifferencePercent
+              }
+            />
 
-        <TransactionTable
-          loading={
-            loading
-          }
-          transactions={
-            transactions
-          }
-          calculateTransactionResult={
-            calculateTransactionResult
-          }
-          onEdit={
-            editTransaction
-          }
-          onDelete={
-            deleteTransaction
-          }
-        />
+            <TransactionTable
+              loading={
+                loading
+              }
+              transactions={
+                transactions
+              }
+              calculateTransactionResult={
+                calculateTransactionResult
+              }
+              onEdit={
+                editTransaction
+              }
+              onDelete={
+                deleteTransaction
+              }
+            />
 
-        {/*
+            {/*
        * Đây là lịch sử PNJ dùng chung.
        *
        * Không truyền onDelete vì người dùng
        * không được xóa dữ liệu thị trường chung.
        */}
-        <PriceHistoryTable
-          priceHistory={
-            priceHistoryWithChanges
-          }
-          paginatedPriceHistory={
-            paginatedPriceHistory
-          }
-          historyPage={
-            historyPage
-          }
-          historyTotalPages={
-            historyTotalPages
-          }
-          onPreviousPage={() =>
-            setHistoryPage(
-              (page) =>
-                Math.max(
-                  1,
-                  page - 1
+            <PriceHistoryTable
+              priceHistory={
+                priceHistoryWithChanges
+              }
+              paginatedPriceHistory={
+                paginatedPriceHistory
+              }
+              historyPage={
+                historyPage
+              }
+              historyTotalPages={
+                historyTotalPages
+              }
+              onPreviousPage={() =>
+                setHistoryPage(
+                  (page) =>
+                    Math.max(
+                      1,
+                      page - 1
+                    )
                 )
-            )
-          }
-          onNextPage={() =>
-            setHistoryPage(
-              (page) =>
-                Math.min(
-                  historyTotalPages,
-                  page + 1
+              }
+              onNextPage={() =>
+                setHistoryPage(
+                  (page) =>
+                    Math.min(
+                      historyTotalPages,
+                      page + 1
+                    )
                 )
-            )
-          }
-        />
+              }
+            />
+          </>
+        ) : (
+          <div
+            style={{
+              width: '100%',
+              minWidth: 0,
+            }}
+          >
+            <PublicChat />
+          </div>
+        )}
 
       </div>
 

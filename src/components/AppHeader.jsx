@@ -5,22 +5,27 @@ import {
 } from "react";
 
 import {
+  Home,
   KeyRound,
   LogOut,
+  MessageCircle,
   Moon,
   Pencil,
-  Sun,
   Settings2,
+  Sun,
   Users,
   Wrench,
 } from "lucide-react";
 
 import ChangePassword from "./ChangePassword";
 import ChangeAvatar from "./ChangeAvatar";
+
 function AppHeader({
   user,
   theme,
   isAdmin,
+  activePage,
+  onChangePage,
   onOpenMaintenance,
   onOpenUserManager,
   onChangeDisplayName,
@@ -35,19 +40,16 @@ function AppHeader({
   ] = useState(false);
 
   const [
-    isAdminMenuOpen,
-    setIsAdminMenuOpen,
+    isSettingsMenuOpen,
+    setIsSettingsMenuOpen,
   ] = useState(false);
 
-  const adminMenuRef = useRef(null);
+  const settingsMenuRef =
+    useRef(null);
 
   const metadata =
     user?.user_metadata ?? {};
 
-  /*
-   * Ưu tiên tên do người dùng tự đặt trong Hũ vàng.
-   * Nếu chưa có thì lấy tên Google, cuối cùng là email.
-   */
   const displayName =
     metadata.display_name ||
     metadata.full_name ||
@@ -55,9 +57,6 @@ function AppHeader({
     user?.email?.split("@")[0] ||
     "Người dùng";
 
-  /*
-   * Google thường trả ảnh tại avatar_url hoặc picture.
-   */
   const avatarUrl =
     metadata.custom_avatar_url ||
     metadata.avatar_url ||
@@ -70,28 +69,43 @@ function AppHeader({
       .charAt(0)
       .toUpperCase() || "U";
 
-  useEffect(() => {
-    setAvatarError(false);
-  }, [avatarUrl]);
-
   const showAvatarImage =
     Boolean(avatarUrl) &&
     !avatarError;
 
   useEffect(() => {
+    setAvatarError(false);
+  }, [avatarUrl]);
+
+  useEffect(() => {
     function handleClickOutside(event) {
       if (
-        adminMenuRef.current &&
-        !adminMenuRef.current.contains(event.target)
+        settingsMenuRef.current &&
+        !settingsMenuRef.current.contains(
+          event.target
+        )
       ) {
-        setIsAdminMenuOpen(false);
+        setIsSettingsMenuOpen(false);
       }
     }
 
-    if (isAdminMenuOpen) {
+    function handleKeyDown(event) {
+      if (
+        event.key === "Escape"
+      ) {
+        setIsSettingsMenuOpen(false);
+      }
+    }
+
+    if (isSettingsMenuOpen) {
       document.addEventListener(
         "mousedown",
         handleClickOutside
+      );
+
+      document.addEventListener(
+        "keydown",
+        handleKeyDown
       );
     }
 
@@ -100,20 +114,62 @@ function AppHeader({
         "mousedown",
         handleClickOutside
       );
+
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
     };
-  }, [isAdminMenuOpen]);
+  }, [isSettingsMenuOpen]);
+
+  function closeSettingsMenu() {
+    setIsSettingsMenuOpen(false);
+  }
+
+  function changePage(page) {
+    closeSettingsMenu();
+    onChangePage?.(page);
+  }
+
+  function handleChangeDisplayName() {
+    closeSettingsMenu();
+    onChangeDisplayName?.();
+  }
+
+  function handleOpenMaintenance() {
+    closeSettingsMenu();
+    onOpenMaintenance?.();
+  }
+
+  function handleOpenUserManager() {
+    closeSettingsMenu();
+    onOpenUserManager?.();
+  }
+
+  function handleLogout() {
+    closeSettingsMenu();
+    onLogout?.();
+  }
 
   return (
     <div className="topbar">
       <div className="app-title">
         <div className="app-logo">
-          <a href="https://huvang.vercel.app/">
+          <button
+            type="button"
+            className="app-logo-button"
+            onClick={() =>
+              changePage("home")
+            }
+            title="Về Trang chủ"
+            aria-label="Về Trang chủ"
+          >
             <img
               src="/logo.png"
               className="login-logo"
               alt="Hũ vàng"
             />
-          </a>
+          </button>
         </div>
 
         <div>
@@ -127,6 +183,65 @@ function AppHeader({
 
       <div className="topbar-right">
         <div className="topbar-actions">
+          <nav
+            className="header-navigation"
+            aria-label="Điều hướng chính"
+          >
+            <button
+              type="button"
+              className={
+                activePage === "home"
+                  ? "header-nav-button header-nav-button--active"
+                  : "header-nav-button"
+              }
+              onClick={() =>
+                changePage("home")
+              }
+              aria-current={
+                activePage === "home"
+                  ? "page"
+                  : undefined
+              }
+              title="Trang chủ"
+            >
+              <Home
+                size={17}
+                strokeWidth={2.2}
+              />
+
+              <span>
+                Trang chủ
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className={
+                activePage === "chat"
+                  ? "header-nav-button header-nav-button--active"
+                  : "header-nav-button"
+              }
+              onClick={() =>
+                changePage("chat")
+              }
+              aria-current={
+                activePage === "chat"
+                  ? "page"
+                  : undefined
+              }
+              title="Chat cộng đồng"
+            >
+              <MessageCircle
+                size={17}
+                strokeWidth={2.2}
+              />
+
+              <span>
+                Chat
+              </span>
+            </button>
+          </nav>
+
           <div className="header-user-info">
             <div className="header-avatar-wrapper">
               <div className="header-avatar">
@@ -167,61 +282,202 @@ function AppHeader({
                   {displayName}
                 </strong>
 
-                {isAdmin && (
-                  <div className="header-admin-tools" ref={adminMenuRef}>
-                    <button
-                      type="button"
-                      className="header-maintenance-button"
-                      onClick={() =>
-                        setIsAdminMenuOpen(
-                          (current) => !current
-                        )
-                      }
-                      title="Bảng điều khiển quản trị"
-                      aria-label="Bảng điều khiển quản trị"
-                      aria-expanded={isAdminMenuOpen}
+                <div
+                  className="header-admin-tools"
+                  ref={settingsMenuRef}
+                >
+                  <button
+                    type="button"
+                    className="header-maintenance-button"
+                    onClick={() =>
+                      setIsSettingsMenuOpen(
+                        (current) =>
+                          !current
+                      )
+                    }
+                    title={
+                      isAdmin
+                        ? "Bảng điều khiển quản trị"
+                        : "Cài đặt tài khoản"
+                    }
+                    aria-label={
+                      isAdmin
+                        ? "Bảng điều khiển quản trị"
+                        : "Cài đặt tài khoản"
+                    }
+                    aria-haspopup="menu"
+                    aria-expanded={
+                      isSettingsMenuOpen
+                    }
+                  >
+                    <Settings2
+                      size={17}
+                      strokeWidth={2.2}
+                    />
+                  </button>
+
+                  {isSettingsMenuOpen && (
+                    <div
+                      className="header-admin-menu"
+                      role="menu"
                     >
-                      <Settings2
-                        size={17}
-                        strokeWidth={2.2}
-                      />
-                    </button>
+                      <div className="header-admin-menu__header">
+                        <Settings2
+                          size={18}
+                          strokeWidth={2}
+                        />
 
-                    {isAdminMenuOpen && (
-                      <div className="header-admin-menu">
-                        <button
-                          type="button"
-                          className="header-admin-menu__item"
-                          onClick={() => {
-                            onOpenMaintenance();
-                            setIsAdminMenuOpen(false);
-                          }}
-                        >
-                          <Wrench size={17} />
-
-                          <span>
-                            Bảo trì hệ thống
+                        <div className="header-admin-menu__header-content">
+                          <span className="header-admin-menu__header-title">
+                            {isAdmin
+                              ? "Bảng điều khiển quản trị"
+                              : "Cài đặt tài khoản"}
                           </span>
-                        </button>
 
-                        <button
-                          type="button"
-                          className="header-admin-menu__item"
-                          onClick={() => {
-                            onOpenUserManager();
-                            setIsAdminMenuOpen(false);
-                          }}
-                        >
-                          <Users size={17} />
-
-                          <span>
-                            Quản lý người dùng
+                          <span className="header-admin-menu__header-description">
+                            {isAdmin
+                              ? "Quản lý tài khoản và hệ thống"
+                              : "Quản lý thông tin cá nhân"}
                           </span>
-                        </button>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                )}
+
+                      <div className="header-admin-menu__group">
+                        <div className="header-admin-menu__group-title">
+                          <span className="header-admin-menu__group-icon">
+                            <Pencil
+                              size={14}
+                              strokeWidth={2}
+                            />
+                          </span>
+
+                          <span className="header-admin-menu__group-title-text">
+                            Tài khoản cá nhân
+                          </span>
+                        </div>
+
+                        <div className="header-admin-menu__group-content">
+                          <button
+                            type="button"
+                            className="header-admin-menu__item"
+                            onClick={
+                              handleChangeDisplayName
+                            }
+                            role="menuitem"
+                          >
+                            <span className="header-admin-menu__item-icon">
+                              <Pencil
+                                size={17}
+                                strokeWidth={2}
+                              />
+                            </span>
+
+                            <span className="header-admin-menu__item-content">
+                              <span className="header-admin-menu__item-title">
+                                Đổi tên hiển thị
+                              </span>
+
+                              <span className="header-admin-menu__item-description">
+                                Thay đổi tên hiển thị trong hệ thống
+                              </span>
+                            </span>
+                          </button>
+
+                          <ChangePassword
+                            onSuccess={() => {
+                              closeSettingsMenu();
+                              onPasswordChanged?.();
+                            }}
+                            buttonClassName="header-admin-menu__item"
+                            buttonIcon={
+                              <span className="header-admin-menu__item-icon">
+                                <KeyRound
+                                  size={17}
+                                  strokeWidth={2}
+                                />
+                              </span>
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      {isAdmin && (
+                        <div className="header-admin-menu__group">
+                          <div className="header-admin-menu__section-header">
+                            <Settings2
+                              size={17}
+                              strokeWidth={2}
+                            />
+
+                            <div className="header-admin-menu__section-content">
+                              <span className="header-admin-menu__section-title">
+                                Quản trị hệ thống
+                              </span>
+
+                              <span className="header-admin-menu__section-description">
+                                Công cụ dành cho quản trị viên
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="header-admin-menu__group-content">
+                            <button
+                              type="button"
+                              className="header-admin-menu__item"
+                              onClick={
+                                handleOpenMaintenance
+                              }
+                              role="menuitem"
+                            >
+                              <span className="header-admin-menu__item-icon">
+                                <Wrench
+                                  size={17}
+                                  strokeWidth={2}
+                                />
+                              </span>
+
+                              <span className="header-admin-menu__item-content">
+                                <span className="header-admin-menu__item-title">
+                                  Bảo trì hệ thống
+                                </span>
+
+                                <span className="header-admin-menu__item-description">
+                                  Quản lý trạng thái và bảo trì ứng dụng
+                                </span>
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              className="header-admin-menu__item"
+                              onClick={
+                                handleOpenUserManager
+                              }
+                              role="menuitem"
+                            >
+                              <span className="header-admin-menu__item-icon">
+                                <Users
+                                  size={17}
+                                  strokeWidth={2}
+                                />
+                              </span>
+
+                              <span className="header-admin-menu__item-content">
+                                <span className="header-admin-menu__item-title">
+                                  Quản lý người dùng
+                                </span>
+
+                                <span className="header-admin-menu__item-description">
+                                  Xem và quản lý tài khoản thành viên
+                                </span>
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -229,29 +485,14 @@ function AppHeader({
           <button
             type="button"
             className="logout-button"
-            onClick={onChangeDisplayName}
-            title="Đổi tên hiển thị"
-          >
-            <Pencil size={16} />
-            Đổi tên
-          </button>
-
-          <ChangePassword
-            onSuccess={onPasswordChanged}
-            buttonClassName="logout-button"
-            buttonIcon={
-              <KeyRound size={16} />
-            }
-          />
-
-          <button
-            type="button"
-            className="logout-button"
-            onClick={onLogout}
+            onClick={handleLogout}
             title="Đăng xuất"
           >
             <LogOut size={16} />
-            Đăng xuất
+
+            <span>
+              Đăng xuất
+            </span>
           </button>
 
           <button
@@ -260,8 +501,13 @@ function AppHeader({
             onClick={onToggleTheme}
             title={
               theme === "light"
-                ? "Chuyển sang theme tối"
-                : "Chuyển sang theme sáng"
+                ? "Chuyển sang giao diện tối"
+                : "Chuyển sang giao diện sáng"
+            }
+            aria-label={
+              theme === "light"
+                ? "Chuyển sang giao diện tối"
+                : "Chuyển sang giao diện sáng"
             }
           >
             {theme === "light" ? (
