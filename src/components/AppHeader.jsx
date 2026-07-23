@@ -226,33 +226,6 @@ function AppHeader({
             <button
               type="button"
               className={
-                activePage === "exchange"
-                  ? "header-nav-button header-nav-button--active"
-                  : "header-nav-button"
-              }
-              onClick={() =>
-                changePage("exchange")
-              }
-              aria-current={
-                activePage === "exchange"
-                  ? "page"
-                  : undefined
-              }
-              title="Tỷ giá ngoại tệ"
-            >
-              <BadgeDollarSign
-                size={17}
-                strokeWidth={2.2}
-              />
-
-              <span>
-                Tỷ giá
-              </span>
-            </button>
-
-            <button
-              type="button"
-              className={
                 activePage === "chat"
                   ? "header-nav-button header-nav-button--active"
                   : "header-nav-button"

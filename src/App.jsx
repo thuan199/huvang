@@ -28,7 +28,6 @@ import WorldGoldMiniWidget from './components/WorldGoldMiniWidget';
 import ToastContainer from './components/ToastContainer';
 import ConfirmModal from './components/ConfirmModal';
 import PublicChat from './components/public-chat/PublicChat';
-import ExchangeRatePage from "./components/ExchangeRatePage";
 
 import { supabase } from './supabaseClient';
 
@@ -1901,9 +1900,6 @@ function App() {
               }
             />
           </>
-        ) : activePage ===
-          "exchange" ? (
-          <ExchangeRatePage />
         ) : (
           <div
             style={{
