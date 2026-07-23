@@ -46,7 +46,7 @@ function WorldGoldComparison({
           </div>
 
           <div>
-            <span>Tỷ giá USD/VND</span>
+            <span>Tỷ giá USD/VND (Nguồn: <a href='https://vietcombank.com.vn/vi-VN/KHCN/Cong-cu-Tien-ich/Ty-gia' target='_blank' rel="noopener noreferrer">Vietcombank</a>)</span>
 
             <strong>
               {formatMoney(worldGold.usdVnd)} VND
@@ -70,8 +70,8 @@ function WorldGoldComparison({
             <strong>
               {shopGold?.sell_price_per_chi
                 ? `${shopGold.gold_type}: ${formatMoney(
-                    shopSellPriceVndPerLuong
-                  )} VND/lượng`
+                  shopSellPriceVndPerLuong
+                )} VND/lượng`
                 : 'Chưa có giá bán ra'}
             </strong>
           </div>
@@ -88,10 +88,10 @@ function WorldGoldComparison({
             >
               {shopGold?.sell_price_per_chi
                 ? `${formatMoney(
-                    Math.round(goldDifference)
-                  )} VND (${Number(
-                    goldDifferencePercent || 0
-                  ).toFixed(2)}%)`
+                  Math.round(goldDifference)
+                )} VND (${Number(
+                  goldDifferencePercent || 0
+                ).toFixed(2)}%)`
                 : '-'}
             </strong>
           </div>
