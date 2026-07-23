@@ -5,6 +5,7 @@ import {
 } from "react";
 
 import {
+  Bot,
   Home,
   KeyRound,
   LogOut,
@@ -15,7 +16,6 @@ import {
   Sun,
   Users,
   Wrench,
-  BadgeDollarSign,
 } from "lucide-react";
 
 import ChangePassword from "./ChangePassword";
@@ -23,9 +23,9 @@ import ChangeAvatar from "./ChangeAvatar";
 
 function AppHeader({
   user,
-  theme,
-  isAdmin,
-  activePage,
+  theme = "light",
+  isAdmin = false,
+  activePage = "home",
   onChangePage,
   onOpenMaintenance,
   onOpenUserManager,
@@ -74,10 +74,19 @@ function AppHeader({
     Boolean(avatarUrl) &&
     !avatarError;
 
+  /*
+   * Khi đường dẫn avatar thay đổi,
+   * cho phép trình duyệt thử tải lại ảnh.
+   */
   useEffect(() => {
     setAvatarError(false);
   }, [avatarUrl]);
 
+  /*
+   * Đóng menu cài đặt khi:
+   * - Nhấn ra ngoài menu.
+   * - Nhấn phím Escape.
+   */
   useEffect(() => {
     function handleClickOutside(event) {
       if (
@@ -91,9 +100,7 @@ function AppHeader({
     }
 
     function handleKeyDown(event) {
-      if (
-        event.key === "Escape"
-      ) {
+      if (event.key === "Escape") {
         setIsSettingsMenuOpen(false);
       }
     }
@@ -127,6 +134,12 @@ function AppHeader({
     setIsSettingsMenuOpen(false);
   }
 
+  /*
+   * Điều hướng trang thông qua App.jsx.
+   *
+   * AppHeader không tự quản lý activePage,
+   * vì state này nằm trong App.jsx.
+   */
   function changePage(page) {
     closeSettingsMenu();
     onChangePage?.(page);
@@ -160,8 +173,12 @@ function AppHeader({
     }
   }
 
+  function handleToggleTheme() {
+    onToggleTheme?.();
+  }
+
   return (
-    <div className="topbar">
+    <header className="topbar">
       <div className="app-title">
         <div className="app-logo">
           <button
@@ -196,6 +213,7 @@ function AppHeader({
             className="header-navigation"
             aria-label="Điều hướng chính"
           >
+            {/* Trang chủ */}
             <button
               type="button"
               className={
@@ -223,6 +241,7 @@ function AppHeader({
               </span>
             </button>
 
+            {/* Chat cộng đồng */}
             <button
               type="button"
               className={
@@ -247,6 +266,34 @@ function AppHeader({
 
               <span>
                 Chat
+              </span>
+            </button>
+
+            {/* Trợ lý AI */}
+            <button
+              type="button"
+              className={
+                activePage === "ai-chat"
+                  ? "header-nav-button header-nav-button--active"
+                  : "header-nav-button"
+              }
+              onClick={() =>
+                changePage("ai-chat")
+              }
+              aria-current={
+                activePage === "ai-chat"
+                  ? "page"
+                  : undefined
+              }
+              title="Trợ lý AI"
+            >
+              <Bot
+                size={17}
+                strokeWidth={2.2}
+              />
+
+              <span>
+                Trợ lý AI
               </span>
             </button>
           </nav>
@@ -351,6 +398,7 @@ function AppHeader({
                         </div>
                       </div>
 
+                      {/* Cài đặt tài khoản */}
                       <div className="header-admin-menu__group">
                         <div className="header-admin-menu__group-title">
                           <span className="header-admin-menu__group-icon">
@@ -393,9 +441,15 @@ function AppHeader({
                           </button>
 
                           <ChangePassword
-                            onSuccess={() => {
+                            onSuccess={(
+                              successMessage
+                            ) => {
                               closeSettingsMenu();
-                              onPasswordChanged?.();
+
+                              onPasswordChanged?.(
+                                successMessage ||
+                                "Đã đổi mật khẩu thành công."
+                              );
                             }}
                             buttonClassName="header-admin-menu__item"
                             buttonIcon={
@@ -410,6 +464,7 @@ function AppHeader({
                         </div>
                       </div>
 
+                      {/* Công cụ quản trị */}
                       {isAdmin && (
                         <div className="header-admin-menu__group">
                           <div className="header-admin-menu__section-header">
@@ -496,6 +551,7 @@ function AppHeader({
             className="logout-button"
             onClick={handleLogout}
             title="Đăng xuất"
+            aria-label="Đăng xuất"
           >
             <LogOut size={16} />
 
@@ -507,7 +563,7 @@ function AppHeader({
           <button
             type="button"
             className="theme-toggle small"
-            onClick={onToggleTheme}
+            onClick={handleToggleTheme}
             title={
               theme === "light"
                 ? "Chuyển sang giao diện tối"
@@ -527,7 +583,7 @@ function AppHeader({
           </button>
         </div>
       </div>
-    </div>
+    </header>
   );
 }
 

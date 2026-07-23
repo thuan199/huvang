@@ -28,6 +28,7 @@ import WorldGoldMiniWidget from './components/WorldGoldMiniWidget';
 import ToastContainer from './components/ToastContainer';
 import ConfirmModal from './components/ConfirmModal';
 import PublicChat from './components/public-chat/PublicChat';
+import AIChatPage from "./components/ai-chat/AIChatPage";
 
 import { supabase } from './supabaseClient';
 
@@ -1900,7 +1901,12 @@ function App() {
               }
             />
           </>
-        ) : (
+        ) : activePage ===
+          "ai-chat" ? (
+          <AIChatPage
+            theme={displayTheme}
+          />
+        ) : activePage === "chat" ? (
           <div
             style={{
               width: "100%",
@@ -1909,7 +1915,7 @@ function App() {
           >
             <PublicChat />
           </div>
-        )}
+        ) : null}
       </div>
 
       <ToastContainer
