@@ -120,49 +120,88 @@ async function loadProfiles(userIds) {
 async function loadReactions(
   messageIds
 ) {
-  if (messageIds.length === 0) {
-    return {};
+  const uniqueMessageIds = [
+    ...new Set(
+      messageIds.filter(Boolean)
+    ),
+  ];
+
+  if (
+    uniqueMessageIds.length === 0
+  ) {
+    return {
+      reactionsByMessageId: {},
+      reactionUserIds: [],
+    };
   }
 
   const { data, error } =
     await supabase
-      .from("chat_reactions")
+      .from(
+        "chat_message_reactions"
+      )
       .select(`
         id,
         message_id,
         user_id,
-        reaction_type,
+        reaction,
         created_at
       `)
       .in(
         "message_id",
-        messageIds
-      );
+        uniqueMessageIds
+      )
+      .order("created_at", {
+        ascending: true,
+      });
 
   if (error) {
+    console.error(
+      "loadReactions:",
+      error
+    );
+
     throw error;
   }
 
-  return (data ?? []).reduce(
-    (result, reaction) => {
-      if (
-        !result[
-        reaction.message_id
-        ]
-      ) {
-        result[
-          reaction.message_id
-        ] = [];
-      }
+  const reactionsByMessageId =
+    {};
 
-      result[
-        reaction.message_id
-      ].push(reaction);
+  const reactionUserIds =
+    new Set();
 
-      return result;
-    },
-    {}
-  );
+  for (
+    const reactionRow of
+    data ?? []
+  ) {
+    if (
+      !reactionsByMessageId[
+      reactionRow.message_id
+      ]
+    ) {
+      reactionsByMessageId[
+        reactionRow.message_id
+      ] = [];
+    }
+
+    reactionsByMessageId[
+      reactionRow.message_id
+    ].push(reactionRow);
+
+    if (reactionRow.user_id) {
+      reactionUserIds.add(
+        reactionRow.user_id
+      );
+    }
+  }
+
+  return {
+    reactionsByMessageId,
+
+    reactionUserIds: [
+      ...reactionUserIds,
+    ],
+  };
 }
 
 export async function adminRemoveMessage({
@@ -318,19 +357,19 @@ export async function loadChatMessages() {
     await supabase
       .from("chat_messages")
       .select(`
-         id,
-          user_id,
-          content,
-          reply_to_id,
-          created_at,
-          updated_at,
-          is_deleted,
-          is_recalled,
-          recalled_at,
-          is_hidden,
-          moderation_message,
-          moderated_by,
-          moderated_at
+        id,
+        user_id,
+        content,
+        reply_to_id,
+        created_at,
+        updated_at,
+        is_deleted,
+        is_recalled,
+        recalled_at,
+        is_hidden,
+        moderation_message,
+        moderated_by,
+        moderated_at
       `)
       .order("created_at", {
         ascending: false,
@@ -340,6 +379,11 @@ export async function loadChatMessages() {
       );
 
   if (error) {
+    console.error(
+      "loadChatMessages:",
+      error
+    );
+
     throw error;
   }
 
@@ -347,27 +391,109 @@ export async function loadChatMessages() {
     data ?? []
   ).reverse();
 
-  const messageIds =
-    rawMessages.map(
-      (message) =>
-        message.id
-    );
+  if (
+    rawMessages.length === 0
+  ) {
+    return [];
+  }
 
-  const userIds =
-    rawMessages.map(
-      (message) =>
-        message.user_id
-    );
+  const messageIds =
+    rawMessages
+      .map(
+        (message) =>
+          message.id
+      )
+      .filter(Boolean);
+
+  const messageAuthorIds =
+    rawMessages
+      .map(
+        (message) =>
+          message.user_id
+      )
+      .filter(Boolean);
+
+  /*
+   * Phải tải reaction trước để lấy
+   * danh sách user đã thả cảm xúc.
+   */
+  const {
+    reactionsByMessageId,
+    reactionUserIds,
+  } = await loadReactions(
+    messageIds
+  );
+
+  /*
+   * Tải profile của:
+   * - người gửi tin nhắn;
+   * - người thả cảm xúc.
+   */
+  const allProfileUserIds = [
+    ...new Set([
+      ...messageAuthorIds,
+      ...reactionUserIds,
+    ]),
+  ];
 
   const [
     profilesByUserId,
-    reactionsByMessageId,
     bansByUserId,
   ] = await Promise.all([
-    loadProfiles(userIds),
-    loadReactions(messageIds),
-    loadActiveBans(userIds),
+    loadProfiles(
+      allProfileUserIds
+    ),
+
+    /*
+     * Trạng thái cấm chỉ cần tải
+     * cho người gửi tin nhắn.
+     */
+    loadActiveBans(
+      messageAuthorIds
+    ),
   ]);
+
+  /*
+   * Gắn profile vào từng reaction.
+   */
+  const reactionsWithProfiles =
+    Object.fromEntries(
+      Object.entries(
+        reactionsByMessageId
+      ).map(
+        ([
+          messageId,
+          reactions,
+        ]) => [
+          messageId,
+
+          reactions.map(
+            (reaction) => ({
+              ...reaction,
+
+              /*
+               * Giữ thêm reaction_type
+               * để tương thích tạm thời
+               * với code cũ.
+               */
+              reaction_type:
+                reaction.reaction,
+
+              profile:
+                profilesByUserId[
+                  reaction.user_id
+                ] ?? {
+                  display_name:
+                    "Thành viên",
+
+                  avatar_url:
+                    null,
+                },
+            })
+          ),
+        ]
+      )
+    );
 
   const messageMap =
     Object.fromEntries(
@@ -384,8 +510,8 @@ export async function loadChatMessages() {
       const repliedRawMessage =
         message.reply_to_id
           ? messageMap[
-          message.reply_to_id
-          ]
+              message.reply_to_id
+            ]
           : null;
 
       return {
@@ -393,45 +519,48 @@ export async function loadChatMessages() {
 
         profile:
           profilesByUserId[
-          message.user_id
+            message.user_id
           ] ?? {
             display_name:
               "Thành viên",
-            avatar_url: null,
+
+            avatar_url:
+              null,
           },
 
         active_ban:
           bansByUserId[
-          message.user_id
+            message.user_id
           ] ?? null,
 
         reactions:
-          reactionsByMessageId[
-          message.id
+          reactionsWithProfiles[
+            message.id
           ] ?? [],
 
         replied_message:
           repliedRawMessage
             ? {
-              ...repliedRawMessage,
+                ...repliedRawMessage,
 
-              profile:
-                profilesByUserId[
-                repliedRawMessage
-                  .user_id
-                ] ?? {
-                  display_name:
-                    "Thành viên",
-                  avatar_url:
-                    null,
-                },
+                profile:
+                  profilesByUserId[
+                    repliedRawMessage
+                      .user_id
+                  ] ?? {
+                    display_name:
+                      "Thành viên",
 
-              active_ban:
-                bansByUserId[
-                repliedRawMessage
-                  .user_id
-                ] ?? null,
-            }
+                    avatar_url:
+                      null,
+                  },
+
+                active_ban:
+                  bansByUserId[
+                    repliedRawMessage
+                      .user_id
+                  ] ?? null,
+              }
             : null,
       };
     }
@@ -514,9 +643,21 @@ export async function addReaction({
   userId,
   reactionType,
 }) {
-  const { error } =
+  if (
+    !messageId ||
+    !userId ||
+    !reactionType
+  ) {
+    throw new Error(
+      "Dữ liệu cảm xúc không hợp lệ."
+    );
+  }
+
+  const { data, error } =
     await supabase
-      .from("chat_reactions")
+      .from(
+        "chat_message_reactions"
+      )
       .insert({
         message_id:
           messageId,
@@ -524,13 +665,28 @@ export async function addReaction({
         user_id:
           userId,
 
-        reaction_type:
+        reaction:
           reactionType,
-      });
+      })
+      .select(`
+        id,
+        message_id,
+        user_id,
+        reaction,
+        created_at
+      `)
+      .single();
 
   if (error) {
+    console.error(
+      "addReaction:",
+      error
+    );
+
     throw error;
   }
+
+  return data;
 }
 
 export async function removeReaction({
@@ -538,9 +694,21 @@ export async function removeReaction({
   userId,
   reactionType,
 }) {
+  if (
+    !messageId ||
+    !userId ||
+    !reactionType
+  ) {
+    throw new Error(
+      "Dữ liệu cảm xúc không hợp lệ."
+    );
+  }
+
   const { error } =
     await supabase
-      .from("chat_reactions")
+      .from(
+        "chat_message_reactions"
+      )
       .delete()
       .eq(
         "message_id",
@@ -551,11 +719,16 @@ export async function removeReaction({
         userId
       )
       .eq(
-        "reaction_type",
+        "reaction",
         reactionType
       );
 
   if (error) {
+    console.error(
+      "removeReaction:",
+      error
+    );
+
     throw error;
   }
 }

@@ -13,6 +13,10 @@ export default function ChatMessageItem({
   message,
   currentUserId,
   isAdmin,
+
+  reactionGroups = {},
+  onShowReactionUsers,
+
   onReply,
   onDelete,
   onReport,
@@ -22,9 +26,10 @@ export default function ChatMessageItem({
 }) {
   const [, forceTimeUpdate] =
     useState(0);
-  
 
-  const formatRecallTime = (recalledAt) => {
+  function formatRecallTime(
+    recalledAt
+  ) {
     if (!recalledAt) {
       return "";
     }
@@ -39,7 +44,7 @@ export default function ChatMessageItem({
         hour12: false,
       }
     );
-  };
+  }
 
   useEffect(() => {
     const timer =
@@ -50,7 +55,9 @@ export default function ChatMessageItem({
       }, 60_000);
 
     return () => {
-      window.clearInterval(timer);
+      window.clearInterval(
+        timer
+      );
     };
   }, []);
 
@@ -67,8 +74,8 @@ export default function ChatMessageItem({
     isOwnMessage
       ? "Bạn"
       : message.profile
-        ?.display_name ||
-      "Thành viên";
+          ?.display_name ||
+        "Thành viên";
 
   const avatarText =
     message.profile
@@ -77,34 +84,37 @@ export default function ChatMessageItem({
       ?.toUpperCase() ||
     "T";
 
-  const recalledMessageText =
-    message.is_deleted
-      ? (
-        message.moderation_message ||
-        "Tin nhắn đã bị xóa vì vi phạm quy định"
-      )
-      : message.is_recalled
-        ? `↺ Đã thu hồi tin nhắn${message.recalled_at
-          ? ` • ${formatRecallTime(
-            message.recalled_at
-          )}`
-          : ""
-        }`
-        : "";
-
   const isRecalled =
-    Boolean(message.is_recalled);
+    Boolean(
+      message.is_recalled
+    );
 
   const isDeleted =
-    Boolean(message.is_deleted);
+    Boolean(
+      message.is_deleted
+    );
 
   const isUnavailable =
     isDeleted || isRecalled;
 
+  const recalledMessageText =
+    isDeleted
+      ? (
+        message.moderation_message ||
+        "Tin nhắn đã bị xóa vì vi phạm quy định"
+      )
+      : isRecalled
+        ? `↺ Đã thu hồi tin nhắn${
+            message.recalled_at
+              ? ` • ${formatRecallTime(
+                  message.recalled_at
+                )}`
+              : ""
+          }`
+        : "";
+
   function jumpToOriginalMessage() {
-    if (
-      !message.reply_to_id
-    ) {
+    if (!message.reply_to_id) {
       return;
     }
 
@@ -150,7 +160,9 @@ export default function ChatMessageItem({
       return;
     }
 
-    await onDelete(message.id);
+    await onDelete(
+      message.id
+    );
   }
 
   function handleReply() {
@@ -187,6 +199,35 @@ export default function ChatMessageItem({
     ) {
       onRemove(message);
     }
+  }
+
+  function handleShowReactionUsers(
+    reactionType
+  ) {
+    const reactionInfo =
+      reactionGroups[
+        reactionType
+      ];
+
+    if (
+      !reactionInfo ||
+      reactionInfo.count <= 0 ||
+      typeof onShowReactionUsers !==
+        "function"
+    ) {
+      return;
+    }
+
+    onShowReactionUsers({
+      messageId:
+        message.id,
+
+      reactionType,
+
+      users:
+        reactionInfo.users ||
+        [],
+    });
   }
 
   function renderAvatar() {
@@ -293,30 +334,45 @@ export default function ChatMessageItem({
                   </strong>
 
                   <span>
-                    {message.replied_message.is_deleted ? (
-                      message.replied_message.moderation_message ||
+                    {message
+                      .replied_message
+                      .is_deleted ? (
+                      message
+                        .replied_message
+                        .moderation_message ||
                       "Tin nhắn đã bị xóa vì vi phạm quy định"
-                    ) : message.replied_message.is_recalled ? (
+                    ) : message
+                        .replied_message
+                        .is_recalled ? (
                       <>
-                        ↺ Đã thu hồi tin nhắn
-                        {message.replied_message.recalled_at && (
+                        ↺ Đã thu hồi
+                        tin nhắn
+
+                        {message
+                          .replied_message
+                          .recalled_at && (
                           <>
                             {" • "}
+
                             {formatRecallTime(
-                              message.replied_message.recalled_at
+                              message
+                                .replied_message
+                                .recalled_at
                             )}
                           </>
                         )}
                       </>
                     ) : (
-                      message.replied_message.content
+                      message
+                        .replied_message
+                        .content
                     )}
                   </span>
                 </>
               ) : (
                 <span>
-                  Tin nhắn gốc không còn
-                  trong danh sách
+                  Tin nhắn gốc không
+                  còn trong danh sách
                 </span>
               )}
             </button>
@@ -333,74 +389,87 @@ export default function ChatMessageItem({
           )}
         </div>
 
-        {!(message.is_deleted || message.is_recalled) && (
-          <>
-            {/* Chỉ cho thả cảm xúc khi tin nhắn còn bình thường */}
-            {!isUnavailable && (
-              <ChatReactionPicker
-                message={message}
-                currentUserId={currentUserId}
-                onToggleReaction={onToggleReaction}
-              />
+        {!isUnavailable && (
+          <ChatReactionPicker
+            message={message}
+            currentUserId={
+              currentUserId
+            }
+            reactionGroups={
+              reactionGroups
+            }
+            onToggleReaction={
+              onToggleReaction
+            }
+            onShowReactionUsers={
+              handleShowReactionUsers
+            }
+          />
+        )}
+
+        <div className="chat-message__actions">
+          {!isDeleted && (
+            <button
+              type="button"
+              onClick={
+                handleReply
+              }
+            >
+              Trả lời
+            </button>
+          )}
+
+          {!isOwnMessage &&
+            !isUnavailable && (
+              <button
+                type="button"
+                onClick={
+                  handleReport
+                }
+              >
+                Báo cáo
+              </button>
             )}
 
-            <div className="chat-message__actions">
-              {/* Có thể trả lời cả tin đã thu hồi */}
-              {!isDeleted && (
-                <button
-                  type="button"
-                  onClick={handleReply}
-                >
-                  Trả lời
-                </button>
-              )}
+          {isOwnMessage &&
+            !isUnavailable && (
+              <button
+                type="button"
+                onClick={
+                  handleDelete
+                }
+              >
+                Xóa
+              </button>
+            )}
 
-              {/* Chỉ báo cáo tin nhắn còn nội dung */}
-              {!isOwnMessage && !isUnavailable && (
-                <button
-                  type="button"
-                  onClick={handleReport}
-                >
-                  Báo cáo
-                </button>
-              )}
+          {isAdmin &&
+            !isOwnMessage && (
+              <button
+                type="button"
+                className="chat-action-admin"
+                onClick={
+                  handleAdmin
+                }
+              >
+                Quản lý
+              </button>
+            )}
 
-              {/* Chỉ người gửi được thu hồi tin chưa thu hồi */}
-              {isOwnMessage && !isUnavailable && (
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                >
-                  Xóa
-                </button>
-              )}
-
-              {/* Quản trị viên vẫn thấy nút quản lý */}
-              {isAdmin && !isOwnMessage && (
-                <button
-                  type="button"
-                  className="chat-action-admin"
-                  onClick={handleAdmin}
-                >
-                  Quản lý
-                </button>
-              )}
-
-              {/* Admin chỉ xóa tin nhắn chưa bị xóa */}
-              {isAdmin &&
-                !isOwnMessage &&
-                !isDeleted && (
-                  <button
-                    type="button"
-                    className="chat-action-delete"
-                    onClick={handleRemove}
-                  >
-                    Xóa
-                  </button>
-                )}
-            </div>
-          </>
-        )}
+          {isAdmin &&
+            !isOwnMessage &&
+            !isDeleted && (
+              <button
+                type="button"
+                className="chat-action-delete"
+                onClick={
+                  handleRemove
+                }
+              >
+                Xóa
+              </button>
+            )}
+        </div>
       </div>
 
       {isOwnMessage &&

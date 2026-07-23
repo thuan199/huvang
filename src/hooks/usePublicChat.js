@@ -296,7 +296,7 @@ export function usePublicChat() {
           reloadMessages(),
         ]);
       } catch (
-        initializeError
+      initializeError
       ) {
         if (
           mountedRef.current
@@ -336,7 +336,7 @@ export function usePublicChat() {
                 );
               }
             } catch (
-              authError
+            authError
             ) {
               if (
                 mountedRef.current
@@ -374,7 +374,7 @@ export function usePublicChat() {
             event: "*",
             schema: "public",
             table:
-              "chat_reactions",
+              "chat_message_reactions",
           },
           () => {
             reloadMessages();
@@ -546,7 +546,7 @@ export function usePublicChat() {
           Math.max(
             0,
             CHAT_SEND_COOLDOWN -
-              elapsed
+            elapsed
           );
 
         setCooldownRemaining(
@@ -641,7 +641,7 @@ export function usePublicChat() {
           setCooldownRemaining(
             Math.ceil(
               CHAT_SEND_COOLDOWN /
-                1000
+              1000
             )
           );
 
@@ -672,39 +672,39 @@ export function usePublicChat() {
     );
 
   const deleteMessage =
-  useCallback(
-    async (messageId) => {
-      try {
-        setError("");
-        setSuccess("");
+    useCallback(
+      async (messageId) => {
+        try {
+          setError("");
+          setSuccess("");
 
-        await deleteOwnMessage(
-          messageId
-        );
+          await deleteOwnMessage(
+            messageId
+          );
 
-        setSuccess(
-          "Đã thu hồi tin nhắn."
-        );
+          setSuccess(
+            "Đã thu hồi tin nhắn."
+          );
 
-        await reloadMessages();
+          await reloadMessages();
 
-        return true;
-      } catch (
+          return true;
+        } catch (
         deleteError
-      ) {
-        setError(
-          getFriendlyError(
-            deleteError
-          )
-        );
+        ) {
+          setError(
+            getFriendlyError(
+              deleteError
+            )
+          );
 
-        return false;
-      }
-    },
-    [
-      reloadMessages,
-    ]
-  );  
+          return false;
+        }
+      },
+      [
+        reloadMessages,
+      ]
+    );
 
   const removeMessageByAdmin =
     useCallback(
@@ -729,7 +729,7 @@ export function usePublicChat() {
 
           return true;
         } catch (
-          removeError
+        removeError
         ) {
           setError(
             getFriendlyError(
@@ -759,6 +759,17 @@ export function usePublicChat() {
           return false;
         }
 
+        if (
+          !messageId ||
+          !reactionType
+        ) {
+          setError(
+            "Dữ liệu cảm xúc không hợp lệ."
+          );
+
+          return false;
+        }
+
         const message =
           messages.find(
             (item) =>
@@ -766,16 +777,25 @@ export function usePublicChat() {
               messageId
           );
 
+        const reactions =
+          Array.isArray(
+            message?.reactions
+          )
+            ? message.reactions
+            : [];
+
         const alreadyReacted =
-          message
-            ?.reactions
-            ?.some(
-              (reaction) =>
-                reaction.user_id ===
-                  currentUser.id &&
+          reactions.some(
+            (reaction) =>
+              reaction.user_id ===
+              currentUser.id &&
+              (
+                reaction.reaction ===
+                reactionType ||
                 reaction.reaction_type ===
-                  reactionType
-            );
+                reactionType
+              )
+          );
 
         try {
           setError("");
@@ -805,7 +825,7 @@ export function usePublicChat() {
 
           return true;
         } catch (
-          reactionError
+        reactionError
         ) {
           setError(
             getFriendlyError(
@@ -858,7 +878,7 @@ export function usePublicChat() {
 
           return true;
         } catch (
-          reportError
+        reportError
         ) {
           setError(
             getFriendlyError(
@@ -899,7 +919,7 @@ export function usePublicChat() {
 
           return true;
         } catch (
-          hideError
+        hideError
         ) {
           setError(
             getFriendlyError(
@@ -987,7 +1007,7 @@ export function usePublicChat() {
 
                   active_ban:
                     message.user_id ===
-                    userId
+                      userId
                       ? null
                       : message.active_ban,
 
@@ -995,19 +1015,19 @@ export function usePublicChat() {
                     message
                       .replied_message
                       ? {
-                          ...message
-                            .replied_message,
+                        ...message
+                          .replied_message,
 
-                          active_ban:
-                            message
-                              .replied_message
-                              .user_id ===
+                        active_ban:
+                          message
+                            .replied_message
+                            .user_id ===
                             userId
-                              ? null
-                              : message
-                                  .replied_message
-                                  .active_ban,
-                        }
+                            ? null
+                            : message
+                              .replied_message
+                              .active_ban,
+                      }
                       : null,
                 })
               )
@@ -1039,7 +1059,7 @@ export function usePublicChat() {
 
           return true;
         } catch (
-          unbanError
+        unbanError
         ) {
           setError(
             getFriendlyError(

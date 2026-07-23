@@ -6,8 +6,120 @@ import {
 
 import ChatMessageItem from "./ChatMessageItem";
 
+/**
+ * Chuẩn hóa dữ liệu reaction của một tin nhắn.
+ *
+ * Hỗ trợ dữ liệu dạng:
+ *
+ * message.reactions = [
+ *   {
+ *     id,
+ *     user_id,
+ *     reaction,
+ *     profile: {
+ *       display_name,
+ *       avatar_url
+ *     }
+ *   }
+ * ]
+ *
+ * Hoặc:
+ *
+ * message.reactions = [
+ *   {
+ *     id,
+ *     user_id,
+ *     reaction_type,
+ *     profiles: {
+ *       display_name,
+ *       avatar_url
+ *     }
+ *   }
+ * ]
+ */
+function groupMessageReactions(message) {
+  const reactionRows =
+    Array.isArray(message?.reactions)
+      ? message.reactions
+      : Array.isArray(
+        message?.chat_message_reactions
+      )
+        ? message.chat_message_reactions
+        : Array.isArray(
+          message?.chat_reactions
+        )
+          ? message.chat_reactions
+          : [];
+
+  return reactionRows.reduce(
+    (result, row) => {
+      const reactionType =
+        row?.reaction ||
+        row?.reaction_type ||
+        row?.emoji;
+
+      if (!reactionType) {
+        return result;
+      }
+
+      if (!result[reactionType]) {
+        result[reactionType] = {
+          reactionType,
+          count: 0,
+          users: [],
+          currentUserReacted: false,
+        };
+      }
+
+      const profile =
+        row?.profile ||
+        row?.profiles ||
+        row?.user_profile ||
+        row?.user ||
+        null;
+
+      const userId =
+        row?.user_id ||
+        profile?.id ||
+        null;
+
+      const displayName =
+        profile?.display_name ||
+        profile?.full_name ||
+        profile?.username ||
+        row?.display_name ||
+        "Thành viên";
+
+      const avatarUrl =
+        profile?.avatar_url ||
+        row?.avatar_url ||
+        null;
+
+      result[reactionType].count += 1;
+
+      result[reactionType].users.push({
+        reactionId:
+          row?.id ?? null,
+
+        userId,
+
+        displayName,
+
+        avatarUrl,
+
+        createdAt:
+          row?.created_at ??
+          null,
+      });
+
+      return result;
+    },
+    {}
+  );
+}
+
 export default function ChatMessageList({
-  messages,
+  messages = [],
   currentUserId,
   onlineUserIds,
   isAdmin,
@@ -18,8 +130,11 @@ export default function ChatMessageList({
   onRemove,
   onToggleReaction,
 }) {
-  const containerRef = useRef(null);
-  const bottomRef = useRef(null);
+  const containerRef =
+    useRef(null);
+
+  const bottomRef =
+    useRef(null);
 
   const previousMessageCountRef =
     useRef(0);
@@ -37,8 +152,13 @@ export default function ChatMessageList({
     setIsLatestVisibleOnPage,
   ] = useState(true);
 
+  const [
+    selectedReaction,
+    setSelectedReaction,
+  ] = useState(null);
+
   /*
-   * Hiện nút khi:
+   * Hiện nút cuộn xuống cuối khi:
    * 1. Danh sách chat không ở cuối.
    * 2. Tin nhắn cuối không nằm trong
    *    vùng nhìn thấy của trình duyệt.
@@ -82,21 +202,17 @@ export default function ChatMessageList({
       return;
     }
 
-    /*
-     * Cuộn danh sách chat xuống cuối.
-     */
     container.scrollTo({
-      top: container.scrollHeight,
+      top:
+        container.scrollHeight,
       behavior: "smooth",
     });
 
-    isAtBottomRef.current = true;
+    isAtBottomRef.current =
+      true;
+
     setIsChatAtBottom(true);
 
-    /*
-     * Sau đó cuộn trang trình duyệt
-     * để vị trí cuối chat xuất hiện.
-     */
     window.setTimeout(() => {
       bottomElement?.scrollIntoView({
         behavior: "smooth",
@@ -106,9 +222,59 @@ export default function ChatMessageList({
     }, 150);
   }
 
+  function handleShowReactionUsers({
+    messageId,
+    reactionType,
+    users = [],
+  }) {
+    if (
+      !reactionType ||
+      users.length === 0
+    ) {
+      return;
+    }
+
+    setSelectedReaction({
+      messageId,
+      reactionType,
+      users,
+    });
+  }
+
+  function handleCloseReactionUsers() {
+    setSelectedReaction(null);
+  }
+
   /*
-   * Theo dõi xem tin nhắn cuối có đang
-   * nằm trong màn hình trình duyệt không.
+   * Đóng popup khi nhấn Escape.
+   */
+  useEffect(() => {
+    if (!selectedReaction) {
+      return undefined;
+    }
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        handleCloseReactionUsers();
+      }
+    }
+
+    window.addEventListener(
+      "keydown",
+      handleKeyDown
+    );
+
+    return () => {
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
+    };
+  }, [selectedReaction]);
+
+  /*
+   * Theo dõi xem tin nhắn cuối có nằm
+   * trong viewport trình duyệt hay không.
    */
   useEffect(() => {
     const bottomElement =
@@ -126,10 +292,6 @@ export default function ChatMessageList({
           );
         },
         {
-          /*
-           * root null:
-           * theo dõi viewport trình duyệt.
-           */
           root: null,
           threshold: 0.1,
         }
@@ -145,11 +307,8 @@ export default function ChatMessageList({
   }, [messages.length]);
 
   /*
-   * Xử lý khi có tin nhắn mới.
-   *
-   * Chỉ tự động cuộn xuống khi:
-   * - Lần tải đầu tiên.
-   * - Người dùng đang ở cuối chat.
+   * Tự cuộn xuống khi có tin nhắn mới,
+   * nhưng chỉ khi user đang ở cuối chat.
    */
   useEffect(() => {
     const container =
@@ -170,7 +329,8 @@ export default function ChatMessageList({
       previousMessageCount;
 
     const isFirstLoad =
-      previousMessageCount === 0;
+      previousMessageCount ===
+      0;
 
     if (
       hasNewMessage &&
@@ -181,13 +341,18 @@ export default function ChatMessageList({
     ) {
       requestAnimationFrame(() => {
         container.scrollTo({
-          top: container.scrollHeight,
-          behavior: isFirstLoad
-            ? "auto"
-            : "smooth",
+          top:
+            container.scrollHeight,
+
+          behavior:
+            isFirstLoad
+              ? "auto"
+              : "smooth",
         });
 
-        isAtBottomRef.current = true;
+        isAtBottomRef.current =
+          true;
+
         setIsChatAtBottom(true);
       });
     } else {
@@ -218,26 +383,70 @@ export default function ChatMessageList({
           checkScrollPosition
         }
       >
-        {messages.map((message) => (
-          <ChatMessageItem
-            key={message.id}
-            message={message}
-            currentUserId={currentUserId}
-            onlineUserIds={onlineUserIds}
-            isAdmin={isAdmin}
+        {messages.map(
+          (message) => {
+            const reactionGroups =
+              groupMessageReactions(
+                message
+              );
 
-            onReply={onReply}
-            onDelete={onDelete}
+            Object.values(
+              reactionGroups
+            ).forEach(
+              (reactionGroup) => {
+                reactionGroup.currentUserReacted =
+                  reactionGroup.users
+                    .some(
+                      (user) =>
+                        user.userId ===
+                        currentUserId
+                    );
+              }
+            );
 
-            onReport={onReport}
-            onAdmin={onAdmin}
-            onRemove={onRemove}
+            return (
+              <ChatMessageItem
+                key={message.id}
+                message={message}
+                currentUserId={
+                  currentUserId
+                }
+                onlineUserIds={
+                  onlineUserIds
+                }
+                isAdmin={isAdmin}
 
-            onToggleReaction={
-              onToggleReaction
-            }
-          />
-        ))}
+                reactionGroups={
+                  reactionGroups
+                }
+
+                onReply={
+                  onReply
+                }
+                onDelete={
+                  onDelete
+                }
+                onReport={
+                  onReport
+                }
+                onAdmin={
+                  onAdmin
+                }
+                onRemove={
+                  onRemove
+                }
+
+                onToggleReaction={
+                  onToggleReaction
+                }
+
+                onShowReactionUsers={
+                  handleShowReactionUsers
+                }
+              />
+            );
+          }
+        )}
 
         <div
           ref={bottomRef}
@@ -272,6 +481,97 @@ export default function ChatMessageList({
             />
           </svg>
         </button>
+      )}
+
+      {selectedReaction && (
+        <div
+          className="chat-reaction-users-overlay"
+          role="presentation"
+          onMouseDown={
+            handleCloseReactionUsers
+          }
+        >
+          <div
+            className="chat-reaction-users-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="chat-reaction-users-title"
+            onMouseDown={(event) =>
+              event.stopPropagation()
+            }
+          >
+            <header className="chat-reaction-users-modal__header">
+              <h3 id="chat-reaction-users-title">
+                {
+                  selectedReaction
+                    .users.length
+                }{" "}
+
+                người đã bày tỏ cảm xúc
+              </h3>
+
+              <button
+                type="button"
+                className="chat-reaction-users-modal__close"
+                onClick={
+                  handleCloseReactionUsers
+                }
+                aria-label="Đóng danh sách cảm xúc"
+              >
+                ×
+              </button>
+            </header>
+
+            <div className="chat-reaction-users-list">
+              {selectedReaction.users.map(
+                (user, index) => (
+                  <div
+                    key={
+                      user.reactionId ||
+                      user.userId ||
+                      `${user.displayName}-${index}`
+                    }
+                    className="chat-reaction-user"
+                  >
+                    {user.avatarUrl ? (
+                      <img
+                        src={
+                          user.avatarUrl
+                        }
+                        alt=""
+                        className="chat-reaction-user__avatar"
+                      />
+                    ) : (
+                      <div
+                        className="chat-reaction-user__avatar chat-reaction-user__avatar--fallback"
+                        aria-hidden="true"
+                      >
+                        {user.displayName
+                          .trim()
+                          .charAt(0)
+                          .toUpperCase()}
+                      </div>
+                    )}
+
+                    <span className="chat-reaction-user__name">
+                      {
+                        user.displayName
+                      }
+
+                      {user.userId ===
+                        currentUserId && (
+                          <small>
+                            {" "}
+                            (Bạn)
+                          </small>
+                        )}
+                    </span>
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -205,7 +205,7 @@
 }
 
 .chat-reaction-button--selected {
-  border-color: #d3aa32;
+  border-color: #fae8b4;
   background: #fff3c4;
 }
 
@@ -685,7 +685,7 @@
 }
 
 .chat-reaction-button--selected {
-  border-color: #d3aa32;
+  border-color: #eedda9;
   background: #fff3c4;
   box-shadow: none;
 }
@@ -711,6 +711,7 @@
 
 /* Giữ chữ gọn, không có nền */
 .chat-message__actions button {
+  margin-top: 3px;
   padding: 0;
   border: 0;
   background: transparent !important;
@@ -1931,4 +1932,427 @@
   .chat-confirm-toast__actions button {
     width: 100%;
   }
+}
+
+.chat-reaction-users-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.chat-reaction-users-modal {
+  width: min(420px, 100%);
+  max-height: min(520px, 80vh);
+  overflow: hidden;
+
+  border-radius: 16px;
+  background: #fff;
+  box-shadow:
+    0 18px 60px
+    rgba(0, 0, 0, 0.2);
+}
+
+.chat-reaction-users-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding: 16px 18px;
+  border-bottom: 1px solid #eee;
+}
+
+.chat-reaction-users-modal__header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.chat-reaction-users-modal__close {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+
+  padding: 4px 8px;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.chat-reaction-users-list {
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.chat-reaction-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 9px 10px;
+  border-radius: 10px;
+}
+
+.chat-reaction-user:hover {
+  background: #f7f7f7;
+}
+
+.chat-reaction-user__avatar {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.chat-reaction-user__avatar--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #ececec;
+  font-weight: 700;
+}
+
+.chat-reaction-user__name {
+  min-width: 0;
+  flex: 1;
+  font-size: 14px;
+}
+
+.chat-reaction-user__name small {
+  color: #777;
+}
+
+.chat-reaction-user__emoji {
+  font-size: 20px;
+}
+
+.chat-reaction-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.chat-reaction-item {
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.chat-reaction-button,
+.chat-reaction-count {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.chat-reaction-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 4px 5px 4px 8px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.chat-reaction-count {
+  min-width: 24px;
+  padding: 4px 8px 4px 3px;
+
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.chat-reaction-item:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.chat-reaction-button--selected {
+  background: #f5f1e4;
+}
+
+.chat-reaction-button:focus-visible,
+.chat-reaction-count:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: -1px;
+}
+
+.chat-message__column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.chat-message--own .chat-message__column {
+  align-items: flex-end;
+}
+
+.chat-message__bubble {
+  position: relative;
+  z-index: 1;
+}
+
+.chat-reaction-picker {
+  position: static;
+  z-index: auto;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+.chat-message__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  margin-top: 2px;
+}
+
+.chat-message--own .chat-reaction-picker,
+.chat-message--own .chat-message__actions {
+  justify-content: flex-end;
+}
+
+.chat-message--other .chat-reaction-picker,
+.chat-message--other .chat-message__actions {
+  justify-content: flex-start;
+}
+
+.chat-reaction-picker {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    margin-bottom: 4px;
+}
+
+.chat-reaction-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.chat-reaction-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    background: transparent;
+    border: none;
+    box-shadow: none;
+
+    font-size: 18px;
+    cursor: pointer;
+
+    transition: transform .15s ease;
+}
+
+.chat-reaction-button:hover {
+    transform: scale(1.15);
+}
+
+.chat-reaction-button--selected {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+
+    transform: scale(1.18);
+}
+
+.chat-reaction-count {
+    padding: 0;
+
+    background: transparent;
+    border: none;
+    box-shadow: none;
+
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+
+.chat-reaction-button--selected {
+    transform: scale(1.18);
+    filter: drop-shadow(0 0 4px rgba(255,215,0,.6));
+}
+
+.chat-reaction-item,
+.chat-reaction-item:hover,
+.chat-reaction-item:focus,
+.chat-reaction-item:focus-within {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.chat-reaction-button,
+.chat-reaction-button:hover,
+.chat-reaction-button:focus,
+.chat-reaction-button:active,
+.chat-reaction-button--selected,
+.chat-reaction-button--selected:hover {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none;
+}
+
+.chat-reaction-count,
+.chat-reaction-count:hover,
+.chat-reaction-count:focus,
+.chat-reaction-count:active {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #fff !important;
+  outline: none;
+}
+
+/* Mặc định: theme Light */
+.chat-reaction-count {
+  color: #374151 !important;
+}
+
+/* Theme Dark */
+[data-theme="dark"] .chat-reaction-count {
+  color: #ffffff !important;
+}
+
+.chat-reaction-button--selected {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none;
+}
+
+/* Light theme */
+.chat-reaction-count,
+.chat-reaction-count:hover,
+.chat-reaction-count:focus,
+.chat-reaction-count:active {
+  color: #111827 !important;
+  background: transparent !important;
+}
+
+/* Dark theme */
+[data-theme="dark"] .chat-reaction-count,
+[data-theme="dark"] .chat-reaction-count:hover,
+[data-theme="dark"] .chat-reaction-count:focus,
+[data-theme="dark"] .chat-reaction-count:active {
+  color: #ffffff !important;
+  background: transparent !important;
+}
+
+/* Theme Light mặc định */
+:root {
+  --chat-reaction-count-color: #111827;
+}
+
+/* Hỗ trợ các cách khai báo Dark theme phổ biến */
+[data-theme="dark"],
+html.dark,
+body.dark,
+.dark-theme,
+.theme-dark {
+  --chat-reaction-count-color: #ffffff;
+}
+
+.chat-reaction-count,
+.chat-reaction-count:hover,
+.chat-reaction-count:focus,
+.chat-reaction-count:active {
+  color: var(--chat-reaction-count-color) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Light theme mặc định */
+:root {
+  --reaction-modal-bg: #ffffff;
+  --reaction-modal-text: #111827;
+  --reaction-modal-border: #e5e7eb;
+  --reaction-modal-hover: #f3f4f6;
+  --reaction-modal-muted: #6b7280;
+}
+
+/* Dark theme */
+[data-theme="dark"],
+html.dark,
+body.dark,
+.dark-theme,
+.theme-dark {
+  --reaction-modal-bg: #111827;
+  --reaction-modal-text: #ffffff;
+  --reaction-modal-border: #374151;
+  --reaction-modal-hover: #1f2937;
+  --reaction-modal-muted: #9ca3af;
+}
+
+.chat-reaction-users-modal {
+  background: var(--reaction-modal-bg) !important;
+  color: var(--reaction-modal-text) !important;
+}
+
+.chat-reaction-users-modal__header {
+  border-bottom: 1px solid var(--reaction-modal-border) !important;
+}
+
+.chat-reaction-users-modal__header h3,
+.chat-reaction-user,
+.chat-reaction-user__name,
+.chat-reaction-user__emoji,
+.chat-reaction-users-modal__close {
+  color: var(--reaction-modal-text) !important;
+}
+
+.chat-reaction-user__name small {
+  color: var(--reaction-modal-muted) !important;
+}
+
+.chat-reaction-user:hover,
+.chat-reaction-users-modal__close:hover {
+  background: var(--reaction-modal-hover) !important;
+}
+
+.chat-reaction-users-modal__close {
+  border: none !important;
+  box-shadow: none !important;
 }

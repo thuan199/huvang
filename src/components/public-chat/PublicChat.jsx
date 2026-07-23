@@ -53,31 +53,20 @@ export default function PublicChat() {
     removeMessageByAdmin,
   } = usePublicChat();
 
-  const [clearToastOpen, setClearToastOpen] =
-    useState(false);
+  const [
+    clearToastOpen,
+    setClearToastOpen,
+  ] = useState(false);
 
   const [
     localNotice,
     setLocalNotice,
   ] = useState(null);
 
-  useEffect(() => {
-    if (!localNotice) {
-      return undefined;
-    }
-
-    const timer =
-      window.setTimeout(() => {
-        setLocalNotice(null);
-      }, 5000);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [localNotice]);
-
-  const [isClearing, setIsClearing] =
-    useState(false);
+  const [
+    isClearing,
+    setIsClearing,
+  ] = useState(false);
 
   const [
     pendingReportCount,
@@ -134,33 +123,40 @@ export default function PublicChat() {
       }
     }, [isAdmin]);
 
+  /*
+   * Tải số lượng báo cáo đang chờ xử lý.
+   */
   useEffect(() => {
     loadPendingReportCount();
   }, [
     loadPendingReportCount,
   ]);
 
+  /*
+   * Realtime số lượng báo cáo vi phạm.
+   */
   useEffect(() => {
     if (!isAdmin) {
       return undefined;
     }
 
-    const channel = supabase
-      .channel(
-        "chat-report-count-realtime"
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "chat_reports",
-        },
-        () => {
-          loadPendingReportCount();
-        }
-      )
-      .subscribe();
+    const channel =
+      supabase
+        .channel(
+          "chat-report-count-realtime"
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "chat_reports",
+          },
+          () => {
+            loadPendingReportCount();
+          }
+        )
+        .subscribe();
 
     return () => {
       supabase.removeChannel(
@@ -172,6 +168,9 @@ export default function PublicChat() {
     loadPendingReportCount,
   ]);
 
+  /*
+   * Tự ẩn thông báo từ usePublicChat.
+   */
   useEffect(() => {
     if (!error && !success) {
       return undefined;
@@ -193,17 +192,39 @@ export default function PublicChat() {
     clearNotice,
   ]);
 
+  /*
+   * Tự ẩn thông báo cục bộ.
+   */
+  useEffect(() => {
+    if (!localNotice) {
+      return undefined;
+    }
+
+    const timer =
+      window.setTimeout(() => {
+        setLocalNotice(null);
+      }, 5000);
+
+    return () => {
+      window.clearTimeout(
+        timer
+      );
+    };
+  }, [localNotice]);
+
   async function handleRemoveViolation(
     report
   ) {
-    if (!report?.message?.id) {
+    const messageId =
+      report?.message?.id;
+
+    if (!messageId) {
       return false;
     }
 
     const successResult =
       await removeMessageByAdmin({
-        messageId:
-          report.message.id,
+        messageId,
 
         removalMessage:
           "Tin nhắn đã bị xóa vì vi phạm quy định",
@@ -228,47 +249,33 @@ export default function PublicChat() {
     loadPendingReportCount();
   }
 
-  useEffect(() => {
-    if (!localNotice) {
-      return undefined;
-    }
-
-    const timer = window.setTimeout(() => {
-      setLocalNotice(null);
-    }, 5000);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [localNotice]);
-
-  /**
-   * Xóa vĩnh viễn tin nhắn của chính user.
+  /*
+   * Xóa toàn bộ tin nhắn do user hiện tại gửi.
    *
-   * Điều kiện:
-   * - User phải đăng nhập.
-   * - message.user_id phải bằng auth.uid().
-   * - Database phải có RLS cho phép user xóa tin của mình.
+   * Tên hiển thị trên giao diện:
+   * "Xóa bộ nhớ đệm".
    */
-  /**
- * Xóa toàn bộ tin nhắn do user hiện tại gửi.
- *
- * Tên hiển thị trên giao diện:
- * "Xóa bộ nhớ đệm".
- */
   async function handleClearConversation() {
-    if (!currentUser?.id || isClearing) {
+    if (
+      !currentUser?.id ||
+      isClearing
+    ) {
       return;
     }
 
     try {
       setIsClearing(true);
 
-      const { error: deleteError } =
+      const {
+        error: deleteError,
+      } =
         await supabase
           .from("chat_messages")
           .delete()
-          .eq("user_id", currentUser.id);
+          .eq(
+            "user_id",
+            currentUser.id
+          );
 
       if (deleteError) {
         throw deleteError;
@@ -292,7 +299,7 @@ export default function PublicChat() {
       setLocalNotice({
         type: "error",
         message:
-          clearError.message ||
+          clearError?.message ||
           "Không thể xóa bộ nhớ đệm.",
       });
     } finally {
@@ -309,8 +316,8 @@ export default function PublicChat() {
           </h2>
 
           <p>
-            Trao đổi công khai giữa
-            các thành viên Hũ vàng
+            Trao đổi công khai giữa các
+            thành viên Hũ vàng
           </p>
         </div>
 
@@ -327,9 +334,11 @@ export default function PublicChat() {
             >
               Báo cáo vi phạm
 
-              {pendingReportCount > 0 && (
+              {pendingReportCount >
+                0 && (
                 <span className="chat-report-badge">
-                  {pendingReportCount > 99
+                  {pendingReportCount >
+                  99
                     ? "99+"
                     : pendingReportCount}
                 </span>
@@ -341,16 +350,26 @@ export default function PublicChat() {
             type="button"
             className="chat-refresh-button"
             disabled={loading}
-            onClick={reloadMessages}
+            onClick={
+              reloadMessages
+            }
           >
             Làm mới
           </button>
+
           {currentUser && (
             <button
               type="button"
               className="chat-clear-cache-button"
-              disabled={loading || isClearing}
-              onClick={() => setClearToastOpen(true)}
+              disabled={
+                loading ||
+                isClearing
+              }
+              onClick={() =>
+                setClearToastOpen(
+                  true
+                )
+              }
             >
               {isClearing
                 ? "Đang xóa..."
@@ -398,12 +417,16 @@ export default function PublicChat() {
 
       {localNotice && (
         <div
-          className={`chat-notice ${localNotice.type === "error"
-            ? "chat-notice--error"
-            : "chat-notice--success"
-            }`}
+          className={[
+            "chat-notice",
+            localNotice.type ===
+            "error"
+              ? "chat-notice--error"
+              : "chat-notice--success",
+          ].join(" ")}
           role={
-            localNotice.type === "error"
+            localNotice.type ===
+            "error"
               ? "alert"
               : "status"
           }
@@ -419,37 +442,28 @@ export default function PublicChat() {
       ) : (
         <ChatMessageList
           messages={messages}
-
           currentUserId={
             currentUser?.id
           }
-
           onlineUserIds={
             onlineUserIds
           }
-
           isAdmin={isAdmin}
-
           onReply={
             setReplyingTo
           }
-
           onDelete={
             deleteMessage
           }
-
           onReport={
             setReportingMessage
           }
-
           onAdmin={
             setAdminMessage
           }
-
           onRemove={
             setRemovingMessage
           }
-
           onToggleReaction={
             toggleReaction
           }
@@ -457,8 +471,12 @@ export default function PublicChat() {
       )}
 
       <ChatComposer
-        currentUser={currentUser}
-        replyingTo={replyingTo}
+        currentUser={
+          currentUser
+        }
+        replyingTo={
+          replyingTo
+        }
         sending={sending}
         cooldownRemaining={
           cooldownRemaining
@@ -474,11 +492,9 @@ export default function PublicChat() {
         message={
           reportingMessage
         }
-
         onClose={() =>
           setReportingMessage(null)
         }
-
         onSubmit={async (
           payload
         ) => {
@@ -499,43 +515,45 @@ export default function PublicChat() {
       />
 
       <ChatAdminModal
-        message={adminMessage}
-
+        message={
+          adminMessage
+        }
         onClose={() =>
           setAdminMessage(null)
         }
-
         onBanUser={banUser}
-        onUnbanUser={unbanUser}
+        onUnbanUser={
+          unbanUser
+        }
       />
 
       <ChatRemoveModal
-        message={removingMessage}
-
+        message={
+          removingMessage
+        }
         onClose={() =>
           setRemovingMessage(null)
         }
-
         onRemoveMessage={
           removeMessageByAdmin
         }
       />
 
       <ChatReportsAdmin
-        open={isReportsAdminOpen}
-
+        open={
+          isReportsAdminOpen
+        }
         onClose={
           handleCloseReportsAdmin
         }
-
         onManageUser={
           handleOpenAdminFromReport
         }
-
         onRemoveViolation={
           handleRemoveViolation
         }
       />
+
       {clearToastOpen && (
         <div
           className="chat-confirm-toast"
@@ -553,17 +571,22 @@ export default function PublicChat() {
             </strong>
 
             <p>
-              Toàn bộ tin nhắn do bạn gửi sẽ bị
-              xóa vĩnh viễn và không thể khôi phục.
+              Toàn bộ tin nhắn do bạn
+              gửi sẽ bị xóa vĩnh viễn
+              và không thể khôi phục.
             </p>
 
             <div className="chat-confirm-toast__actions">
               <button
                 type="button"
                 className="chat-confirm-toast__cancel"
-                disabled={isClearing}
+                disabled={
+                  isClearing
+                }
                 onClick={() =>
-                  setClearToastOpen(false)
+                  setClearToastOpen(
+                    false
+                  )
                 }
               >
                 Hủy
@@ -572,8 +595,12 @@ export default function PublicChat() {
               <button
                 type="button"
                 className="chat-confirm-toast__confirm"
-                disabled={isClearing}
-                onClick={handleClearConversation}
+                disabled={
+                  isClearing
+                }
+                onClick={
+                  handleClearConversation
+                }
               >
                 {isClearing
                   ? "Đang xóa..."
@@ -586,9 +613,13 @@ export default function PublicChat() {
             type="button"
             className="chat-confirm-toast__close"
             aria-label="Đóng thông báo"
-            disabled={isClearing}
+            disabled={
+              isClearing
+            }
             onClick={() =>
-              setClearToastOpen(false)
+              setClearToastOpen(
+                false
+              )
             }
           >
             ×
@@ -596,9 +627,5 @@ export default function PublicChat() {
         </div>
       )}
     </section>
-
-
   );
-
-
 }
