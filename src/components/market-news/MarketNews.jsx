@@ -23,6 +23,8 @@ function formatPublishedTime(value) {
 }
 
 export default function MarketNews() {
+    const [lastUpdated, setLastUpdated] = useState(null);
+    const [news, setNews] = useState([]);
     const [articles, setArticles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [errorMessage, setErrorMessage] =
@@ -45,7 +47,8 @@ export default function MarketNews() {
                     summary,
                     image_url,
                     category,
-                    published_at
+                    published_at,
+                    updated_at
                 `)
                 .order("published_at", {
                     ascending: false,
@@ -55,6 +58,28 @@ export default function MarketNews() {
 
             if (!isMounted) {
                 return;
+            }
+
+            setNews(data ?? []);
+
+            if (data?.length) {
+                const latestUpdatedAt = data.reduce(
+                    (latest, item) => {
+                        if (!item.updated_at) return latest;
+
+                        const itemTime = new Date(item.updated_at).getTime();
+                        const latestTime = latest
+                            ? new Date(latest).getTime()
+                            : 0;
+
+                        return itemTime > latestTime
+                            ? item.updated_at
+                            : latest;
+                    },
+                    null
+                );
+
+                setLastUpdated(latestUpdatedAt);
             }
 
             if (error) {
@@ -70,6 +95,8 @@ export default function MarketNews() {
                 setLoading(false);
                 return;
             }
+
+
 
             setArticles(data ?? []);
             setLoading(false);
@@ -117,6 +144,20 @@ export default function MarketNews() {
         );
     }
 
+    const formatUpdatedTime = (value) => {
+        if (!value) return "";
+
+        return new Intl.DateTimeFormat("vi-VN", {
+            hour: "2-digit",
+            minute: "2-digit",
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour12: false,
+            timeZone: "Asia/Ho_Chi_Minh",
+        }).format(new Date(value));
+    };
+
     return (
         <section className="market-news">
             <div className="market-news__header">
@@ -124,8 +165,12 @@ export default function MarketNews() {
                     <h2>📰 Tin tức thị trường</h2>
 
                     <p>
-                        Cập nhật tin tức mới nhất
-                        về vàng và kinh tế
+                        Cập nhật tin tức mới nhất về vàng và kinh tế
+                        {lastUpdated && (
+                            <>
+                                {" "}• Cập nhật lúc {formatUpdatedTime(lastUpdated)}
+                            </>
+                        )}
                     </p>
                 </div>
             </div>
