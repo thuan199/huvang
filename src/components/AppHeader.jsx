@@ -30,6 +30,9 @@ function AppHeader({
   isAdmin = false,
   activePage = "home",
   onChangePage,
+  helpOpen,
+  onOpenHelp,
+  onCloseHelp,
   onOpenMaintenance,
   onOpenUserManager,
   onChangeDisplayName,
@@ -38,19 +41,6 @@ function AppHeader({
   onLogout,
   onToggleTheme,
 }) {
-  const [
-    helpOpen,
-    setHelpOpen,
-  ] = useState(false);
-
-  function openHelp() {
-    setHelpOpen(true);
-  }
-
-  function closeHelp() {
-    setHelpOpen(false);
-  }
-
   const [
     avatarError,
     setAvatarError,
@@ -158,6 +148,7 @@ function AppHeader({
    */
   function changePage(page) {
     closeSettingsMenu();
+    onCloseHelp?.();
     onChangePage?.(page);
   }
 
@@ -317,7 +308,7 @@ function AppHeader({
               <button
                 type="button"
                 className="header-help-button"
-                onClick={openHelp}
+                onClick={onOpenHelp}
                 aria-haspopup="dialog"
                 aria-expanded={helpOpen}
               >
@@ -334,7 +325,7 @@ function AppHeader({
               </button>
               <HelpModal
                 open={helpOpen}
-                onClose={closeHelp}
+                onClose={onCloseHelp}
               />
             </nav>
 
@@ -626,7 +617,7 @@ function AppHeader({
       </header>
       <HelpModal
         open={helpOpen}
-        onClose={closeHelp}
+        onClose={onCloseHelp}
       />
     </>
   );

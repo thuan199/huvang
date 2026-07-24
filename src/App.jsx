@@ -59,6 +59,11 @@ function App() {
     type: "success",
   });
 
+  const [
+    helpOpen,
+    setHelpOpen,
+  ] = useState(false);
+
   function showToast(
     message,
     type = "success",
@@ -1642,6 +1647,13 @@ function App() {
           theme={displayTheme}
           isAdmin={isAdmin}
           activePage={activePage}
+          helpOpen={helpOpen}
+          onOpenHelp={() =>
+            setHelpOpen(true)
+          }
+          onCloseHelp={() =>
+            setHelpOpen(false)
+          }
           onChangePage={(page) => {
             setActivePage(page);
 
@@ -1751,15 +1763,17 @@ function App() {
 
         {activePage === "home" ? (
           <>
-            <WorldGoldMiniWidget
-              isOpen={isWorldGoldOpen}
-              onOpen={() =>
-                setIsWorldGoldOpen(true)
-              }
-              onClose={() =>
-                setIsWorldGoldOpen(false)
-              }
-            />
+            {!helpOpen && (
+              <WorldGoldMiniWidget
+                isOpen={isWorldGoldOpen}
+                onOpen={() =>
+                  setIsWorldGoldOpen(true)
+                }
+                onClose={() =>
+                  setIsWorldGoldOpen(false)
+                }
+              />
+            )}
 
             <SummaryCards
               summary={summary}
