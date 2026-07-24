@@ -621,3 +621,149 @@ body.dark .header-help-button:focus-visible,
 .help-modal__tabs::-webkit-scrollbar {
   display: none;
 }
+
+@media (max-width: 700px) {
+  .help-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+
+    width: 100%;
+    height: 100dvh;
+    padding: 0;
+
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.52);
+  }
+
+  .help-modal {
+    width: 100%;
+    height: 92dvh;
+    max-height: 92dvh;
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+
+    border-radius: 20px 20px 0 0;
+    background: var(--help-bg);
+  }
+
+  /* Header luôn nằm trên cùng */
+  .help-modal__header {
+    position: relative;
+    z-index: 3;
+
+    flex: 0 0 auto;
+
+    padding: 16px 18px;
+
+    background: var(--help-bg);
+    border-bottom: 1px solid var(--help-border);
+  }
+
+  .help-modal__body {
+    flex: 1 1 auto;
+    min-height: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+  }
+
+  /* Hàng nút luôn hiển thị */
+  .help-modal__tabs {
+    position: relative;
+    z-index: 2;
+
+    flex: 0 0 auto;
+
+    display: flex;
+    flex-direction: row;
+    gap: 7px;
+
+    width: 100%;
+    padding: 10px 12px;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    background: var(--help-surface);
+    border-right: 0;
+    border-bottom: 1px solid var(--help-border);
+
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .help-modal__tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .help-tab {
+    flex: 0 0 auto;
+    width: auto;
+
+    padding: 10px 12px;
+
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  /* Chỉ phần này được cuộn */
+  .help-modal__content {
+    flex: 1 1 auto;
+    min-height: 0;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    padding: 16px 14px 30px;
+
+    background: var(--help-bg);
+
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .help-modal__content::-webkit-scrollbar {
+    display: none;
+  }
+
+  .help-about ul {
+    grid-template-columns: 1fr;
+  }
+}
+
+.help-about__logo-image {
+  display: block;
+  width: 72px;
+  height: 72px;
+
+  margin: 0 auto 8px;
+
+  object-fit: contain;
+}
+
+@media (max-width: 600px) {
+
+    .help-modal__tabs{
+        display:grid;
+        grid-template-columns:repeat(2,1fr);
+        gap:10px;
+    }
+
+    .help-tab{
+        width:100%;
+    }
+
+}

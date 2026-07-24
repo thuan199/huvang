@@ -42,11 +42,16 @@ export default function HelpModal({
       return undefined;
     }
 
+    const previousOverflow =
+      document.body.style.overflow;
+
     function handleKeyDown(event) {
       if (event.key === "Escape") {
         onClose();
       }
     }
+
+    setActiveTab("guide");
 
     document.body.style.overflow =
       "hidden";
@@ -58,7 +63,7 @@ export default function HelpModal({
 
     return () => {
       document.body.style.overflow =
-        "";
+        previousOverflow;
 
       window.removeEventListener(
         "keydown",
@@ -71,7 +76,7 @@ export default function HelpModal({
     return null;
   }
 
-  function handleOverlayClick(
+  function handleOverlayMouseDown(
     event
   ) {
     if (
@@ -87,7 +92,7 @@ export default function HelpModal({
       className="help-modal-overlay"
       role="presentation"
       onMouseDown={
-        handleOverlayClick
+        handleOverlayMouseDown
       }
     >
       <section
@@ -95,6 +100,9 @@ export default function HelpModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="help-modal-title"
+        onMouseDown={(event) =>
+          event.stopPropagation()
+        }
       >
         <header className="help-modal__header">
           <div>
@@ -124,56 +132,64 @@ export default function HelpModal({
             aria-label="Danh mục hỗ trợ"
           >
             {HELP_TABS.map(
-              (tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  className={
-                    activeTab ===
-                    tab.id
-                      ? "help-tab help-tab--active"
-                      : "help-tab"
-                  }
-                  onClick={() =>
-                    setActiveTab(
-                      tab.id
-                    )
-                  }
-                >
-                  <span
-                    aria-hidden="true"
-                  >
-                    {tab.icon}
-                  </span>
+              (tab) => {
+                const isActive =
+                  activeTab ===
+                  tab.id;
 
-                  <span>
-                    {tab.label}
-                  </span>
-                </button>
-              )
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    className={
+                      isActive
+                        ? "help-tab help-tab--active"
+                        : "help-tab"
+                    }
+                    aria-pressed={
+                      isActive
+                    }
+                    onClick={() =>
+                      setActiveTab(
+                        tab.id
+                      )
+                    }
+                  >
+                    <span
+                      aria-hidden="true"
+                    >
+                      {tab.icon}
+                    </span>
+
+                    <span>
+                      {tab.label}
+                    </span>
+                  </button>
+                );
+              }
             )}
           </nav>
 
           <div className="help-modal__content">
             {activeTab ===
               "guide" && (
-              <GuideContent />
-            )}
+                <GuideContent />
+              )}
 
             {activeTab ===
               "faq" && (
-              <FaqContent />
-            )}
+                <FaqContent />
+              )}
 
             {activeTab ===
               "contact" && (
-              <ContactContent />
-            )}
+                <ContactContent />
+              )}
 
             {activeTab ===
               "about" && (
-              <AboutContent />
-            )}
+                <AboutContent />
+              )}
           </div>
         </div>
       </section>
@@ -199,21 +215,26 @@ function GuideContent() {
             Cập nhật giá cá nhân
           </strong>
           , chọn loại vàng và nhập
-          giá mua vào, giá bán ra của bạn khi giao dịch.
-           Sau đó nhấn
+          giá mua vào, giá bán ra
+          của bạn khi giao dịch.
+          Sau đó nhấn
           <strong>
             {" "}
             Cập nhật giá
           </strong>
           .
         </p>
+
         <p>
-          Hoặc ấn 
+          Hoặc nhấn
           <strong>
             {" "}
-            Lấy giá hiện tại từ PNJ{" "}
+            Lấy giá hiện tại từ PNJ
           </strong>
-          để hệ thống tự động lấy giá mua/giá bán mới nhất từ PNJ.
+          {" "}
+          để hệ thống tự động lấy
+          giá mua và giá bán mới
+          nhất từ PNJ.
         </p>
       </HelpStep>
 
@@ -236,9 +257,10 @@ function GuideContent() {
           Nhấn
           <strong>
             {" "}
-            Lưu giao dịch {" "}
+            Lưu giao dịch
           </strong>
-          để ghi nhận.
+          {" "}
+          để ghi nhận giao dịch.
         </p>
       </HelpStep>
 
@@ -249,8 +271,9 @@ function GuideContent() {
         <p>
           Hệ thống tự động so sánh
           giá mua của bạn với giá
-          bán hiện tại để tính lãi,
-          lỗ và tỷ lệ phần trăm.
+          bán hiện tại để tính số
+          tiền lãi hoặc lỗ và tỷ lệ
+          phần trăm.
         </p>
       </HelpStep>
 
@@ -295,7 +318,10 @@ function HelpStep({
       </div>
 
       <div className="help-step__content">
-        <h4>{title}</h4>
+        <h4>
+          {title}
+        </h4>
+
         {children}
       </div>
     </article>
@@ -337,7 +363,7 @@ function FaqContent() {
       <details className="help-faq">
         <summary>
           Giá vàng thế giới được
-          tính thế nào?
+          tính như thế nào?
         </summary>
 
         <p>
@@ -398,7 +424,9 @@ function ContactContent() {
         </div>
 
         <div>
-          <span>Email</span>
+          <span>
+            Email
+          </span>
 
           <strong>
             thu2toite@gmail.com
@@ -417,7 +445,9 @@ function ContactContent() {
         </div>
 
         <div>
-          <span>Facebook</span>
+          <span>
+            Facebook
+          </span>
 
           <strong>
             Liên hệ qua Facebook
@@ -434,7 +464,9 @@ function ContactContent() {
         </div>
 
         <div>
-          <span>Báo lỗi</span>
+          <span>
+            Báo lỗi
+          </span>
 
           <strong>
             Gửi thông tin lỗi
@@ -453,11 +485,15 @@ function AboutContent() {
       </h3>
 
       <div className="help-about">
-          <img
-              src="/logo.png"
-              className="login-logo"
-              alt="Hũ vàng"
-            />
+        <img
+          src="/logo.png"
+          className="help-about__logo-image"
+          alt="Hũ Vàng"
+        />
+
+        <h4>
+          Hũ Vàng
+        </h4>
 
         <p>
           Công cụ hỗ trợ quản lý
@@ -470,19 +506,24 @@ function AboutContent() {
           <li>
             Quản lý giao dịch vàng
           </li>
+
           <li>
             Theo dõi giá cá nhân
           </li>
+
           <li>
             Xem lịch sử và biểu đồ
           </li>
+
           <li>
             Quy đổi giá vàng thế
             giới
           </li>
+
           <li>
             Chat cộng đồng
           </li>
+
           <li>
             Trợ lý AI
           </li>
