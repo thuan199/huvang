@@ -4,6 +4,8 @@ import {
   useState,
 } from "react";
 
+import HelpModal from "./help/HelpModal";
+
 import {
   Bot,
   Home,
@@ -35,6 +37,11 @@ function AppHeader({
   onLogout,
   onToggleTheme,
 }) {
+  const [
+    helpOpen,
+    setHelpOpen,
+  ] = useState(false);
+
   const [
     avatarError,
     setAvatarError,
@@ -296,6 +303,29 @@ function AppHeader({
                 Trợ lý AI
               </span>
             </button>
+
+            <button
+              type="button"
+              className="header-help-button"
+              onClick={() =>
+                setHelpOpen(true)
+              }
+            >
+              <span
+                className="header-help-button__icon"
+                aria-hidden="true"
+              >
+                ❓
+              </span>
+
+              Hỗ trợ
+            </button>
+            <HelpModal
+              open={helpOpen}
+              onClose={() =>
+                setHelpOpen(false)
+              }
+            />
           </nav>
 
           <div className="header-user-info">
