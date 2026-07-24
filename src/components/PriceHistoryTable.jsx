@@ -175,12 +175,6 @@ function PriceHistoryTable({
               </button>
             </div>
           )}
-
-          <footer className="app-footer">
-            <p>
-              © 2026 Phạm Ngọc Thuần
-            </p>
-          </footer>
         </div>
       )}
     </div>

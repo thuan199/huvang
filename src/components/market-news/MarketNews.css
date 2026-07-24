@@ -276,3 +276,15 @@
 .dark-theme .market-news__updated-time {
   color: #94a3b8;
 }
+
+.app-footer {
+  margin-top: 0;
+  padding: 28px 16px 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.app-footer p {
+  margin: 0;
+}

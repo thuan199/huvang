@@ -256,7 +256,13 @@ export default function MarketNews() {
                             </div>
                         </article>
                     ))}
+                    <footer className="app-footer">
+                        <p>
+                            © 2026 Phạm Ngọc Thuần
+                        </p>
+                    </footer>
                 </div>
+
             )}
         </section>
     );
