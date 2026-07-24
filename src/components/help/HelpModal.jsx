@@ -39,11 +39,11 @@ export default function HelpModal({
 
   useEffect(() => {
     if (!open) {
+      document.body.style.overflow = "";
       return undefined;
     }
 
-    const previousOverflow =
-      document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
     function handleKeyDown(event) {
       if (event.key === "Escape") {
@@ -51,38 +51,28 @@ export default function HelpModal({
       }
     }
 
-    setActiveTab("guide");
-
-    document.body.style.overflow =
-      "hidden";
-
     window.addEventListener(
       "keydown",
       handleKeyDown
     );
 
     return () => {
-      document.body.style.overflow =
-        previousOverflow;
+      document.body.style.overflow = "";
 
       window.removeEventListener(
         "keydown",
         handleKeyDown
       );
     };
-  }, [open, onClose]);
+  }, [open]);
+
 
   if (!open) {
     return null;
   }
 
-  function handleOverlayMouseDown(
-    event
-  ) {
-    if (
-      event.target ===
-      event.currentTarget
-    ) {
+  function handleOverlayMouseDown(event) {
+    if (event.target === event.currentTarget) {
       onClose();
     }
   }
@@ -100,9 +90,6 @@ export default function HelpModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="help-modal-title"
-        onMouseDown={(event) =>
-          event.stopPropagation()
-        }
       >
         <header className="help-modal__header">
           <div>

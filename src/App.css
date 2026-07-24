@@ -6398,3 +6398,21 @@ input[type="date"] {
     height: 15px;
   }
 }
+@media (max-width: 600px) {
+  .header-navigation {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+
+    width: 100%;
+  }
+
+  .header-nav-button,
+  .header-help-button {
+    width: 100%;
+    min-width: 0;
+
+    justify-content: center;
+    text-align: center;
+  }
+}

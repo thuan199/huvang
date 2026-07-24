@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -42,13 +43,13 @@ function AppHeader({
     setHelpOpen,
   ] = useState(false);
 
-  const openHelp = () => {
+  function openHelp() {
     setHelpOpen(true);
-  };
+  }
 
-  const closeHelp = () => {
+  function closeHelp() {
     setHelpOpen(false);
-  };
+  }
 
   const [
     avatarError,
