@@ -54,7 +54,7 @@ export default function MarketNews() {
                     ascending: false,
                     nullsFirst: false,
                 })
-                .limit(10);
+                .limit(20);
 
             if (!isMounted) {
                 return;
