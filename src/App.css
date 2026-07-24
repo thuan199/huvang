@@ -5056,49 +5056,43 @@ body.dark-theme .toast-info {
 }
 
 .header-nav-button {
-  display: inline-flex;
+   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 7px;
 
-  min-height: 38px;
-  padding: 8px 14px;
+  min-height: 44px;
+  padding: 0 15px;
 
-  border: 1px solid rgba(173, 127, 0, 0.22);
-  border-radius: 12px;
+  border: 1px solid rgba(194, 132, 0, 0.38);
+  border-radius: 13px;
 
-  color: #7a5600;
-  background: rgba(255, 250, 235, 0.72);
+  background: rgba(255, 255, 255, 0.55);
+  color: #7a4d00;
+
+  font-size: 14px;
+  font-weight: 600;
 
   cursor: pointer;
-
-  font: inherit;
-  font-size: 14px;
-  font-weight: 700;
-
-  box-shadow:
-    0 6px 16px rgba(120, 86, 0, 0.08);
-
   transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
+    background-color 0.2s ease,
     border-color 0.2s ease,
-    background 0.2s ease,
-    color 0.2s ease;
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 .header-nav-button:hover {
-  border-color: rgba(180, 128, 0, 0.5);
-  background: #fff3c7;
-
-  box-shadow:
-    0 8px 20px rgba(120, 86, 0, 0.14);
-
-  transform: translateY(-1px);
+   background: rgba(255, 247, 224, 0.95);
+  border-color: rgba(194, 132, 0, 0.65);
+  color: #9a6200;
 }
 
 .header-nav-button:active {
-  transform: translateY(0);
+   background: rgba(255, 255, 255, 0.65);
+  border-color: #d39a16;
+  color: #8a5900;
+  box-shadow: 0 0 0 2px rgba(211, 154, 22, 0.1);
 }
 
 .header-nav-button--active {

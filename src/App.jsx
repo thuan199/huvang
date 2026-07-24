@@ -29,7 +29,7 @@ import ToastContainer from './components/ToastContainer';
 import ConfirmModal from './components/ConfirmModal';
 import PublicChat from './components/public-chat/PublicChat';
 import AIChatPage from "./components/ai-chat/AIChatPage";
-
+import MarketNews from "./components/market-news/MarketNews";
 import { supabase } from './supabaseClient';
 
 import {
@@ -1914,6 +1914,8 @@ function App() {
                 )
               }
             />
+
+            <MarketNews />
           </>
         ) : activePage ===
           "ai-chat" ? (
