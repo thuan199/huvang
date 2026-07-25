@@ -17,7 +17,7 @@ function loadTradingViewScript() {
   if (
     window.TradingView &&
     typeof window.TradingView.widget ===
-      "function"
+    "function"
   ) {
     return Promise.resolve(
       window.TradingView
@@ -39,7 +39,7 @@ function loadTradingViewScript() {
               typeof window
                 .TradingView
                 .widget ===
-                "function"
+              "function"
             ) {
               resolve(
                 window.TradingView
@@ -113,7 +113,7 @@ function loadTradingViewScript() {
           typeof window
             .TradingView
             .widget ===
-            "function"
+          "function"
         ) {
           resolve(
             window.TradingView
@@ -293,7 +293,7 @@ function TradingViewGoldChart({
           widgetRef.current &&
           typeof widgetRef.current
             .onChartReady ===
-            "function"
+          "function"
         ) {
           widgetRef.current.onChartReady(
             () => {
@@ -310,34 +310,43 @@ function TradingViewGoldChart({
          * Dự phòng: theo dõi khi iframe
          * của TradingView được tạo.
          */
-        const checkIframe =
-          window.setInterval(
-            () => {
-              if (cancelled) {
-                window.clearInterval(
-                  checkIframe
-                );
+        const checkIframe = window.setInterval(() => {
+          if (cancelled) {
+            window.clearInterval(checkIframe);
+            return;
+          }
 
-                return;
-              }
+          const iframe =
+            container.querySelector("iframe");
 
-              const iframe =
-                container.querySelector(
-                  "iframe"
-                );
+          if (!iframe) {
+            return;
+          }
 
-              if (iframe) {
-                setIsLoading(
-                  false
-                );
+          window.clearInterval(checkIframe);
 
-                window.clearInterval(
-                  checkIframe
-                );
-              }
-            },
-            250
+          const handleIframeLoad = () => {
+            if (!cancelled) {
+              setIsLoading(false);
+            }
+          };
+
+          iframe.addEventListener(
+            "load",
+            handleIframeLoad,
+            { once: true }
           );
+
+          /*
+           * Dự phòng trong trường hợp iframe đã tải xong
+           * trước khi event listener được gắn.
+           */
+          window.setTimeout(() => {
+            if (!cancelled) {
+              setIsLoading(false);
+            }
+          }, 1500);
+        }, 250);
 
         loadingTimeout =
           window.setTimeout(
@@ -357,7 +366,7 @@ function TradingViewGoldChart({
             10000
           );
       } catch (
-        chartError
+      chartError
       ) {
         console.error(
           "Lỗi tải biểu đồ TradingView:",
@@ -369,7 +378,7 @@ function TradingViewGoldChart({
 
           setError(
             chartError?.message ||
-              "Không thể tải biểu đồ XAU/USD."
+            "Không thể tải biểu đồ XAU/USD."
           );
         }
       }
@@ -410,7 +419,7 @@ function TradingViewGoldChart({
           <div className="gold-chart-spinner" />
 
           <span>
-            Đang tải dữ liệu...
+            Đang tải biểu đồ tương tác từ TradingView, mã OANDA:XAUUSD.
           </span>
         </div>
       )}
@@ -427,11 +436,10 @@ function TradingViewGoldChart({
 
       <div
         ref={containerRef}
-        className={`gold-chart-widget ${
-          isLoading
+        className={`gold-chart-widget ${isLoading
             ? "gold-chart-hidden"
             : ""
-        }`}
+          }`}
       />
     </div>
   );
