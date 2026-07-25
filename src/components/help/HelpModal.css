@@ -750,3 +750,360 @@ body.dark .header-help-button:focus-visible,
 body.help-modal-open {
   overflow: hidden;
 }
+
+.help-world-gold {
+  line-height: 1.65;
+}
+
+.help-world-gold > p {
+  margin: 0 0 12px;
+}
+
+.help-info-section {
+  margin-top: 24px;
+}
+
+.help-info-section__title {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+
+  margin: 0 0 12px;
+
+  font-size: 1rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.help-info-section__content {
+  color: var(--text);
+}
+
+.help-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+}
+
+.help-info-table {
+  width: 100%;
+  min-width: 620px;
+
+  border-collapse: collapse;
+
+  font-size: 0.9rem;
+}
+
+.help-info-table th,
+.help-info-table td {
+  padding: 10px 12px;
+
+  border-right: 1px solid var(--card-border);
+  border-bottom: 1px solid var(--card-border);
+
+  text-align: left;
+  vertical-align: top;
+}
+
+.help-info-table th:last-child,
+.help-info-table td:last-child {
+  border-right: none;
+}
+
+.help-info-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.help-info-table th {
+  background: rgba(15, 23, 42, 0.04);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.help-info-list {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.help-info-list li {
+  margin-bottom: 8px;
+}
+
+.help-info-list li:last-child {
+  margin-bottom: 0;
+}
+
+.help-world-gold__notice {
+  margin-top: 24px;
+  padding: 12px 14px;
+
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 10px;
+
+  background: rgba(245, 158, 11, 0.08);
+  color: var(--text);
+
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+/* Dark mode */
+
+.dark-theme .help-info-table th {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark-theme .help-world-gold__notice {
+  border-color: rgba(251, 191, 36, 0.2);
+  background: rgba(251, 191, 36, 0.07);
+}
+
+/* Mobile */
+
+@media (max-width: 768px) {
+  .help-info-section {
+    margin-top: 20px;
+  }
+
+  .help-info-table {
+    font-size: 0.84rem;
+  }
+
+  .help-info-table th,
+  .help-info-table td {
+    padding: 9px 10px;
+  }
+}
+
+/* ========================================
+   WORLD GOLD - DARK THEME
+======================================== */
+
+.dark-theme .help-world-gold {
+  color: #cbd5e1;
+}
+
+.dark-theme .help-world-gold h3 {
+  color: #f8fafc;
+}
+
+.dark-theme .help-world-gold > p {
+  color: #cbd5e1;
+}
+
+.dark-theme .help-world-gold strong {
+  color: #f1f5f9;
+}
+
+.dark-theme .help-info-section__title {
+  color: #f1f5f9;
+}
+
+.dark-theme .help-info-section__content {
+  color: #cbd5e1;
+}
+
+/* Khung bảng */
+
+.dark-theme .help-table-wrapper {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Tiêu đề bảng */
+
+.dark-theme .help-info-table th {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f1f5f9;
+}
+
+/* Nội dung bảng */
+
+.dark-theme .help-info-table td {
+  background: rgba(15, 23, 42, 0.35);
+  color: #cbd5e1;
+}
+
+/* Đường viền bảng */
+
+.dark-theme .help-info-table th,
+.dark-theme .help-info-table td {
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+/* Hiệu ứng rê chuột trên dòng */
+
+.dark-theme .help-info-table tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.055);
+}
+
+/* Chữ đậm trong bảng */
+
+.dark-theme .help-info-table td strong {
+  color: #f8fafc;
+}
+
+/* Danh sách */
+
+.dark-theme .help-info-list {
+  color: #cbd5e1;
+}
+
+.dark-theme .help-info-list li::marker {
+  color: #60a5fa;
+}
+
+/* Khung lưu ý */
+
+.dark-theme .help-world-gold__notice {
+  border-color: rgba(251, 191, 36, 0.22);
+  background: rgba(245, 158, 11, 0.09);
+  color: #fde68a;
+}
+
+.dark-theme .help-modal {
+  background: #0f172a;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+
+.dark-theme .help-modal__header {
+  border-bottom-color: rgba(255, 255, 255, 0.09);
+}
+
+.dark-theme .help-modal__header h2 {
+  color: #f8fafc;
+}
+
+.dark-theme .help-modal__header p {
+  color: #94a3b8;
+}
+
+.dark-theme .help-modal__close {
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+
+.dark-theme .help-modal__tabs {
+  border-right-color: rgba(255, 255, 255, 0.09);
+  background: rgba(2, 6, 23, 0.35);
+}
+
+.dark-theme .help-tab {
+  color: #94a3b8;
+  background: transparent;
+}
+
+.dark-theme .help-tab:hover {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark-theme .help-tab--active {
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.dark-theme .help-modal__content {
+  background: #0f172a;
+}
+
+/* ========================================
+   BỎ HIỆU ỨNG HOVER CỦA BẢNG
+======================================== */
+
+.help-info-table tbody tr:hover,
+.help-info-table tbody tr:hover td {
+  background: inherit;
+  color: inherit;
+  box-shadow: none;
+  filter: none;
+  transform: none;
+}
+
+/* Dark theme: giữ nguyên màu nền từng dòng */
+.dark-theme .help-info-table tbody tr:hover td {
+  background: rgba(15, 23, 42, 0.35);
+  color: #cbd5e1;
+}
+
+/* Nếu bảng có dòng chẵn khác màu */
+.dark-theme .help-info-table tbody tr:nth-child(even):hover td {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+/* ========================================
+   BỎ HIỆU ỨNG PHÁT SÁNG CỦA TAB
+======================================== */
+
+.help-tab,
+.help-tab:hover,
+.help-tab:focus,
+.help-tab:focus-visible,
+.help-tab:active,
+.help-tab--active {
+  box-shadow: none;
+  filter: none;
+  text-shadow: none;
+  transform: none;
+  outline: none;
+}
+
+/* Không di chuyển khi rê chuột */
+.help-tab:hover {
+  transform: none;
+}
+
+/* Dark theme */
+.dark-theme .help-tab,
+.dark-theme .help-tab:hover,
+.dark-theme .help-tab:focus,
+.dark-theme .help-tab:focus-visible,
+.dark-theme .help-tab:active,
+.dark-theme .help-tab--active {
+  box-shadow: none;
+  filter: none;
+  text-shadow: none;
+  transform: none;
+  outline: none;
+}
+
+.dark-theme .help-info-table tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.055);
+}
+
+/* Bỏ nền sáng xen kẽ của bảng */
+.help-info-table tbody tr,
+.help-info-table tbody tr td,
+.help-info-table tbody tr:nth-child(even),
+.help-info-table tbody tr:nth-child(even) td,
+.help-info-table tbody tr:nth-child(odd),
+.help-info-table tbody tr:nth-child(odd) td {
+  background: transparent;
+}
+
+/* Dark theme */
+.dark-theme .help-info-table tbody tr,
+.dark-theme .help-info-table tbody tr td,
+.dark-theme .help-info-table tbody tr:nth-child(even),
+.dark-theme .help-info-table tbody tr:nth-child(even) td,
+.dark-theme .help-info-table tbody tr:nth-child(odd),
+.dark-theme .help-info-table tbody tr:nth-child(odd) td {
+  background: transparent;
+  color: #cbd5e1;
+}
+
+/* Hover cũng không đổi nền */
+.help-info-table tbody tr:hover,
+.help-info-table tbody tr:hover td,
+.dark-theme .help-info-table tbody tr:hover,
+.dark-theme .help-info-table tbody tr:hover td {
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  filter: none;
+}
