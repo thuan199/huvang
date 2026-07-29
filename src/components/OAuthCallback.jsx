@@ -14,51 +14,119 @@ export default function OAuthCallback() {
   );
 
   useEffect(() => {
-    async function finishLogin() {
-      try {
-        const {
-          data,
-          error,
-        } =
-          await supabase.auth.getSession();
+    let closeTimer;
 
-        if (error) {
-          throw error;
-        }
-
-        if (!data?.session) {
-          setMessage(
-            "Không lấy được phiên đăng nhập."
+    const {
+      data: {
+        subscription,
+      },
+    } =
+      supabase.auth.onAuthStateChange(
+        (event, session) => {
+          console.log(
+            "OAuth callback:",
+            event,
+            session,
           );
-          return;
-        }
+
+          if (
+            event !== "SIGNED_IN" &&
+            event !== "INITIAL_SESSION"
+          ) {
+            return;
+          }
+
+          if (!session) {
+            return;
+          }
+
+          setMessage(
+            "Đăng nhập thành công. Đang đóng cửa sổ...",
+          );
+
+          if (window.opener) {
+            window.opener.postMessage(
+              {
+                type:
+                  "GOOGLE_LOGIN_SUCCESS",
+              },
+              window.location.origin,
+            );
+          }
+
+          closeTimer =
+            window.setTimeout(() => {
+              window.close();
+
+              // Nếu trình duyệt không cho đóng,
+              // chuyển popup về trang chính.
+              if (!window.closed) {
+                window.location.replace(
+                  "/",
+                );
+              }
+            }, 300);
+        },
+      );
+
+    async function checkExistingSession() {
+      const {
+        data,
+        error,
+      } =
+        await supabase.auth.getSession();
+
+      if (error) {
+        console.error(
+          "Lỗi lấy session:",
+          error,
+        );
 
         setMessage(
-          "Đăng nhập thành công. Đang đóng cửa sổ..."
+          error.message ||
+          "Không thể hoàn tất đăng nhập.",
+        );
+
+        return;
+      }
+
+      if (data?.session) {
+        setMessage(
+          "Đăng nhập thành công. Đang đóng cửa sổ...",
         );
 
         window.opener?.postMessage(
           {
-            type: "GOOGLE_LOGIN_SUCCESS",
+            type:
+              "GOOGLE_LOGIN_SUCCESS",
           },
-          window.location.origin
+          window.location.origin,
         );
 
-        window.close();
-      } catch (err) {
-        console.error(
-          "Lỗi xử lý OAuth callback:",
-          err
-        );
+        closeTimer =
+          window.setTimeout(() => {
+            window.close();
 
-        setMessage(
-          err?.message ||
-            "Không thể hoàn tất đăng nhập."
-        );
+            if (!window.closed) {
+              window.location.replace(
+                "/",
+              );
+            }
+          }, 300);
       }
     }
 
-    finishLogin();
+    checkExistingSession();
+
+    return () => {
+      subscription.unsubscribe();
+
+      if (closeTimer) {
+        window.clearTimeout(
+          closeTimer,
+        );
+      }
+    };
   }, []);
 
   return (

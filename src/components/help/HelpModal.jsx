@@ -204,23 +204,14 @@ function GuideContent() {
 
       <HelpStep
         number="1"
-        title="Cập nhật giá vàng hiện tại"
+        title="Giá vàng hiện tại"
       >
         <p>
-          Tại mục
+          Hệ thống hiện thị dữ liệu mới nhất từ{" "}
           <strong>
-            {" "}
-            Cập nhật giá cá nhân
+                    PNJ, SJC và Mi Hồng.
           </strong>
-          , chọn loại vàng và nhập
-          giá mua vào, giá bán ra
-          của bạn khi giao dịch.
-          Sau đó nhấn
-          <strong>
-            {" "}
-            Cập nhật giá
-          </strong>
-          .
+    
         </p>
 
         <p>
