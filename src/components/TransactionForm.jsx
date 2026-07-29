@@ -63,19 +63,19 @@ function getItemSourceCode(item) {
 
   return normalizeSourceCode(
     item?.source_code ??
-    item?.sourceCode ??
-    nestedSource?.code ??
-    nestedSource?.source_code ??
-    joinedSource?.code ??
-    joinedSource?.source_code ??
-    item?.source_name ??
-    item?.source
+      item?.sourceCode ??
+      nestedSource?.code ??
+      nestedSource?.source_code ??
+      joinedSource?.code ??
+      joinedSource?.source_code ??
+      item?.source_name ??
+      item?.source,
   );
 }
 
 function getMarketBuybackPrice(
   marketCurrentPrices,
-  sourceCode
+  sourceCode,
 ) {
   const normalizedSource =
     normalizeSourceCode(sourceCode);
@@ -88,25 +88,25 @@ function getMarketBuybackPrice(
 
         const buybackPrice = Number(
           item.buy_price ??
-          item.buy_price_per_chi ??
-          item.current_price_per_chi ??
-          item.price_per_chi ??
-          0
+            item.buy_price_per_chi ??
+            item.current_price_per_chi ??
+            item.price_per_chi ??
+            0,
         );
 
         return (
           itemSource === normalizedSource &&
           buybackPrice > 0
         );
-      }
+      },
     );
 
   return Number(
     marketPrice?.buy_price ??
-    marketPrice?.buy_price_per_chi ??
-    marketPrice?.current_price_per_chi ??
-    marketPrice?.price_per_chi ??
-    0
+      marketPrice?.buy_price_per_chi ??
+      marketPrice?.current_price_per_chi ??
+      marketPrice?.price_per_chi ??
+      0,
   );
 }
 
@@ -120,37 +120,67 @@ function TransactionForm({
 }) {
   const selectedSourceCode =
     normalizeSourceCode(
-      transactionForm.location
+      transactionForm.source_code,
     ) || 'PNJ';
 
   const selectedSource =
     GOLD_SOURCES.find(
       (source) =>
-        source.code === selectedSourceCode
-    ) ?? GOLD_SOURCES[2];
+        source.code ===
+        selectedSourceCode,
+    ) ??
+    GOLD_SOURCES.find(
+      (source) =>
+        source.code === 'PNJ',
+    );
 
   const availableProducts =
-    selectedSource.products;
+    selectedSource?.products ?? [];
+
+  const selectedGoldType =
+    availableProducts.some(
+      (product) =>
+        product.value ===
+        transactionForm.gold_type,
+    )
+      ? transactionForm.gold_type
+      : availableProducts[0]?.value ?? '';
+
+  function updateFormField(
+    fieldName,
+    fieldValue,
+  ) {
+    setTransactionForm(
+      (currentForm) => ({
+        ...currentForm,
+        [fieldName]: fieldValue,
+      }),
+    );
+  }
 
   function handleSourceChange(event) {
     const sourceCode =
       normalizeSourceCode(
-        event.target.value
+        event.target.value,
       );
 
     const newSource =
       GOLD_SOURCES.find(
         (source) =>
-          source.code === sourceCode
+          source.code === sourceCode,
       );
 
+    if (!newSource) {
+      return;
+    }
+
     const firstProduct =
-      newSource?.products?.[0];
+      newSource.products?.[0];
 
     const buybackPrice =
       getMarketBuybackPrice(
         marketCurrentPrices,
-        sourceCode
+        sourceCode,
       );
 
     setTransactionForm(
@@ -167,15 +197,15 @@ function TransactionForm({
           buybackPrice > 0
             ? String(buybackPrice)
             : '',
-      })
+      }),
     );
   }
 
   function handleGoldTypeChange(event) {
-    setTransactionForm({
-      ...transactionForm,
-      gold_type: event.target.value,
-    });
+    updateFormField(
+      'gold_type',
+      event.target.value,
+    );
   }
 
   return (
@@ -208,14 +238,14 @@ function TransactionForm({
       <select
         id="transaction-type"
         value={
-          transactionForm.transaction_type
+          transactionForm
+            .transaction_type ?? 'BUY'
         }
         onChange={(event) =>
-          setTransactionForm({
-            ...transactionForm,
-            transaction_type:
-              event.target.value,
-          })
+          updateFormField(
+            'transaction_type',
+            event.target.value,
+          )
         }
       >
         <option value="BUY">
@@ -233,7 +263,7 @@ function TransactionForm({
 
       <select
         id="gold-source"
-        value={selectedSource.code}
+        value={selectedSourceCode}
         onChange={handleSourceChange}
       >
         {GOLD_SOURCES.map(
@@ -244,7 +274,7 @@ function TransactionForm({
             >
               {source.label}
             </option>
-          )
+          ),
         )}
       </select>
 
@@ -254,9 +284,7 @@ function TransactionForm({
 
       <select
         id="gold-type"
-        value={
-          transactionForm.gold_type ?? ''
-        }
+        value={selectedGoldType}
         onChange={
           handleGoldTypeChange
         }
@@ -269,11 +297,11 @@ function TransactionForm({
             >
               {product.label}
             </option>
-          )
+          ),
         )}
       </select>
 
-      {selectedSource.code ===
+      {selectedSourceCode ===
         'SJC' && (
           <p className="transaction-unit-note">
             Giá SJC được nhập theo chỉ.
@@ -292,14 +320,14 @@ function TransactionForm({
         min="0"
         step="0.1"
         value={
-          transactionForm.quantity_chi
+          transactionForm
+            .quantity_chi ?? ''
         }
         onChange={(event) =>
-          setTransactionForm({
-            ...transactionForm,
-            quantity_chi:
-              event.target.value,
-          })
+          updateFormField(
+            'quantity_chi',
+            event.target.value,
+          )
         }
         placeholder="Ví dụ: 5"
       />
@@ -314,14 +342,14 @@ function TransactionForm({
         min="0"
         step="10000"
         value={
-          transactionForm.price_per_chi
+          transactionForm
+            .price_per_chi ?? ''
         }
         onChange={(event) =>
-          setTransactionForm({
-            ...transactionForm,
-            price_per_chi:
-              event.target.value,
-          })
+          updateFormField(
+            'price_per_chi',
+            event.target.value,
+          )
         }
         placeholder="Ví dụ: 14320000"
       />
@@ -329,9 +357,11 @@ function TransactionForm({
       <label htmlFor="sell-price">
         Giá cửa hàng thu lại mỗi chỉ
       </label>
+
       <p className="transaction-price-note">
-        Giá được tự động lấy theo nguồn vàng đã chọn
-        và được lưu cùng giao dịch.
+        Giá được tự động lấy theo nguồn
+        vàng đã chọn và được lưu cùng giao
+        dịch.
       </p>
 
       <input
@@ -341,22 +371,21 @@ function TransactionForm({
         step="10000"
         value={
           transactionForm
-            .sell_price_per_chi
+            .sell_price_per_chi ?? ''
         }
         onChange={(event) =>
-          setTransactionForm(
-            (currentForm) => ({
-              ...currentForm,
-              sell_price_per_chi:
-                event.target.value,
-            })
+          updateFormField(
+            'sell_price_per_chi',
+            event.target.value,
           )
         }
         placeholder="Chưa có giá cửa hàng thu lại"
       />
+
       <p className="transaction-price-note">
-        Giá được tự động lấy theo nguồn vàng đã chọn.
-        Bạn vẫn có thể điều chỉnh lại trước khi lưu.
+        Giá được tự động lấy theo nguồn
+        vàng đã chọn. Bạn vẫn có thể điều
+        chỉnh lại trước khi lưu.
       </p>
 
       <label htmlFor="transaction-date">
@@ -367,14 +396,14 @@ function TransactionForm({
         id="transaction-date"
         type="date"
         value={
-          transactionForm.transaction_date
+          transactionForm
+            .transaction_date ?? ''
         }
         onChange={(event) =>
-          setTransactionForm({
-            ...transactionForm,
-            transaction_date:
-              event.target.value,
-          })
+          updateFormField(
+            'transaction_date',
+            event.target.value,
+          )
         }
       />
 
@@ -386,15 +415,12 @@ function TransactionForm({
         id="transaction-location"
         type="text"
         value={
-          transactionForm.location
+          transactionForm.location ?? ''
         }
         onChange={(event) =>
-          setTransactionForm(
-            (currentForm) => ({
-              ...currentForm,
-              location:
-                event.target.value,
-            })
+          updateFormField(
+            'location',
+            event.target.value,
           )
         }
         placeholder="Ví dụ: PNJ Tô Ngọc Vân, Chợ Bà Chiểu..."
@@ -407,14 +433,13 @@ function TransactionForm({
       <textarea
         id="transaction-note"
         value={
-          transactionForm.note
+          transactionForm.note ?? ''
         }
         onChange={(event) =>
-          setTransactionForm({
-            ...transactionForm,
-            note:
-              event.target.value,
-          })
+          updateFormField(
+            'note',
+            event.target.value,
+          )
         }
         placeholder="Ghi chú thêm nếu có"
       />
