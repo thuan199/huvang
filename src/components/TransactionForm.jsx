@@ -340,7 +340,7 @@ function TransactionForm({
         id="buy-price"
         type="number"
         min="0"
-        step="10000"
+        step="5000"
         value={
           transactionForm
             .price_per_chi ?? ''
@@ -368,7 +368,7 @@ function TransactionForm({
         id="sell-price"
         type="number"
         min="0"
-        step="10000"
+        step="5000"
         value={
           transactionForm
             .sell_price_per_chi ?? ''

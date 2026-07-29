@@ -6782,3 +6782,12 @@ input[type="date"] {
     0 8px 18px
     rgba(197, 139, 0, 0.25);
 }
+
+.change-password-info {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(234, 179, 8, 0.12);
+  font-size: 14px;
+  line-height: 1.5;
+}

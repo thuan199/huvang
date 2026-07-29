@@ -1,10 +1,15 @@
-import { useState } from "react";
+import {
+  useState,
+} from "react";
+
 import {
   Eye,
   EyeOff,
 } from "lucide-react";
 
-import { supabase } from "../supabaseClient";
+import {
+  supabase,
+} from "../supabaseClient";
 
 export default function ChangePassword({
   onSuccess,
@@ -14,6 +19,16 @@ export default function ChangePassword({
   const [
     isOpen,
     setIsOpen,
+  ] = useState(false);
+
+  const [
+    hasPasswordLogin,
+    setHasPasswordLogin,
+  ] = useState(true);
+
+  const [
+    checkingProvider,
+    setCheckingProvider,
   ] = useState(false);
 
   const [
@@ -68,9 +83,102 @@ export default function ChangePassword({
     setError("");
   }
 
-  function openModal() {
+  function getUserProviders(user) {
+    const identityProviders =
+      user?.identities
+        ?.map(
+          (identity) =>
+            identity?.provider,
+        )
+        .filter(Boolean) ?? [];
+
+    const metadataProviders =
+      Array.isArray(
+        user?.app_metadata
+          ?.providers,
+      )
+        ? user.app_metadata
+            .providers
+        : [];
+
+    const primaryProvider =
+      user?.app_metadata
+        ?.provider;
+
+    return Array.from(
+      new Set([
+        ...identityProviders,
+        ...metadataProviders,
+        primaryProvider,
+      ].filter(Boolean)),
+    );
+  }
+
+  async function checkPasswordProvider() {
+    const {
+      data,
+      error: userError,
+    } =
+      await supabase.auth
+        .getUser();
+
+    if (userError) {
+      throw userError;
+    }
+
+    const user = data?.user;
+
+    if (!user) {
+      throw new Error(
+        "Không tìm thấy thông tin tài khoản.",
+      );
+    }
+
+    const providers =
+      getUserProviders(user);
+
+    /*
+     * Có provider "email" nghĩa là tài khoản
+     * đã hỗ trợ đăng nhập bằng email/mật khẩu.
+     *
+     * Chỉ có "google" nghĩa là user chưa tạo
+     * mật khẩu cho ứng dụng.
+     */
+    const hasEmailProvider =
+      providers.includes(
+        "email",
+      );
+
+    setHasPasswordLogin(
+      hasEmailProvider,
+    );
+
+    return {
+      user,
+      hasEmailProvider,
+    };
+  }
+
+  async function openModal() {
     resetForm();
-    setIsOpen(true);
+    setCheckingProvider(true);
+
+    try {
+      await checkPasswordProvider();
+      setIsOpen(true);
+    } catch (err) {
+      console.error(
+        "Lỗi kiểm tra phương thức đăng nhập:",
+        err,
+      );
+
+      onSuccess?.(
+        err?.message ||
+          "Không thể kiểm tra thông tin tài khoản.",
+      );
+    } finally {
+      setCheckingProvider(false);
+    }
   }
 
   function closeModal() {
@@ -82,35 +190,74 @@ export default function ChangePassword({
     setIsOpen(false);
   }
 
-  async function handleSubmit(event) {
+  async function verifyCurrentPassword(
+    user,
+  ) {
+    if (!user?.email) {
+      throw new Error(
+        "Không tìm thấy email của tài khoản.",
+      );
+    }
+
+    const {
+      error: signInError,
+    } =
+      await supabase.auth
+        .signInWithPassword({
+          email:
+            user.email,
+
+          password:
+            currentPassword,
+        });
+
+    if (signInError) {
+      throw new Error(
+        "Mật khẩu hiện tại không đúng.",
+      );
+    }
+  }
+
+  async function handleSubmit(
+    event,
+  ) {
     event.preventDefault();
     setError("");
 
-    if (!currentPassword.trim()) {
+    if (
+      hasPasswordLogin &&
+      !currentPassword
+    ) {
       setError(
-        "Vui lòng nhập mật khẩu hiện tại."
+        "Vui lòng nhập mật khẩu hiện tại.",
       );
+
       return;
     }
 
-    if (!newPassword.trim()) {
+    if (!newPassword) {
       setError(
-        "Vui lòng nhập mật khẩu mới."
+        "Vui lòng nhập mật khẩu mới.",
       );
+
       return;
     }
 
-    if (newPassword.length < 8) {
+    if (
+      newPassword.length < 8
+    ) {
       setError(
-        "Mật khẩu mới phải có ít nhất 8 ký tự."
+        "Mật khẩu mới phải có ít nhất 8 ký tự.",
       );
+
       return;
     }
 
-    if (!confirmPassword.trim()) {
+    if (!confirmPassword) {
       setError(
-        "Vui lòng xác nhận mật khẩu mới."
+        "Vui lòng xác nhận mật khẩu mới.",
       );
+
       return;
     }
 
@@ -119,18 +266,21 @@ export default function ChangePassword({
       confirmPassword
     ) {
       setError(
-        "Xác nhận mật khẩu mới không khớp."
+        "Xác nhận mật khẩu mới không khớp.",
       );
+
       return;
     }
 
     if (
+      hasPasswordLogin &&
       currentPassword ===
-      newPassword
+        newPassword
     ) {
       setError(
-        "Mật khẩu mới phải khác mật khẩu hiện tại."
+        "Mật khẩu mới phải khác mật khẩu hiện tại.",
       );
+
       return;
     }
 
@@ -141,33 +291,31 @@ export default function ChangePassword({
         data: userData,
         error: userError,
       } =
-        await supabase.auth.getUser();
+        await supabase.auth
+          .getUser();
 
       if (userError) {
         throw userError;
       }
 
-      const user = userData?.user;
+      const user =
+        userData?.user;
 
-      if (!user?.email) {
+      if (!user) {
         throw new Error(
-          "Không tìm thấy email của tài khoản."
+          "Không tìm thấy thông tin tài khoản.",
         );
       }
 
-      const {
-        error: signInError,
-      } =
-        await supabase.auth
-          .signInWithPassword({
-            email: user.email,
-            password:
-              currentPassword,
-          });
-
-      if (signInError) {
-        throw new Error(
-          "Mật khẩu hiện tại không đúng."
+      /*
+       * Chỉ xác thực mật khẩu hiện tại khi
+       * tài khoản đã có đăng nhập password.
+       *
+       * Tài khoản Google lần đầu sẽ bỏ qua bước này.
+       */
+      if (hasPasswordLogin) {
+        await verifyCurrentPassword(
+          user,
         );
       }
 
@@ -184,26 +332,52 @@ export default function ChangePassword({
         throw updateError;
       }
 
+      const successMessage =
+        hasPasswordLogin
+          ? "Đã đổi mật khẩu thành công."
+          : "Đã tạo mật khẩu đăng nhập thành công. Từ bây giờ bạn có thể đăng nhập bằng Google hoặc email và mật khẩu.";
+
+      setHasPasswordLogin(true);
+
       resetForm();
       setIsOpen(false);
 
       onSuccess?.(
-        "Đã đổi mật khẩu thành công."
+        successMessage,
       );
     } catch (err) {
       console.error(
-        "Lỗi đổi mật khẩu:",
-        err
+        hasPasswordLogin
+          ? "Lỗi đổi mật khẩu:"
+          : "Lỗi tạo mật khẩu:",
+        err,
       );
 
       setError(
         err?.message ||
-        "Không thể đổi mật khẩu."
+          (hasPasswordLogin
+            ? "Không thể đổi mật khẩu."
+            : "Không thể tạo mật khẩu đăng nhập."),
       );
     } finally {
       setSaving(false);
     }
   }
+
+  const modalTitle =
+    hasPasswordLogin
+      ? "Đổi mật khẩu"
+      : "Tạo mật khẩu đăng nhập";
+
+  const modalDescription =
+    hasPasswordLogin
+      ? "Nhập mật khẩu hiện tại và mật khẩu mới."
+      : "Bạn đang đăng nhập bằng Google. Hãy tạo mật khẩu để có thể đăng nhập bằng email.";
+
+  const submitLabel =
+    hasPasswordLogin
+      ? "Đổi mật khẩu"
+      : "Tạo mật khẩu";
 
   return (
     <>
@@ -214,13 +388,18 @@ export default function ChangePassword({
           "change-password-open-button"
         }
         onClick={openModal}
-        title="Đổi mật khẩu"
+        disabled={
+          checkingProvider
+        }
+        title="Mật khẩu đăng nhập"
       >
         {buttonIcon}
 
         <span className="header-admin-menu__item-content">
           <span className="header-admin-menu__item-title">
-            Đổi mật khẩu
+            {checkingProvider
+              ? "Đang kiểm tra..."
+              : "Mật khẩu đăng nhập"}
           </span>
         </span>
       </button>
@@ -239,7 +418,7 @@ export default function ChangePassword({
             aria-modal="true"
             aria-labelledby="change-password-title"
             onMouseDown={(
-              event
+              event,
             ) =>
               event.stopPropagation()
             }
@@ -249,12 +428,11 @@ export default function ChangePassword({
                 <h2
                   id="change-password-title"
                 >
-                  Đổi mật khẩu
+                  {modalTitle}
                 </h2>
 
                 <p>
-                  Nhập mật khẩu hiện tại
-                  và mật khẩu mới.
+                  {modalDescription}
                 </p>
               </div>
 
@@ -279,80 +457,92 @@ export default function ChangePassword({
                 handleSubmit
               }
             >
-              <label
-                className="change-password-label"
-                htmlFor="current-password"
-              >
-                Mật khẩu hiện tại
-              </label>
+              {hasPasswordLogin && (
+                <>
+                  <label
+                    className="change-password-label"
+                    htmlFor="current-password"
+                  >
+                    Mật khẩu hiện tại
+                  </label>
 
-              <div className="password-input-wrapper">
-                <input
-                  id="current-password"
-                  type={
-                    showCurrentPassword
-                      ? "text"
-                      : "password"
-                  }
-                  className="change-password-input"
-                  value={
-                    currentPassword
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    setCurrentPassword(
-                      event.target
-                        .value
-                    )
-                  }
-                  autoComplete="current-password"
-                  disabled={
-                    saving
-                  }
-                  autoFocus
-                />
+                  <div className="password-input-wrapper">
+                    <input
+                      id="current-password"
+                      type={
+                        showCurrentPassword
+                          ? "text"
+                          : "password"
+                      }
+                      className="change-password-input"
+                      value={
+                        currentPassword
+                      }
+                      onChange={(
+                        event,
+                      ) =>
+                        setCurrentPassword(
+                          event.target
+                            .value,
+                        )
+                      }
+                      autoComplete="current-password"
+                      disabled={
+                        saving
+                      }
+                      autoFocus
+                    />
 
-                <button
-                  type="button"
-                  className="password-eye-button"
-                  onClick={() =>
-                    setShowCurrentPassword(
-                      (current) =>
-                        !current
-                    )
-                  }
-                  disabled={
-                    saving
-                  }
-                  title={
-                    showCurrentPassword
-                      ? "Ẩn mật khẩu"
-                      : "Hiện mật khẩu"
-                  }
-                  aria-label={
-                    showCurrentPassword
-                      ? "Ẩn mật khẩu hiện tại"
-                      : "Hiện mật khẩu hiện tại"
-                  }
-                >
-                  {showCurrentPassword ? (
-                    <EyeOff
-                      size={18}
-                    />
-                  ) : (
-                    <Eye
-                      size={18}
-                    />
-                  )}
-                </button>
-              </div>
+                    <button
+                      type="button"
+                      className="password-eye-button"
+                      onClick={() =>
+                        setShowCurrentPassword(
+                          (current) =>
+                            !current,
+                        )
+                      }
+                      disabled={
+                        saving
+                      }
+                      title={
+                        showCurrentPassword
+                          ? "Ẩn mật khẩu"
+                          : "Hiện mật khẩu"
+                      }
+                      aria-label={
+                        showCurrentPassword
+                          ? "Ẩn mật khẩu hiện tại"
+                          : "Hiện mật khẩu hiện tại"
+                      }
+                    >
+                      {showCurrentPassword ? (
+                        <EyeOff
+                          size={18}
+                        />
+                      ) : (
+                        <Eye
+                          size={18}
+                        />
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {!hasPasswordLogin && (
+                <div className="change-password-info">
+                  Tài khoản này đang sử dụng Google để đăng nhập và chưa có mật khẩu riêng.
+                </div>
+              )}
 
               <label
                 className="change-password-label"
                 htmlFor="new-password"
               >
-                Mật khẩu mới
+                {hasPasswordLogin
+                  ? "Mật khẩu mới"
+                  : "Mật khẩu đăng nhập"}
               </label>
 
               <div className="password-input-wrapper">
@@ -368,16 +558,19 @@ export default function ChangePassword({
                     newPassword
                   }
                   onChange={(
-                    event
+                    event,
                   ) =>
                     setNewPassword(
                       event.target
-                        .value
+                        .value,
                     )
                   }
                   autoComplete="new-password"
                   disabled={
                     saving
+                  }
+                  autoFocus={
+                    !hasPasswordLogin
                   }
                 />
 
@@ -387,7 +580,7 @@ export default function ChangePassword({
                   onClick={() =>
                     setShowNewPassword(
                       (current) =>
-                        !current
+                        !current,
                     )
                   }
                   disabled={
@@ -436,11 +629,11 @@ export default function ChangePassword({
                     confirmPassword
                   }
                   onChange={(
-                    event
+                    event,
                   ) =>
                     setConfirmPassword(
                       event.target
-                        .value
+                        .value,
                     )
                   }
                   autoComplete="new-password"
@@ -455,7 +648,7 @@ export default function ChangePassword({
                   onClick={() =>
                     setShowConfirmPassword(
                       (current) =>
-                        !current
+                        !current,
                     )
                   }
                   disabled={
@@ -515,8 +708,10 @@ export default function ChangePassword({
                   }
                 >
                   {saving
-                    ? "Đang đổi..."
-                    : "Đổi mật khẩu"}
+                    ? hasPasswordLogin
+                      ? "Đang đổi..."
+                      : "Đang tạo..."
+                    : submitLabel}
                 </button>
               </div>
             </form>
