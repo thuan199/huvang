@@ -64,11 +64,11 @@ function getSourceLabel(sourceCode) {
     case "PNJ":
       return "PNJ";
 
-    case "SJC":
-      return "SJC";
-
     case "MI_HONG":
       return "Mi Hồng";
+
+    case "SJC":
+      return "SJC";  
 
     default:
       return (
@@ -195,9 +195,9 @@ function CurrentPriceForm({
         }))
         .sort((first, second) => {
           const sourceOrder = {
-            PNJ: 1,
-            SJC: 2,
-            MI_HONG: 3,
+            MI_HONG: 1,
+            PNJ: 2,
+            SJC: 3,
           };
 
           return (
