@@ -82,8 +82,7 @@ export function useMaintenanceMode() {
       const {
         data: sessionData,
         error: sessionError,
-      } =
-        await supabase.auth.getSession();
+      } = await supabase.auth.getSession();
 
       if (sessionError) {
         console.error(
@@ -103,8 +102,6 @@ export function useMaintenanceMode() {
         return false;
       }
 
-
-
       const {
         data,
         error,
@@ -117,7 +114,12 @@ export function useMaintenanceMode() {
       if (error) {
         console.error(
           "Không kiểm tra được admin:",
-          error
+          {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint,
+          }
         );
 
         setIsAdmin(false);
@@ -125,7 +127,7 @@ export function useMaintenanceMode() {
       }
 
       const adminResult =
-        Boolean(data?.user_id);
+        data?.user_id === user.id;
 
       setIsAdmin(adminResult);
 

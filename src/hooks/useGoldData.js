@@ -1,28 +1,295 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
 
-import { getGoldData } from '../services/goldDataService';
+import {
+  getGoldData,
+} from '../services/goldDataService';
+
 import { supabase } from '../supabaseClient';
 
-const EMPTY_GOLD_DATA = {
-  // Dữ liệu cá nhân
-  transactions: [],
-  prices: [],
-  priceHistory: [],
-  personalPriceHistory: [],
+const MARKET_SOURCES = [
+  'PNJ',
+  'SJC',
+  'MI_HONG',
+];
 
-  // Dữ liệu PNJ dùng chung
-  pnjCurrentPrice: null,
-  pnjPriceHistory: [],
-};
+function normalizeSourceCode(value) {
+  return String(value ?? '')
+    .trim()
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/Đ/g, 'D')
+    .replace(/[^A-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .replace(/^MIHONG$/, 'MI_HONG');
+}
+
+function getItemSourceCode(item) {
+  const source =
+    Array.isArray(item?.source)
+      ? item.source[0]
+      : item?.source;
+
+  const joinedSource =
+    Array.isArray(
+      item?.gold_price_sources
+    )
+      ? item.gold_price_sources[0]
+      : item?.gold_price_sources;
+
+  return normalizeSourceCode(
+    item?.source_code ??
+    item?.sourceCode ??
+    source?.code ??
+    source?.source_code ??
+    joinedSource?.code ??
+    joinedSource?.source_code ??
+    item?.source_name ??
+    item?.source
+  );
+}
+
+function createEmptySourceGroups() {
+  return {
+    PNJ: [],
+    SJC: [],
+    MI_HONG: [],
+  };
+}
+
+function groupMarketRowsBySource(rows = []) {
+  const groups =
+    createEmptySourceGroups();
+
+  if (!Array.isArray(rows)) {
+    return groups;
+  }
+
+  rows.forEach((item) => {
+    const sourceCode =
+      getItemSourceCode(item);
+
+    if (!sourceCode) {
+      return;
+    }
+
+    if (!groups[sourceCode]) {
+      groups[sourceCode] = [];
+    }
+
+    groups[sourceCode].push({
+      ...item,
+      source_code: sourceCode,
+    });
+  });
+
+  return groups;
+}
+
+function normalizeMarketRows(rows = []) {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+
+  return rows.map((item) => {
+    const sourceCode =
+      getItemSourceCode(item);
+
+    return {
+      ...item,
+      source_code:
+        sourceCode ||
+        item?.source_code ||
+        '',
+    };
+  });
+}
+
+function mergeUniqueRows(...collections) {
+  const result = [];
+  const seen = new Set();
+
+  collections.forEach((collection) => {
+    if (!Array.isArray(collection)) {
+      return;
+    }
+
+    collection.forEach((item, index) => {
+      const sourceCode =
+        getItemSourceCode(item);
+
+      const key = String(
+        item?.id ??
+        [
+          sourceCode,
+          item?.product_id ??
+            item?.source_product_id ??
+            item?.gold_type_id ??
+            '',
+          item?.recorded_at ??
+            item?.fetched_at ??
+            item?.updated_at ??
+            item?.created_at ??
+            '',
+          item?.buy_price ??
+            item?.buy_price_per_chi ??
+            item?.current_price_per_chi ??
+            item?.price_per_chi ??
+            '',
+          item?.sell_price ??
+            item?.sell_price_per_chi ??
+            '',
+          index,
+        ].join('|')
+      );
+
+      if (seen.has(key)) {
+        return;
+      }
+
+      seen.add(key);
+
+      result.push({
+        ...item,
+        source_code: sourceCode,
+      });
+    });
+  });
+
+  return result;
+}
+
+function createEmptyGoldData() {
+  return {
+    transactions: [],
+
+    /*
+     * Giữ lại để tương thích với code cũ.
+     * Nếu đã bỏ giá cá nhân thì hai mảng này
+     * có thể luôn rỗng.
+     */
+    prices: [],
+    priceHistory: [],
+    personalPriceHistory: [],
+
+    /*
+     * Dữ liệu thị trường của PNJ, SJC, Mi Hồng.
+     */
+    marketCurrentPrices: [],
+    marketPriceHistory: [],
+
+    currentPricesBySource:
+      createEmptySourceGroups(),
+
+    priceHistoryBySource:
+      createEmptySourceGroups(),
+
+    /*
+     * Giữ lại để tương thích với các component
+     * cũ chỉ sử dụng PNJ.
+     */
+    pnjCurrentPrice: null,
+    pnjPriceHistory: [],
+  };
+}
+
+function buildNormalizedGoldData(result) {
+  const safeResult =
+    result ?? {};
+
+  /*
+   * Ưu tiên dữ liệu chung do goldDataService trả về.
+   * Nếu service chỉ trả từng nguồn riêng lẻ thì gộp lại.
+   */
+  const currentRowsFromGroups =
+    MARKET_SOURCES.flatMap(
+      (sourceCode) =>
+        safeResult
+          ?.currentPricesBySource
+          ?.[sourceCode] ?? []
+    );
+
+  const historyRowsFromGroups =
+    MARKET_SOURCES.flatMap(
+      (sourceCode) =>
+        safeResult
+          ?.priceHistoryBySource
+          ?.[sourceCode] ?? []
+    );
+
+  const marketCurrentPrices =
+    normalizeMarketRows(
+      mergeUniqueRows(
+        safeResult.marketCurrentPrices,
+        currentRowsFromGroups,
+        safeResult.pnjCurrentPrice
+          ? [safeResult.pnjCurrentPrice]
+          : []
+      )
+    );
+
+  const marketPriceHistory =
+    normalizeMarketRows(
+      mergeUniqueRows(
+        safeResult.marketPriceHistory,
+        historyRowsFromGroups,
+        safeResult.pnjPriceHistory
+      )
+    );
+
+  const currentPricesBySource =
+    groupMarketRowsBySource(
+      marketCurrentPrices
+    );
+
+  const priceHistoryBySource =
+    groupMarketRowsBySource(
+      marketPriceHistory
+    );
+
+  return {
+    transactions:
+      safeResult.transactions ?? [],
+
+    prices:
+      safeResult.prices ?? [],
+
+    priceHistory:
+      safeResult.priceHistory ?? [],
+
+    personalPriceHistory:
+      safeResult.personalPriceHistory ??
+      safeResult.priceHistory ??
+      [],
+
+    marketCurrentPrices,
+    marketPriceHistory,
+    currentPricesBySource,
+    priceHistoryBySource,
+
+    pnjCurrentPrice:
+      safeResult.pnjCurrentPrice ??
+      currentPricesBySource.PNJ?.[0] ??
+      null,
+
+    pnjPriceHistory:
+      safeResult.pnjPriceHistory?.length
+        ? normalizeMarketRows(
+            safeResult.pnjPriceHistory
+          )
+        : priceHistoryBySource.PNJ ?? [],
+  };
+}
 
 function useGoldData(userId) {
   const [goldData, setGoldData] =
-    useState(EMPTY_GOLD_DATA);
+    useState(createEmptyGoldData);
 
   const [loading, setLoading] =
     useState(false);
@@ -30,193 +297,184 @@ function useGoldData(userId) {
   const [error, setError] =
     useState('');
 
-  const requestIdRef = useRef(0);
+  const requestIdRef =
+    useRef(0);
 
-  const loadGoldData = useCallback(
-    async ({ force = false } = {}) => {
-      if (!userId) {
-        requestIdRef.current += 1;
-
-        setGoldData(EMPTY_GOLD_DATA);
-        setLoading(false);
-        setError('');
-
-        return EMPTY_GOLD_DATA;
-      }
-
-      const requestId =
-        requestIdRef.current + 1;
-
-      requestIdRef.current =
-        requestId;
-
-      setLoading(true);
-      setError('');
-
-      try {
-        const result =
-          await getGoldData(
-            userId,
-            { force }
-          );
-
-        /*
-         * Nếu trong lúc request đang chạy đã có request mới hơn
-         * thì không ghi đè state bằng dữ liệu cũ.
-         */
-        if (
-          requestId !==
-          requestIdRef.current
-        ) {
-          return result;
-        }
-
-        setGoldData({
-          transactions:
-            result?.transactions ?? [],
-
-          prices:
-            result?.prices ?? [],
-
-          /*
-           * Lịch sử cá nhân.
-           *
-           * Giữ priceHistory để tương thích
-           * với code cũ.
-           */
-          priceHistory:
-            result?.priceHistory ?? [],
-
-          personalPriceHistory:
-            result?.personalPriceHistory ??
-            result?.priceHistory ??
-            [],
-
-          /*
-           * Dữ liệu PNJ dùng chung.
-           */
-          pnjCurrentPrice:
-            result?.pnjCurrentPrice ?? null,
-
-          pnjPriceHistory:
-            result?.pnjPriceHistory ?? [],
-        });
-
-        return result;
-      } catch (loadError) {
-        if (
-          requestId ===
-          requestIdRef.current
-        ) {
-          setError(
-            loadError?.message ||
-              'Không thể tải dữ liệu.'
-          );
-        }
-
-        throw loadError;
-      } finally {
-        if (
-          requestId ===
-          requestIdRef.current
-        ) {
-          setLoading(false);
-        }
-      }
-    },
-    [userId]
-  );
-
-  /*
-   * Tải dữ liệu khi user thay đổi.
-   */
-  useEffect(() => {
-    if (!userId) {
+  const resetGoldData =
+    useCallback(() => {
       requestIdRef.current += 1;
 
-      setGoldData(EMPTY_GOLD_DATA);
+      setGoldData(
+        createEmptyGoldData()
+      );
+
       setLoading(false);
       setError('');
+    }, []);
 
+  const loadGoldData =
+    useCallback(
+      async ({
+        force = false,
+      } = {}) => {
+        if (!userId) {
+          const emptyData =
+            createEmptyGoldData();
+
+          resetGoldData();
+
+          return emptyData;
+        }
+
+        const requestId =
+          requestIdRef.current + 1;
+
+        requestIdRef.current =
+          requestId;
+
+        setLoading(true);
+        setError('');
+
+        try {
+          const result =
+            await getGoldData(
+              userId,
+              { force }
+            );
+
+          const normalizedResult =
+            buildNormalizedGoldData(
+              result
+            );
+
+          /*
+           * Nếu có request mới hơn thì không ghi đè
+           * dữ liệu của request mới.
+           */
+          if (
+            requestId !==
+            requestIdRef.current
+          ) {
+            return normalizedResult;
+          }
+
+          setGoldData(
+            normalizedResult
+          );
+
+          return normalizedResult;
+        } catch (loadError) {
+          if (
+            requestId ===
+            requestIdRef.current
+          ) {
+            setError(
+              loadError?.message ||
+              'Không thể tải dữ liệu.'
+            );
+          }
+
+          throw loadError;
+        } finally {
+          if (
+            requestId ===
+            requestIdRef.current
+          ) {
+            setLoading(false);
+          }
+        }
+      },
+      [
+        userId,
+        resetGoldData,
+      ]
+    );
+
+  const reloadGoldData =
+    useCallback(
+      () =>
+        loadGoldData({
+          force: true,
+        }),
+      [loadGoldData]
+    );
+
+  useEffect(() => {
+    if (!userId) {
+      resetGoldData();
       return;
     }
 
-    loadGoldData().catch(() => {});
+    loadGoldData().catch(
+      () => {}
+    );
   }, [
     userId,
     loadGoldData,
+    resetGoldData,
   ]);
 
   /*
-   * Ép tải lại toàn bộ dữ liệu.
-   */
-  const reloadGoldData = useCallback(
-    async () => {
-      return loadGoldData({
-        force: true,
-      });
-    },
-    [loadGoldData]
-  );
-
-  /*
-   * Tự động tải lại khi dữ liệu cá nhân thay đổi.
+   * Realtime cho dữ liệu cá nhân.
    */
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      return undefined;
+    }
 
     let reloadTimer;
 
     function scheduleReload() {
-      clearTimeout(reloadTimer);
+      window.clearTimeout(
+        reloadTimer
+      );
 
-      reloadTimer = setTimeout(() => {
-        reloadGoldData().catch(() => {});
-      }, 300);
+      reloadTimer =
+        window.setTimeout(
+          () => {
+            reloadGoldData().catch(
+              () => {}
+            );
+          },
+          300
+        );
     }
 
-    const personalChannel = supabase
-      .channel(
-        `gold-personal-data-${userId}`
-      )
-
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'gold_transactions',
-          filter: `user_id=eq.${userId}`,
-        },
-        scheduleReload
-      )
-
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'gold_prices',
-          filter: `user_id=eq.${userId}`,
-        },
-        scheduleReload
-      )
-
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'gold_price_history',
-          filter: `user_id=eq.${userId}`,
-        },
-        scheduleReload
-      )
-
-      .subscribe();
+    const personalChannel =
+      supabase
+        .channel(
+          `gold-personal-data-${userId}`
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table:
+              'gold_transactions',
+            filter:
+              `user_id=eq.${userId}`,
+          },
+          scheduleReload
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table:
+              'user_gold_preferences',
+            filter:
+              `user_id=eq.${userId}`,
+          },
+          scheduleReload
+        )
+        .subscribe();
 
     return () => {
-      clearTimeout(reloadTimer);
+      window.clearTimeout(
+        reloadTimer
+      );
 
       supabase.removeChannel(
         personalChannel
@@ -228,53 +486,88 @@ function useGoldData(userId) {
   ]);
 
   /*
-   * Tự động tải lại khi giá PNJ dùng chung thay đổi.
-   *
-   * Không dùng filter user_id vì đây là dữ liệu chung.
+   * Realtime cho dữ liệu thị trường của:
+   * - PNJ
+   * - SJC
+   * - Mi Hồng
    */
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      return undefined;
+    }
 
     let reloadTimer;
 
-    function schedulePnjReload() {
-      clearTimeout(reloadTimer);
+    function scheduleMarketReload() {
+      window.clearTimeout(
+        reloadTimer
+      );
 
-      reloadTimer = setTimeout(() => {
-        reloadGoldData().catch(() => {});
-      }, 300);
+      reloadTimer =
+        window.setTimeout(
+          () => {
+            reloadGoldData().catch(
+              () => {}
+            );
+          },
+          300
+        );
     }
 
-    const pnjChannel = supabase
-      .channel('shared-pnj-data')
-
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'pnj_current_price',
-        },
-        schedulePnjReload
-      )
-
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'pnj_price_history',
-        },
-        schedulePnjReload
-      )
-
-      .subscribe();
+    const marketChannel =
+      supabase
+        .channel(
+          `shared-gold-market-data-${userId}`
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table:
+              'gold_price_latest',
+          },
+          scheduleMarketReload
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table:
+              'gold_price_history',
+          },
+          scheduleMarketReload
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table:
+              'gold_source_products',
+          },
+          scheduleMarketReload
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table:
+              'gold_price_sources',
+          },
+          scheduleMarketReload
+        )
+        .subscribe();
 
     return () => {
-      clearTimeout(reloadTimer);
+      window.clearTimeout(
+        reloadTimer
+      );
 
       supabase.removeChannel(
-        pnjChannel
+        marketChannel
       );
     };
   }, [
@@ -283,23 +576,28 @@ function useGoldData(userId) {
   ]);
 
   /*
-   * Khi quay lại tab hoặc cửa sổ được focus,
-   * tải lại để tránh dữ liệu cũ.
+   * Tải lại dữ liệu khi user quay lại tab.
    */
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      return undefined;
+    }
 
     function handleVisibilityChange() {
       if (
         document.visibilityState ===
         'visible'
       ) {
-        reloadGoldData().catch(() => {});
+        reloadGoldData().catch(
+          () => {}
+        );
       }
     }
 
     function handleWindowFocus() {
-      reloadGoldData().catch(() => {});
+      reloadGoldData().catch(
+        () => {}
+      );
     }
 
     document.addEventListener(
@@ -328,8 +626,35 @@ function useGoldData(userId) {
     reloadGoldData,
   ]);
 
+  /*
+   * Các object nhóm theo nguồn luôn có đủ:
+   * PNJ, SJC, MI_HONG.
+   */
+  const currentPricesBySource =
+    useMemo(
+      () => ({
+        ...createEmptySourceGroups(),
+        ...goldData.currentPricesBySource,
+      }),
+      [
+        goldData
+          .currentPricesBySource,
+      ]
+    );
+
+  const priceHistoryBySource =
+    useMemo(
+      () => ({
+        ...createEmptySourceGroups(),
+        ...goldData.priceHistoryBySource,
+      }),
+      [
+        goldData
+          .priceHistoryBySource,
+      ]
+    );
+
   return {
-    // Dữ liệu cá nhân
     transactions:
       goldData.transactions,
 
@@ -342,7 +667,15 @@ function useGoldData(userId) {
     personalPriceHistory:
       goldData.personalPriceHistory,
 
-    // Dữ liệu PNJ dùng chung
+    marketCurrentPrices:
+      goldData.marketCurrentPrices,
+
+    marketPriceHistory:
+      goldData.marketPriceHistory,
+
+    currentPricesBySource,
+    priceHistoryBySource,
+
     pnjCurrentPrice:
       goldData.pnjCurrentPrice,
 
@@ -351,7 +684,6 @@ function useGoldData(userId) {
 
     loading,
     error,
-
     reloadGoldData,
   };
 }

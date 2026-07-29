@@ -4,7 +4,6 @@ import {
   createGoldTransaction,
   updateGoldTransaction,
   deleteGoldTransaction,
-  updateTransactionSellPriceByGoldType,
 } from './services/goldTransactionService';
 import Toast from "./components/Toast";
 import AdminUserManager from "./components/AdminUserManager";
@@ -32,9 +31,6 @@ import AIChatPage from "./components/ai-chat/AIChatPage";
 import MarketNews from "./components/market-news/MarketNews";
 import { supabase } from './supabaseClient';
 
-import {
-  getVietnamDateKey,
-} from './utils/formatters';
 
 import {
   useEffect,
@@ -136,8 +132,6 @@ function App() {
     toasts,
     addToast,
     removeToast,
-    success: showSuccessToast,
-    error: showErrorToast,
   } = useToast();
 
   const {
@@ -164,6 +158,18 @@ function App() {
     setActiveGoldTab,
   ] = useState('local');
 
+
+  /*
+   * Nguồn đang được chọn trong thẻ lịch sử giá cửa hàng.
+   * Hiện tại hệ thống mới có dữ liệu PNJ.
+   * Hai tab SJC và Mi Hồng sẽ hiển thị rỗng cho đến khi
+   * có Edge Function đồng bộ tương ứng.
+   */
+  const [
+    activeHistorySource,
+    setActiveHistorySource,
+  ] = useState('PNJ');
+
   /*
    * Điều hướng nội bộ:
    * - home: giao diện Hũ vàng hiện tại.
@@ -188,61 +194,193 @@ function App() {
    */
   const {
     transactions,
-    prices,
-    personalPriceHistory,
+    marketCurrentPrices = [],
+    marketPriceHistory = [],
+    currentPricesBySource = {},
+    priceHistoryBySource = {},
     pnjCurrentPrice,
-    pnjPriceHistory,
+    pnjPriceHistory = [],
     loading,
     error: goldDataError,
     reloadGoldData,
   } = useGoldData(user?.id);
 
-  /*
-   * Giữ tên priceHistory để không phải sửa các phần
-   * biểu đồ, tính biến động và bảng lịch sử phía dưới.
-   *
-   * Từ đây priceHistory là lịch sử PNJ dùng chung.
-   */
-  const priceHistory =
-    pnjPriceHistory ?? [];
+  function normalizeSourceCode(value) {
+    return String(value ?? '')
+      .trim()
+      .toUpperCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/Đ/g, 'D')
+      .replace(/[^A-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .replace(/^MIHONG$/, 'MI_HONG');
+  }
 
-  /*
-   * Chuẩn hóa dữ liệu giá PNJ theo cấu trúc mà
-   * các component cũ đang sử dụng.
-   */
+  function normalizeProductName(value) {
+    return String(value ?? '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function getItemSourceCode(item) {
+    const nestedSource =
+      Array.isArray(item?.source)
+        ? item.source[0]
+        : item?.source;
+
+    const joinedSource =
+      Array.isArray(item?.gold_price_sources)
+        ? item.gold_price_sources[0]
+        : item?.gold_price_sources;
+
+    return normalizeSourceCode(
+      item?.source_code ??
+      item?.sourceCode ??
+      nestedSource?.code ??
+      nestedSource?.source_code ??
+      joinedSource?.code ??
+      joinedSource?.source_code ??
+      item?.source_name ??
+      item?.source
+    );
+  }
+
+  function getItemProductName(item) {
+    const nestedProduct =
+      Array.isArray(item?.source_product)
+        ? item.source_product[0]
+        : item?.source_product;
+
+    const joinedProduct =
+      Array.isArray(item?.gold_source_products)
+        ? item.gold_source_products[0]
+        : item?.gold_source_products;
+
+    const nestedGoldType =
+      Array.isArray(item?.gold_type)
+        ? item.gold_type[0]
+        : item?.gold_type;
+
+    return (
+      item?.product_name ??
+      item?.source_product_name ??
+      nestedProduct?.product_name ??
+      nestedProduct?.name ??
+      joinedProduct?.product_name ??
+      joinedProduct?.name ??
+      item?.gold_type_name ??
+      nestedGoldType?.name ??
+      item?.gold_type ??
+      ''
+    );
+  }
+
+  const allShopPriceHistory = useMemo(() => {
+    if (
+      Array.isArray(marketPriceHistory) &&
+      marketPriceHistory.length > 0
+    ) {
+      return marketPriceHistory;
+    }
+
+    return Array.isArray(pnjPriceHistory)
+      ? pnjPriceHistory.map((item) => ({
+        ...item,
+        source_code:
+          item.source_code ??
+          'PNJ',
+      }))
+      : [];
+  }, [
+    marketPriceHistory,
+    pnjPriceHistory,
+  ]);
+
+  const priceHistory = useMemo(() => {
+    const selectedSource =
+      normalizeSourceCode(
+        activeHistorySource
+      );
+
+    const groupedRows =
+      priceHistoryBySource?.[
+      selectedSource
+      ];
+
+    if (
+      Array.isArray(groupedRows) &&
+      groupedRows.length > 0
+    ) {
+      return groupedRows;
+    }
+
+    return allShopPriceHistory.filter(
+      (item) =>
+        getItemSourceCode(item) ===
+        selectedSource
+    );
+  }, [
+    activeHistorySource,
+    allShopPriceHistory,
+    priceHistoryBySource,
+  ]);
+
   const shopGold = useMemo(() => {
-    if (!pnjCurrentPrice) {
+    const currentPnjPrice =
+      (
+        Array.isArray(marketCurrentPrices)
+          ? marketCurrentPrices
+          : []
+      ).find(
+        (item) =>
+          getItemSourceCode(item) ===
+          'PNJ'
+      ) ??
+      pnjCurrentPrice ??
+      null;
+
+    if (!currentPnjPrice) {
       return null;
     }
 
     const buyPricePerChi = Number(
-      pnjCurrentPrice.buy_price_per_chi ??
-      pnjCurrentPrice.current_price_per_chi ??
-      pnjCurrentPrice.price_per_chi ??
+      currentPnjPrice.buy_price ??
+      currentPnjPrice.buy_price_per_chi ??
+      currentPnjPrice.current_price_per_chi ??
+      currentPnjPrice.price_per_chi ??
       0
     );
 
     const sellPricePerChi = Number(
-      pnjCurrentPrice.sell_price_per_chi ??
+      currentPnjPrice.sell_price ??
+      currentPnjPrice.sell_price_per_chi ??
       0
     );
 
     return {
-      ...pnjCurrentPrice,
-
+      ...currentPnjPrice,
+      source_code: 'PNJ',
+      source: 'PNJ',
       current_price_per_chi:
         buyPricePerChi,
-
       price_per_chi:
         buyPricePerChi,
-
       buy_price_per_chi:
         buyPricePerChi,
-
       sell_price_per_chi:
         sellPricePerChi,
     };
-  }, [pnjCurrentPrice]);
+  }, [
+    marketCurrentPrices,
+    pnjCurrentPrice,
+  ]);
 
   /*
    * Kiểm tra trạng thái đăng nhập.
@@ -579,6 +717,13 @@ function App() {
   const [historyPage, setHistoryPage] =
     useState(1);
 
+  /*
+   * Khi đổi nguồn giá, quay lại trang đầu tiên.
+   */
+  useEffect(() => {
+    setHistoryPage(1);
+  }, [activeHistorySource]);
+
   const historyPageSize = 10;
 
   /*
@@ -605,7 +750,10 @@ function App() {
           priceHistory[index];
 
         const goldTypeKey = String(
-          item.gold_type ?? ''
+          item.gold_type_name ??
+          item.gold_type ??
+          item.product_name ??
+          ''
         )
           .trim()
           .toLowerCase();
@@ -617,6 +765,7 @@ function App() {
 
         const currentBuyPrice =
           Number(
+            item.buy_price ??
             item.price_per_chi ??
             item.new_buy_price_per_chi ??
             item.buy_price_per_chi ??
@@ -625,6 +774,7 @@ function App() {
 
         const currentSellPrice =
           Number(
+            item.sell_price ??
             item.sell_price_per_chi ??
             item.new_sell_price_per_chi ??
             0
@@ -633,6 +783,7 @@ function App() {
         const previousBuyPrice =
           previousItem
             ? Number(
+              previousItem.buy_price ??
               previousItem.price_per_chi ??
               previousItem
                 .new_buy_price_per_chi ??
@@ -645,6 +796,7 @@ function App() {
         const previousSellPrice =
           previousItem
             ? Number(
+              previousItem.sell_price ??
               previousItem
                 .sell_price_per_chi ??
               previousItem
@@ -729,10 +881,6 @@ function App() {
   const [editingId, setEditingId] =
     useState(null);
 
-  const [
-    editingPriceId,
-    setEditingPriceId,
-  ] = useState(null);
 
   const [
     isWorldGoldOpen,
@@ -832,6 +980,7 @@ function App() {
 
   const defaultTransactionForm = {
     transaction_type: 'BUY',
+    source_code: 'PNJ',
     gold_type: 'Nhẫn 9999',
     quantity_chi: '',
     price_per_chi: '',
@@ -844,13 +993,6 @@ function App() {
     note: '',
   };
 
-  const defaultPriceForm = {
-    gold_type: 'Nhẫn 9999',
-    current_price_per_chi: '',
-    sell_price_per_chi: '',
-    note: '',
-  };
-
   const [
     transactionForm,
     setTransactionForm,
@@ -858,94 +1000,138 @@ function App() {
     defaultTransactionForm
   );
 
-  const [
-    priceForm,
-    setPriceForm,
-  ] = useState(
-    defaultPriceForm
-  );
-
-  /*
-   * Lấy giá cửa hàng mua lại hiện tại.
-   *
-   * Ưu tiên:
-   * 1. Giá PNJ dùng chung.
-   * 2. Giá cá nhân trong gold_prices.
-   */
   function getCurrentBuybackPrice(
+    sourceCode,
     goldType
   ) {
+    const normalizedSource =
+      normalizeSourceCode(sourceCode);
+
     const normalizedGoldType =
-      String(goldType ?? '')
-        .trim()
-        .toLowerCase();
+      normalizeProductName(goldType);
 
-    const pnjGoldType =
-      String(
-        shopGold?.gold_type ?? ''
-      )
-        .trim()
-        .toLowerCase();
-
-    if (
-      shopGold &&
-      normalizedGoldType === pnjGoldType
-    ) {
-      return Number(
-        shopGold.buy_price_per_chi ??
-        shopGold.current_price_per_chi ??
-        shopGold.price_per_chi ??
-        0
-      );
-    }
-
-    const matchedPrice =
-      prices.find(
+    const sourceRows =
+      (
+        Array.isArray(marketCurrentPrices)
+          ? marketCurrentPrices
+          : []
+      ).filter(
         (item) =>
-          String(
-            item.gold_type ?? ''
-          )
-            .trim()
-            .toLowerCase() ===
-          normalizedGoldType
+          getItemSourceCode(item) ===
+          normalizedSource
       );
 
-    return matchedPrice
-      ? Number(
-        matchedPrice
-          .current_price_per_chi ??
-        0
-      )
-      : 0;
+    const exactRow = sourceRows.find(
+      (item) =>
+        normalizeProductName(
+          getItemProductName(item)
+        ) === normalizedGoldType
+    );
+
+    const aliasBySource = {
+      PNJ: [
+        'nhan 9999',
+        'nhan tron 9999',
+        'vang nhan 9999',
+      ],
+      MI_HONG: [
+        'vang 999',
+        'vang 999 9',
+        'vang nhan 999',
+      ],
+      SJC: [
+        'nhan sjc',
+        'vang nhan sjc',
+        'vang mieng sjc',
+      ],
+    };
+
+    const aliases =
+      aliasBySource[normalizedSource] ??
+      [];
+
+    const aliasRow = sourceRows.find(
+      (item) =>
+        aliases.some(
+          (alias) =>
+            normalizeProductName(
+              getItemProductName(item)
+            ).includes(alias)
+        )
+    );
+
+    const matchedMarketPrice =
+      exactRow ??
+      aliasRow ??
+      sourceRows.find(
+        (item) =>
+          Number(
+            item.buy_price ??
+            item.buy_price_per_chi ??
+            item.current_price_per_chi ??
+            item.price_per_chi ??
+            0
+          ) > 0
+      );
+
+    return Number(
+      matchedMarketPrice?.buy_price ??
+      matchedMarketPrice
+        ?.buy_price_per_chi ??
+      matchedMarketPrice
+        ?.current_price_per_chi ??
+      matchedMarketPrice?.price_per_chi ??
+      0
+    );
   }
 
-  /*
-   * Khi thêm giao dịch mới, tự động lấy giá
-   * cửa hàng đang mua lại.
-   */
   useEffect(() => {
-    if (editingId) {
+    const existingSellPrice = Number(
+      transactionForm.sell_price_per_chi ||
+      0
+    );
+
+    if (
+      editingId &&
+      existingSellPrice > 0
+    ) {
       return;
     }
 
     const currentBuybackPrice =
       getCurrentBuybackPrice(
+        transactionForm.source_code,
         transactionForm.gold_type
       );
 
+    if (
+      !currentBuybackPrice ||
+      currentBuybackPrice <= 0
+    ) {
+      return;
+    }
+
     setTransactionForm(
       (currentForm) => {
-        const newSellPrice =
-          currentBuybackPrice > 0
-            ? String(
-              currentBuybackPrice
-            )
-            : '';
+        const currentSellPrice =
+          Number(
+            currentForm.sell_price_per_chi ||
+            0
+          );
 
         if (
-          currentForm
-            .sell_price_per_chi ===
-          newSellPrice
+          editingId &&
+          currentSellPrice > 0
+        ) {
+          return currentForm;
+        }
+
+        const nextSellPrice =
+          String(currentBuybackPrice);
+
+        if (
+          currentForm.sell_price_per_chi ===
+          nextSellPrice
         ) {
           return currentForm;
         }
@@ -953,15 +1139,16 @@ function App() {
         return {
           ...currentForm,
           sell_price_per_chi:
-            newSellPrice,
+            nextSellPrice,
         };
       }
     );
   }, [
-    transactionForm.gold_type,
-    prices,
-    shopGold,
     editingId,
+    transactionForm.source_code,
+    transactionForm.gold_type,
+    transactionForm.sell_price_per_chi,
+    marketCurrentPrices,
   ]);
 
   async function saveTransaction(
@@ -1029,38 +1216,19 @@ function App() {
 
     const payload = {
       user_id: user.id,
-
-      transaction_type:
-        transactionForm
-          .transaction_type,
-
-      gold_type:
-        transactionForm
-          .gold_type
-          .trim(),
-
-      quantity_chi:
-        quantity,
-
-      price_per_chi:
-        price,
-
+      transaction_type: transactionForm.transaction_type,
+      gold_name: transactionForm.gold_type.trim(),
+      quantity_chi: quantity,
+      unit_price: price,
       sell_price_per_chi:
         sellPrice,
-
-      transaction_date:
-        transactionForm
-          .transaction_date,
-
-      location:
-        transactionForm
-          .location
-          .trim(),
-
-      note:
-        transactionForm
-          .note
-          .trim(),
+      source_code:
+        transactionForm.source_code,
+      fee_amount: 0,
+      total_amount: quantity * price,
+      transaction_date: transactionForm.transaction_date,
+      seller_name: transactionForm.location.trim() || null,
+      note: transactionForm.note.trim() || null,
     };
 
     try {
@@ -1115,6 +1283,11 @@ function App() {
       transaction_type:
         tx.transaction_type,
 
+      source_code:
+        tx.source_code ??
+        tx.market_source_code ??
+        'PNJ',
+
       gold_type:
         tx.gold_type ?? '',
 
@@ -1167,332 +1340,6 @@ function App() {
     );
 
     setMessage('');
-  }
-
-  /*
-   * Lưu giá do người dùng tự nhập.
-   *
-   * Chức năng này vẫn ghi vào:
-   * - gold_prices
-   * - gold_price_history
-   *
-   * Đây là dữ liệu cá nhân, không phải dữ liệu PNJ dùng chung.
-   */
-  async function saveCurrentPrice(
-    event
-  ) {
-    event.preventDefault();
-
-    setMessage('');
-    setMessageType('success');
-
-    const currentPrice = Number(
-      priceForm
-        .current_price_per_chi
-    );
-
-    const sellPrice = Number(
-      priceForm
-        .sell_price_per_chi
-    );
-
-    const goldType =
-      priceForm
-        .gold_type
-        .trim();
-
-    const now =
-      new Date().toISOString();
-
-    const priceDate =
-      getVietnamDateKey();
-
-    if (!goldType) {
-      setMessageType('error');
-      setMessage(
-        'Vui lòng nhập loại vàng.'
-      );
-      return;
-    }
-
-    if (
-      !currentPrice ||
-      currentPrice <= 0
-    ) {
-      setMessageType('error');
-
-      setMessage(
-        'Vui lòng nhập giá cửa hàng mua vào hợp lệ.'
-      );
-
-      return;
-    }
-
-    if (
-      !sellPrice ||
-      sellPrice <= 0
-    ) {
-      setMessageType('error');
-
-      setMessage(
-        'Vui lòng nhập giá cửa hàng bán ra hợp lệ.'
-      );
-
-      return;
-    }
-
-    let priceError;
-
-    if (editingPriceId) {
-      const result =
-        await supabase
-          .from('gold_prices')
-          .update({
-            gold_type:
-              goldType,
-
-            current_price_per_chi:
-              currentPrice,
-
-            sell_price_per_chi:
-              sellPrice,
-
-            updated_at:
-              now,
-          })
-          .eq(
-            'id',
-            editingPriceId
-          )
-          .eq(
-            'user_id',
-            user.id
-          );
-
-      priceError =
-        result.error;
-    } else {
-      const result =
-        await supabase
-          .from('gold_prices')
-          .upsert(
-            {
-              user_id:
-                user.id,
-
-              gold_type:
-                goldType,
-
-              current_price_per_chi:
-                currentPrice,
-
-              sell_price_per_chi:
-                sellPrice,
-
-              updated_at:
-                now,
-            },
-            {
-              onConflict:
-                'user_id,gold_type',
-            }
-          );
-
-      priceError =
-        result.error;
-    }
-
-    if (priceError) {
-      setMessageType('error');
-      setMessage(
-        priceError.message
-      );
-      return;
-    }
-
-    try {
-      await updateTransactionSellPriceByGoldType({
-        userId:
-          user.id,
-
-        goldType,
-
-        sellPricePerChi:
-          currentPrice,
-      });
-    } catch (error) {
-      setMessageType('error');
-
-      setMessage(
-        `Đã lưu giá hiện tại nhưng không cập nhật được giá trong danh sách giao dịch: ${error?.message ||
-        'Lỗi không xác định'
-        }`
-      );
-
-      return;
-    }
-
-    const {
-      error: historyError,
-    } = await supabase
-      .from('gold_price_history')
-      .upsert(
-        {
-          user_id:
-            user.id,
-
-          gold_type:
-            goldType,
-
-          price_date:
-            priceDate,
-
-          price_per_chi:
-            currentPrice,
-
-          sell_price_per_chi:
-            sellPrice,
-
-          note:
-            priceForm.note.trim() ||
-            'Cập nhật giá hiện tại',
-
-          created_at:
-            now,
-        },
-        {
-          onConflict:
-            'user_id,gold_type,price_date',
-        }
-      );
-
-    if (historyError) {
-      setMessageType('error');
-
-      setMessage(
-        `Không lưu được lịch sử giá theo ngày: ${historyError.message}`
-      );
-
-      return;
-    }
-
-    const wasEditing =
-      Boolean(editingPriceId);
-
-    setPriceForm(
-      defaultPriceForm
-    );
-
-    setEditingPriceId(null);
-
-    await reloadGoldData();
-
-    setMessageType('success');
-
-    setMessage(
-      wasEditing
-        ? 'Đã sửa giá hiện tại và cập nhật giá mới nhất của ngày hôm nay.'
-        : 'Đã cập nhật giá hiện tại và lưu giá mới nhất của ngày hôm nay.'
-    );
-  }
-
-  function editCurrentPrice(item) {
-    setEditingPriceId(
-      item.id
-    );
-
-    setPriceForm({
-      gold_type:
-        item.gold_type ?? '',
-
-      current_price_per_chi:
-        String(
-          item.current_price_per_chi ??
-          ''
-        ),
-
-      sell_price_per_chi:
-        String(
-          item.sell_price_per_chi ??
-          ''
-        ),
-
-      note:
-        'Sửa giá hiện tại',
-    });
-
-    setMessageType('success');
-
-    setMessage(
-      'Đang chỉnh sửa giá hiện tại. Sửa xong bấm Lưu giá đã sửa.'
-    );
-  }
-
-  function cancelPriceEdit() {
-    setEditingPriceId(null);
-
-    setPriceForm(
-      defaultPriceForm
-    );
-
-    setMessage('');
-  }
-
-  async function deleteCurrentPrice(
-    id,
-    goldType
-  ) {
-    const ok = await confirm({
-      title:
-        `Xóa giá của ${goldType}?`,
-
-      message:
-        'Giá đang lưu sẽ bị xóa. Lịch sử cập nhật giá cá nhân vẫn được giữ lại.',
-
-      confirmText:
-        'Xóa giá',
-
-      cancelText:
-        'Giữ lại',
-
-      type:
-        'danger',
-    });
-
-    if (!ok) {
-      return;
-    }
-
-    const {
-      error,
-    } = await supabase
-      .from('gold_prices')
-      .delete()
-      .eq('id', id)
-      .eq(
-        'user_id',
-        user.id
-      );
-
-    if (error) {
-      setMessageType('error');
-      setMessage(error.message);
-      return;
-    }
-
-    if (
-      editingPriceId === id
-    ) {
-      cancelPriceEdit();
-    }
-
-    await reloadGoldData();
-
-    setMessageType('success');
-
-    setMessage(
-      'Đã xóa giá hiện tại. Lịch sử giá cá nhân vẫn được giữ lại.'
-    );
   }
 
   async function deleteTransaction(
@@ -1788,6 +1635,9 @@ function App() {
                 setTransactionForm={
                   setTransactionForm
                 }
+                marketCurrentPrices={
+                  marketCurrentPrices
+                }
                 onSubmit={
                   saveTransaction
                 }
@@ -1797,30 +1647,8 @@ function App() {
               />
 
               <CurrentPriceForm
-                editingPriceId={
-                  editingPriceId
-                }
-                priceForm={
-                  priceForm
-                }
-                setPriceForm={
-                  setPriceForm
-                }
-                prices={prices}
-                pnjCurrentPrice={
-                  shopGold
-                }
-                onSubmit={
-                  saveCurrentPrice
-                }
-                onCancel={
-                  cancelPriceEdit
-                }
-                onEdit={
-                  editCurrentPrice
-                }
-                onDelete={
-                  deleteCurrentPrice
+                prices={
+                  marketCurrentPrices
                 }
                 onPriceUpdated={
                   reloadGoldData
@@ -1829,21 +1657,19 @@ function App() {
             </div>
 
             <LocalGoldChart
-              activeGoldTab={
-                activeGoldTab
+              activeGoldTab={activeGoldTab}
+              setActiveGoldTab={setActiveGoldTab}
+
+              activeHistorySource={
+                activeHistorySource
               }
-              setActiveGoldTab={
-                setActiveGoldTab
+              setActiveHistorySource={
+                setActiveHistorySource
               }
-              chartRange={
-                chartRange
-              }
-              setChartRange={
-                setChartRange
-              }
-              priceChartData={
-                priceChartData
-              }
+
+              chartRange={chartRange}
+              setChartRange={setChartRange}
+              priceChartData={priceChartData}
               theme={displayTheme}
             />
 
@@ -1885,8 +1711,12 @@ function App() {
             />
 
             <PriceHistoryTable
+              activeSource={activeHistorySource}
+              onSourceChange={
+                setActiveHistorySource
+              }
               priceHistory={
-                priceHistoryWithChanges
+                priceHistory
               }
               paginatedPriceHistory={
                 paginatedPriceHistory

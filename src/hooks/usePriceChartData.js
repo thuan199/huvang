@@ -34,151 +34,261 @@ function getChartStartDate(range) {
   return date;
 }
 
-function usePriceChartData(priceHistory, chartRange) {
+function getItemDate(item) {
+  return (
+    item?.source_updated_at ||
+    item?.fetched_at ||
+    item?.updated_at ||
+    item?.created_at ||
+    null
+  );
+}
+
+function getBuyPrice(item) {
+  return Number(
+    item?.buy_price ??
+    item?.buy_price_per_chi ??
+    item?.price_per_chi ??
+    item?.current_price_per_chi ??
+    0
+  );
+}
+
+function getSellPrice(item) {
+  return Number(
+    item?.sell_price ??
+    item?.sell_price_per_chi ??
+    0
+  );
+}
+
+function getGoldTypeKey(item) {
+  return String(
+    item?.gold_type_code ??
+    item?.gold_type_name ??
+    item?.gold_type ??
+    item?.product_code ??
+    item?.product_name ??
+    ''
+  )
+    .trim()
+    .toLowerCase();
+}
+
+function getGoldTypeName(item) {
+  return (
+    item?.gold_type_name ||
+    item?.gold_type ||
+    item?.product_name ||
+    item?.product_code ||
+    'Không xác định'
+  );
+}
+
+function usePriceChartData(
+  priceHistory,
+  chartRange
+) {
   const priceChartData = useMemo(() => {
     const source = Array.isArray(priceHistory)
       ? priceHistory
       : [];
 
-    const sortedHistory = [...source].sort(
-      (firstItem, secondItem) =>
-        new Date(firstItem.created_at) -
-        new Date(secondItem.created_at)
-    );
+    const validHistory = source.filter((item) => {
+      const itemDate = getItemDate(item);
+
+      return (
+        itemDate &&
+        !Number.isNaN(
+          new Date(itemDate).getTime()
+        )
+      );
+    });
+
+    const sortedHistory = [
+      ...validHistory,
+    ].sort((firstItem, secondItem) => {
+      return (
+        new Date(
+          getItemDate(firstItem)
+        ).getTime() -
+        new Date(
+          getItemDate(secondItem)
+        ).getTime()
+      );
+    });
 
     if (sortedHistory.length === 0) {
       return [];
     }
 
-    const startDate = getChartStartDate(chartRange);
-    startDate.setHours(0, 0, 0, 0);
+    const startDate =
+      getChartStartDate(chartRange);
 
-    /*
-     * Những lần cập nhật nằm trong khoảng thời gian đang xem.
-     */
-    const historyInRange = sortedHistory.filter(
-      (item) =>
-        new Date(item.created_at) >= startDate
-    );
+    const historyInRange =
+      sortedHistory.filter((item) => {
+        const itemDate = new Date(
+          getItemDate(item)
+        );
 
-    /*
-     * Những lần cập nhật xảy ra trước khoảng thời gian đang xem.
-     */
-    const historyBeforeRange = sortedHistory.filter(
-      (item) =>
-        new Date(item.created_at) < startDate
-    );
+        return itemDate >= startDate;
+      });
 
-    /*
-     * Lấy giá cuối cùng trước thời điểm bắt đầu.
-     *
-     * Ví dụ:
-     * Hôm nay chưa cập nhật giá thì biểu đồ vẫn bắt đầu
-     * bằng giá cuối cùng của ngày hôm qua.
-     */
-    const latestPreviousPrice =
-      historyBeforeRange.length > 0
-        ? historyBeforeRange[
-        historyBeforeRange.length - 1
-        ]
-        : null;
+    const historyBeforeRange =
+      sortedHistory.filter((item) => {
+        const itemDate = new Date(
+          getItemDate(item)
+        );
+
+        return itemDate < startDate;
+      });
 
     const chartData = [];
 
-    if (latestPreviousPrice) {
+    /*
+     * Lưu giá gần nhất của từng loại vàng
+     * trước khoảng thời gian đang xem.
+     */
+    const previousPriceByGoldType =
+      new Map();
+
+    for (const item of historyBeforeRange) {
+      const goldTypeKey =
+        getGoldTypeKey(item);
+
+      previousPriceByGoldType.set(
+        goldTypeKey,
+        item
+      );
+    }
+
+    /*
+     * Thêm điểm đầu khoảng cho từng loại vàng.
+     */
+    for (const [
+      goldTypeKey,
+      previousItem,
+    ] of previousPriceByGoldType.entries()) {
       chartData.push({
         time:
           chartRange === '1d'
             ? 'Đầu ngày'
-            : startDate.toLocaleDateString('vi-VN', {
-              day: '2-digit',
-              month: '2-digit',
-            }),
+            : startDate.toLocaleDateString(
+              'vi-VN',
+              {
+                day: '2-digit',
+                month: '2-digit',
+              }
+            ),
 
         fullTime: `${startDate.toLocaleDateString(
           'vi-VN'
         )} 00:00`,
 
-        price: Number(
-          latestPreviousPrice.price_per_chi || 0
-        ),
+        goldType:
+          getGoldTypeName(previousItem),
 
-        sellPrice: Number(
-          latestPreviousPrice.sell_price_per_chi || 0
-        ),
+        goldTypeKey,
+
+        source:
+          previousItem.source_code ||
+          previousItem.source ||
+          '',
+
+        price:
+          getBuyPrice(previousItem),
+
+        sellPrice:
+          getSellPrice(previousItem),
 
         buyPriceChange: null,
         sellPriceChange: null,
+
+        note:
+          previousItem.note ?? '',
+
         isCarriedForward: true,
       });
     }
 
     /*
-     * Thêm các lần cập nhật thật trong khoảng thời gian đang xem.
-     */
-    const previousPriceByGoldType = new Map();
-
-    /*
-     * Lưu giá gần nhất trước khoảng đang xem
-     * để lần cập nhật đầu tiên vẫn tính được tăng/giảm.
-     */
-    for (const item of historyBeforeRange) {
-      const goldTypeKey = String(item.gold_type || '')
-        .trim()
-        .toLowerCase();
-
-      previousPriceByGoldType.set(goldTypeKey, item);
-    }
-
-    /*
-     * Thêm các lần cập nhật thật trong khoảng thời gian đang xem.
+     * Thêm các lần cập nhật thật
+     * trong khoảng thời gian đang xem.
      */
     for (const item of historyInRange) {
-      const goldTypeKey = String(item.gold_type || '')
-        .trim()
-        .toLowerCase();
+      const goldTypeKey =
+        getGoldTypeKey(item);
 
       const previousItem =
-        previousPriceByGoldType.get(goldTypeKey);
+        previousPriceByGoldType.get(
+          goldTypeKey
+        );
 
-      const currentBuyPrice = Number(
-        item.price_per_chi || 0
-      );
+      const currentBuyPrice =
+        getBuyPrice(item);
 
-      const currentSellPrice = Number(
-        item.sell_price_per_chi || 0
-      );
+      const currentSellPrice =
+        getSellPrice(item);
 
-      const buyPriceChange = previousItem
-        ? currentBuyPrice -
-        Number(previousItem.price_per_chi || 0)
-        : null;
+      const previousBuyPrice =
+        previousItem
+          ? getBuyPrice(previousItem)
+          : null;
 
-      const sellPriceChange = previousItem
-        ? currentSellPrice -
-        Number(previousItem.sell_price_per_chi || 0)
-        : null;
+      const previousSellPrice =
+        previousItem
+          ? getSellPrice(previousItem)
+          : null;
+
+      const buyPriceChange =
+        previousBuyPrice !== null
+          ? currentBuyPrice -
+            previousBuyPrice
+          : null;
+
+      const sellPriceChange =
+        previousSellPrice !== null
+          ? currentSellPrice -
+            previousSellPrice
+          : null;
+
+      const itemDate =
+        getItemDate(item);
 
       chartData.push({
-        time: new Date(item.created_at).toLocaleString(
-          'vi-VN',
-          {
-            day: '2-digit',
-            month: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-          }
-        ),
+        time: new Date(
+          itemDate
+        ).toLocaleString('vi-VN', {
+          day: '2-digit',
+          month: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
 
-        fullTime: formatDateTime(item.created_at),
+        fullTime:
+          formatDateTime(itemDate),
 
-        goldType: item.gold_type,
+        goldType:
+          getGoldTypeName(item),
 
-        price: currentBuyPrice,
-        sellPrice: currentSellPrice,
+        goldTypeKey,
+
+        source:
+          item.source_code ||
+          item.source ||
+          '',
+
+        price:
+          currentBuyPrice,
+
+        sellPrice:
+          currentSellPrice,
 
         buyPriceChange,
         sellPriceChange,
+
+        note:
+          item.note ?? '',
 
         isCarriedForward: false,
       });
@@ -190,8 +300,9 @@ function usePriceChartData(priceHistory, chartRange) {
     }
 
     /*
-     * Nếu không có giá cũ trước khoảng xem
-     * nhưng vẫn có lịch sử, lấy dòng gần nhất.
+     * Nếu khoảng thời gian không có dữ liệu
+     * và cũng không có điểm chuyển tiếp,
+     * hiển thị dòng giá gần nhất.
      */
     if (
       chartData.length === 0 &&
@@ -199,22 +310,41 @@ function usePriceChartData(priceHistory, chartRange) {
     ) {
       const latestPrice =
         sortedHistory[
-        sortedHistory.length - 1
+          sortedHistory.length - 1
         ];
+
+      const latestDate =
+        getItemDate(latestPrice);
 
       chartData.push({
         time: 'Giá gần nhất',
-        fullTime: formatDateTime(
-          latestPrice.created_at
-        ),
-        price: Number(
-          latestPrice.price_per_chi || 0
-        ),
-        sellPrice: Number(
-          latestPrice.sell_price_per_chi || 0
-        ),
-        buyPriceChange,
-        sellPriceChange,
+
+        fullTime:
+          formatDateTime(latestDate),
+
+        goldType:
+          getGoldTypeName(latestPrice),
+
+        goldTypeKey:
+          getGoldTypeKey(latestPrice),
+
+        source:
+          latestPrice.source_code ||
+          latestPrice.source ||
+          '',
+
+        price:
+          getBuyPrice(latestPrice),
+
+        sellPrice:
+          getSellPrice(latestPrice),
+
+        buyPriceChange: null,
+        sellPriceChange: null,
+
+        note:
+          latestPrice.note ?? '',
+
         isCarriedForward: true,
       });
     }

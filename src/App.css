@@ -6444,3 +6444,341 @@ input[type="date"] {
     transform: rotate(360deg);
   }
 }
+
+.price-history-header {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.price-history-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  
+}
+
+.price-history-tab {
+  border: none;
+  border-bottom: 3px solid
+    transparent;
+  background: transparent;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.price-history-tab:hover {
+  opacity: 1;
+}
+
+.price-history-tab--active {
+  border-bottom-color: currentColor;
+  opacity: 1;
+}
+
+@media (max-width: 600px) {
+  .price-history-tabs {
+    width: 100%;
+  }
+
+  .price-history-tab {
+    flex: 1;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+.gold-type-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sjc-conversion-unit {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.sjc-conversion-note {
+  max-width: 260px;
+  font-size: 12px;
+  line-height: 1.4;
+  opacity: 0.72;
+}
+
+.price-history-tabs {
+  display: flex;
+  gap: 10px;
+}
+
+.price-history-tab {
+  padding: 11px 22px;       /* cao hơn một chút */
+  min-height: 44px;
+
+  border: 1px solid #e6dfd1;
+  border-radius: 14px;
+
+  background: #faf8f4;
+  color: #555;
+
+  font-size: 15px;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  transition:
+    background-color .2s ease,
+    color .2s ease,
+    border-color .2s ease,
+    box-shadow .2s ease,
+    transform .15s ease;
+}
+
+.price-history-tab:hover {
+  background: #fffdf8;
+  border-color: #d8b766;
+  color: #222;
+
+  transform: translateY(-1px);
+}
+
+.price-history-tab--active {
+  background: #ffffff;
+
+  color: #1f1f1f;
+
+  border-color: #c79a28;
+
+  box-shadow:
+    0 3px 10px rgba(199,154,40,.10);
+}
+
+.transaction-unit-note {
+  margin: 4px 0 8px;
+  padding: 8px 10px;
+
+  border: 1px solid
+    rgba(191, 145, 25, 0.22);
+  border-radius: 9px;
+
+  background:
+    rgba(255, 245, 205, 0.42);
+
+  font-size: 12px;
+  line-height: 1.45;
+  opacity: 0.82;
+}
+
+.transaction-price-note {
+  margin: 3px 0 8px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* =========================================================
+   FORM GIAO DỊCH VÀ GIÁ VÀNG HIỆN TẠI
+========================================================= */
+
+.gold-entry-layout {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.25fr)
+    minmax(340px, 0.75fr);
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 18px;
+}
+
+.gold-entry-layout > .card {
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.current-market-prices {
+  position: sticky;
+  top: 122px;
+}
+
+.current-market-prices__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 15px;
+}
+
+.current-market-prices__header h2 {
+  margin-bottom: 5px;
+}
+
+.current-market-prices__header p {
+  margin: 0;
+}
+
+.current-market-prices__refresh {
+  flex-shrink: 0;
+  margin-top: 0;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.current-market-prices__list {
+  display: grid;
+  gap: 11px;
+}
+
+.current-market-price-item {
+  padding: 13px;
+  border: 1px solid #eadfc8;
+  border-radius: 14px;
+  background: #fffaf0;
+}
+
+.current-market-price-item__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.current-market-price-item__top strong {
+  color: #765600;
+  font-size: 15px;
+}
+
+.current-market-price-item__top time {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.current-market-price-item > p {
+  margin: 5px 0 11px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.current-market-price-item__values {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.current-market-price-item__values > div {
+  min-width: 0;
+  padding: 10px;
+  border-radius: 11px;
+  background: #ffffff;
+}
+
+.current-market-price-item__values span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.current-market-price-item__values strong {
+  display: block;
+  color: var(--navy);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.current-market-prices__empty {
+  padding: 30px 15px;
+  border: 1px dashed #dacba9;
+  border-radius: 13px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* Dark mode */
+.dark-theme .current-market-price-item {
+  border-color: #334155;
+  background: #0f172a;
+}
+
+.dark-theme
+.current-market-price-item__values > div {
+  background: #1e293b;
+}
+
+.dark-theme
+.current-market-price-item__top strong {
+  color: #facc15;
+}
+
+.dark-theme
+.current-market-price-item__values strong {
+  color: #f8fafc;
+}
+
+.dark-theme
+.current-market-prices__empty {
+  border-color: #475569;
+  color: #94a3b8;
+}
+
+@media (max-width: 1100px) {
+  .gold-entry-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .current-market-prices {
+    position: static;
+  }
+}
+
+@media (max-width: 600px) {
+  .current-market-prices__header {
+    flex-direction: column;
+  }
+
+  .current-market-prices__refresh {
+    width: 100%;
+  }
+
+  .current-market-price-item__values {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chart-source-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 12px 0 16px;
+}
+
+.chart-source-buttons button {
+  min-width: 90px;
+  padding: 9px 18px;
+  border: 1px solid #d6a617;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.chart-source-buttons button:hover {
+  transform: translateY(-1px);
+}
+
+.chart-source-buttons button.active {
+  background: #c58b00;
+  color: #fff;
+  box-shadow:
+    0 8px 18px
+    rgba(197, 139, 0, 0.25);
+}

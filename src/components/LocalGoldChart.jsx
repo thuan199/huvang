@@ -37,9 +37,10 @@ function PriceChangeLabel({
   const number = Number(change);
   const isIncrease = number > 0;
 
-  const formattedValue = Math.abs(number).toLocaleString(
-    'vi-VN'
-  );
+  const formattedValue =
+    Math.abs(number).toLocaleString(
+      'vi-VN'
+    );
 
   const text = isIncrease
     ? `▲ +${formattedValue}`
@@ -64,11 +65,30 @@ function PriceChangeLabel({
 function LocalGoldChart({
   activeGoldTab,
   setActiveGoldTab,
+
+  activeHistorySource,
+  setActiveHistorySource,
+
   chartRange,
   setChartRange,
   priceChartData,
   theme,
 }) {
+  const chartSources = [
+    {
+      value: 'PNJ',
+      label: 'PNJ',
+    },
+    {
+      value: 'SJC',
+      label: 'SJC',
+    },
+    {
+      value: 'MI_HONG',
+      label: 'Mi Hồng',
+    },
+  ];
+
   const chartRanges = [
     {
       value: '1d',
@@ -96,6 +116,13 @@ function LocalGoldChart({
     },
   ];
 
+  const activeSourceLabel =
+    chartSources.find(
+      (source) =>
+        source.value ===
+        activeHistorySource
+    )?.label ?? 'PNJ';
+
   return (
     <div className="card">
       <div className="gold-chart-tabs">
@@ -111,7 +138,7 @@ function LocalGoldChart({
           }
         >
           <BarChart3 size={17} />
-          Lịch sử giá PNJ
+          Lịch sử giá {activeSourceLabel}
         </button>
 
         <button
@@ -134,36 +161,69 @@ function LocalGoldChart({
         <>
           <h2 className="section-title">
             <BarChart3 size={20} />
-            Biểu đồ lịch sử giá
+            Biểu đồ lịch sử giá{' '}
+            {activeSourceLabel}
           </h2>
 
+          <div className="chart-source-buttons">
+            {chartSources.map(
+              (source) => (
+                <button
+                  key={source.value}
+                  type="button"
+                  className={
+                    activeHistorySource ===
+                    source.value
+                      ? 'active'
+                      : ''
+                  }
+                  onClick={() =>
+                    setActiveHistorySource(
+                      source.value
+                    )
+                  }
+                >
+                  {source.label}
+                </button>
+              )
+            )}
+          </div>
+
           <div className="chart-range-buttons">
-            {chartRanges.map((range) => (
-              <button
-                key={range.value}
-                type="button"
-                className={
-                  chartRange === range.value
-                    ? 'active'
-                    : ''
-                }
-                onClick={() =>
-                  setChartRange(range.value)
-                }
-              >
-                {range.label}
-              </button>
-            ))}
+            {chartRanges.map(
+              (range) => (
+                <button
+                  key={range.value}
+                  type="button"
+                  className={
+                    chartRange ===
+                    range.value
+                      ? 'active'
+                      : ''
+                  }
+                  onClick={() =>
+                    setChartRange(
+                      range.value
+                    )
+                  }
+                >
+                  {range.label}
+                </button>
+              )
+            )}
           </div>
 
           {priceChartData.length === 0 ? (
             <p className="small-text">
-              Chưa có lịch sử giá để vẽ biểu đồ.
+              Chưa có lịch sử giá{' '}
+              {activeSourceLabel} để vẽ
+              biểu đồ.
             </p>
           ) : (
             <>
               <p className="chart-swipe-hint">
-                Vuốt sang trái hoặc phải để xem thêm dữ liệu
+                Vuốt sang trái hoặc phải
+                để xem thêm dữ liệu
               </p>
 
               <div className="chart-scroll">
@@ -191,8 +251,12 @@ function LocalGoldChart({
                       />
 
                       <YAxis
-                        tickFormatter={(value) =>
-                          formatMoney(value)
+                        tickFormatter={(
+                          value
+                        ) =>
+                          formatMoney(
+                            value
+                          )
                         }
                         domain={[
                           'dataMin - 50000',
@@ -223,20 +287,25 @@ function LocalGoldChart({
                           }
 
                           return payload[0]
-                            .payload.fullTime;
+                            .payload
+                            .fullTime;
                         }}
                       />
 
                       <Line
                         type="stepAfter"
                         dataKey="price"
-                        name="Giá mua"
+                        name={`Giá mua ${activeSourceLabel}`}
                         strokeWidth={3}
                         dot={{ r: 4 }}
-                        activeDot={{ r: 6 }}
+                        activeDot={{
+                          r: 6,
+                        }}
                       >
                         <LabelList
-                          content={(props) => (
+                          content={(
+                            props
+                          ) => (
                             <PriceChangeLabel
                               {...props}
                               changeKey="buyPriceChange"
@@ -249,13 +318,17 @@ function LocalGoldChart({
                       <Line
                         type="stepAfter"
                         dataKey="sellPrice"
-                        name="Giá bán"
+                        name={`Giá bán ${activeSourceLabel}`}
                         strokeWidth={3}
                         dot={{ r: 4 }}
-                        activeDot={{ r: 6 }}
+                        activeDot={{
+                          r: 6,
+                        }}
                       >
                         <LabelList
-                          content={(props) => (
+                          content={(
+                            props
+                          ) => (
                             <PriceChangeLabel
                               {...props}
                               changeKey="sellPriceChange"
@@ -277,11 +350,14 @@ function LocalGoldChart({
         <>
           <h2 className="section-title">
             <Globe2 size={20} />
-            Biểu đồ vàng thế giới XAU/USD
+            Biểu đồ vàng thế giới
+            XAU/USD
           </h2>
 
           <p className="small-text">
-            Biểu đồ tương tác từ TradingView, mã OANDA:XAUUSD.
+            Biểu đồ tương tác từ
+            TradingView, mã
+            OANDA:XAUUSD.
           </p>
 
           <div className="world-chart-box">

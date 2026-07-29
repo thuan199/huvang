@@ -52,7 +52,7 @@ function TransactionTable({
                     <th>Vàng</th>
                     <th>Số chỉ</th>
                     <th>Giá tại thời điểm mua</th>
-                    <th>Giá bán ra hiện tại</th>
+                    <th>Giá cửa hàng thu lại hiện tại</th>
                     <th>Nơi mua/bán</th>
                     <th>Lời/lỗ</th>
                     <th>Lời/lỗ %</th>
@@ -86,7 +86,11 @@ function TransactionTable({
                           {formatMoney(transaction.price_per_chi)}
                         </td>
 
-                        <td>{formatMoney(result.currentPrice)}</td>
+                        <td>
+                          {result.hasMarketPrice
+                            ? `${formatMoney(result.currentPrice)} VND/chỉ`
+                            : 'Chưa có giá'}
+                        </td>
 
                         <td>
                           {transaction.location ? (
@@ -197,9 +201,13 @@ function TransactionTable({
                       </tr>
 
                       <tr>
-                        <th>Giá hiện tại</th>
+                        <th>Giá cửa hàng thu lại</th>
                         <td>
-                          {formatMoney(mobileResult.currentPrice)} VND
+                          {mobileResult.hasMarketPrice
+                            ? `${formatMoney(
+                              mobileResult.currentPrice
+                            )} VND/chỉ`
+                            : 'Chưa có giá'}
                         </td>
                       </tr>
 

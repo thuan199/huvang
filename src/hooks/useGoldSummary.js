@@ -1,21 +1,9 @@
 import { useMemo } from 'react';
 
-function useGoldSummary(transactions, priceHistory) {
-  const priceMap = useMemo(() => {
-    const map = {};
-
-    for (const item of priceHistory || []) {
-      if (!map[item.gold_type]) {
-        map[item.gold_type] = Number(
-          item.price_per_chi || 0
-        );
-      }
-    }
-
-    return map;
-  }, [priceHistory]);
-
-  function calculateTransactionResult(transaction) {
+function useGoldSummary(transactions) {
+  function calculateTransactionResult(
+    transaction
+  ) {
     const quantity = Number(
       transaction.quantity_chi || 0
     );
@@ -24,19 +12,22 @@ function useGoldSummary(transactions, priceHistory) {
       transaction.price_per_chi || 0
     );
 
-    const latestBuybackPrice = Number(
-      priceMap[transaction.gold_type] || 0
-    );
-
+    /*
+     * Giá thu lại đã được lấy tại thời điểm
+     * nhập giao dịch và lưu vào database.
+     */
     const currentPrice = Number(
-      latestBuybackPrice ||
-      transaction.sell_price_per_chi ||
-      buyPrice
+      transaction.sell_price_per_chi || 0
     );
 
-    const originalValue = quantity * buyPrice;
-    const currentValue = quantity * currentPrice;
-    const profit = currentValue - originalValue;
+    const originalValue =
+      quantity * buyPrice;
+
+    const currentValue =
+      quantity * currentPrice;
+
+    const profit =
+      currentValue - originalValue;
 
     const profitPercent =
       originalValue > 0
@@ -49,6 +40,8 @@ function useGoldSummary(transactions, priceHistory) {
       currentPrice,
       profit,
       profitPercent,
+      hasMarketPrice:
+        currentPrice > 0,
     };
   }
 
@@ -57,28 +50,39 @@ function useGoldSummary(transactions, priceHistory) {
     let totalBuyCost = 0;
     let totalCurrentValue = 0;
 
-    for (const transaction of transactions || []) {
+    for (
+      const transaction of
+      transactions || []
+    ) {
       const quantity = Number(
         transaction.quantity_chi || 0
       );
 
-      if (transaction.transaction_type === 'BUY') {
+      const result =
+        calculateTransactionResult(
+          transaction
+        );
+
+      if (
+        transaction.transaction_type ===
+        'BUY'
+      ) {
         totalGoldQuantity += quantity;
+        totalBuyCost +=
+          result.originalValue;
+        totalCurrentValue +=
+          result.currentValue;
       } else if (
-        transaction.transaction_type === 'SELL'
+        transaction.transaction_type ===
+        'SELL'
       ) {
         totalGoldQuantity -= quantity;
       }
-
-      const result =
-        calculateTransactionResult(transaction);
-
-      totalBuyCost += result.originalValue;
-      totalCurrentValue += result.currentValue;
     }
 
     const profit =
-      totalCurrentValue - totalBuyCost;
+      totalCurrentValue -
+      totalBuyCost;
 
     const profitPercent =
       totalBuyCost > 0
@@ -92,10 +96,9 @@ function useGoldSummary(transactions, priceHistory) {
       profit,
       profitPercent,
     };
-  }, [transactions, priceMap]);
+  }, [transactions]);
 
   return {
-    priceMap,
     summary,
     calculateTransactionResult,
   };

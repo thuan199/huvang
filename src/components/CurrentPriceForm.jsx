@@ -1,58 +1,247 @@
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
-} from 'react';
+} from "react";
 
 import {
   CloudDownload,
-  Pencil,
-  Trash2,
-  XCircle,
   RefreshCcw,
   CheckCircle2,
   Info,
   AlertCircle,
   X,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { formatMoney } from '../utils/formatters';
 import {
-  syncGoldPriceFromPnj,
-} from '../services/goldDataService.js';
+  formatMoney,
+} from "../utils/formatters";
+
+import {
+  syncAllGoldPrices,
+} from "../services/goldDataService.js";
+
+function normalizeSourceCode(value) {
+  return String(value ?? "")
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/Đ/g, "D")
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .replace(/^MIHONG$/, "MI_HONG");
+}
+
+function getSourceCode(item) {
+  const nestedSource =
+    Array.isArray(item?.source)
+      ? item.source[0]
+      : item?.source;
+
+  const joinedSource =
+    Array.isArray(
+      item?.gold_price_sources
+    )
+      ? item.gold_price_sources[0]
+      : item?.gold_price_sources;
+
+  return normalizeSourceCode(
+    item?.source_code ??
+      item?.sourceCode ??
+      nestedSource?.code ??
+      nestedSource?.source_code ??
+      joinedSource?.code ??
+      joinedSource?.source_code ??
+      item?.source_name ??
+      item?.source
+  );
+}
+
+function getSourceLabel(sourceCode) {
+  switch (sourceCode) {
+    case "PNJ":
+      return "PNJ";
+
+    case "SJC":
+      return "SJC";
+
+    case "MI_HONG":
+      return "Mi Hồng";
+
+    default:
+      return (
+        sourceCode ||
+        "Không xác định"
+      );
+  }
+}
+
+function getProductName(item) {
+  const sourceCode =
+    getSourceCode(item);
+
+  if (sourceCode === "SJC") {
+    return (
+      item?.gold_type_name ??
+      item?.product_name ??
+      item?.gold_type ??
+      "Vàng miếng SJC"
+    );
+  }
+
+  return (
+    item?.gold_type_name ??
+    item?.product_name ??
+    item?.source_product_name ??
+    item?.gold_type ??
+    "Loại vàng"
+  );
+}
+
+function getBuyPrice(item) {
+  return Number(
+    item?.buy_price ??
+      item?.buy_price_per_chi ??
+      item?.current_price_per_chi ??
+      item?.price_per_chi ??
+      0
+  );
+}
+
+function getSellPrice(item) {
+  return Number(
+    item?.sell_price ??
+      item?.sell_price_per_chi ??
+      0
+  );
+}
+
+function getUpdatedAt(item) {
+  return (
+    item?.updated_at ??
+    item?.fetched_at ??
+    item?.created_at ??
+    null
+  );
+}
+
+function formatUpdatedTime(value) {
+  if (!value) {
+    return "Chưa xác định";
+  }
+
+  const date = new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return "Chưa xác định";
+  }
+
+  return new Intl.DateTimeFormat(
+    "vi-VN",
+    {
+      dateStyle: "short",
+      timeStyle: "short",
+    }
+  ).format(date);
+}
 
 function CurrentPriceForm({
-  editingPriceId,
-  priceForm,
-  setPriceForm,
-  prices,
-  onSubmit,
-  onCancel,
-  onEdit,
-  onDelete,
+  prices = [],
   onPriceUpdated,
 }) {
   const [
-    isLoadingPnjPrice,
-    setIsLoadingPnjPrice,
+    isLoadingCurrentPrices,
+    setIsLoadingCurrentPrices,
   ] = useState(false);
 
-  const [toast, setToast] = useState(null);
+  const [
+    toast,
+    setToast,
+  ] = useState(null);
 
-  const toastTimerRef = useRef(null);
+  const toastTimerRef =
+    useRef(null);
+
+  const normalizedPrices =
+    useMemo(() => {
+      return (
+        Array.isArray(prices)
+          ? prices
+          : []
+      )
+        .map((item) => ({
+          ...item,
+
+          normalizedSourceCode:
+            getSourceCode(item),
+
+          normalizedProductName:
+            getProductName(item),
+
+          normalizedBuyPrice:
+            getBuyPrice(item),
+
+          normalizedSellPrice:
+            getSellPrice(item),
+
+          normalizedUpdatedAt:
+            getUpdatedAt(item),
+        }))
+        .sort((first, second) => {
+          const sourceOrder = {
+            PNJ: 1,
+            SJC: 2,
+            MI_HONG: 3,
+          };
+
+          return (
+            (
+              sourceOrder[
+                first
+                  .normalizedSourceCode
+              ] ?? 99
+            ) -
+            (
+              sourceOrder[
+                second
+                  .normalizedSourceCode
+              ] ?? 99
+            )
+          );
+        });
+    }, [prices]);
 
   function hideToast() {
-    if (toastTimerRef.current) {
-      window.clearTimeout(toastTimerRef.current);
-      toastTimerRef.current = null;
+    if (
+      toastTimerRef.current
+    ) {
+      window.clearTimeout(
+        toastTimerRef.current
+      );
+
+      toastTimerRef.current =
+        null;
     }
 
     setToast(null);
   }
 
-  function showToast(message, type = 'success') {
-    if (toastTimerRef.current) {
-      window.clearTimeout(toastTimerRef.current);
+  function showToast(
+    message,
+    type = "success"
+  ) {
+    if (
+      toastTimerRef.current
+    ) {
+      window.clearTimeout(
+        toastTimerRef.current
+      );
     }
 
     setToast({
@@ -60,82 +249,204 @@ function CurrentPriceForm({
       type,
     });
 
-    toastTimerRef.current = window.setTimeout(() => {
-      setToast(null);
-      toastTimerRef.current = null;
-    }, 3500);
+    toastTimerRef.current =
+      window.setTimeout(() => {
+        setToast(null);
+
+        toastTimerRef.current =
+          null;
+      }, 5000);
   }
 
   useEffect(() => {
     return () => {
-      if (toastTimerRef.current) {
-        window.clearTimeout(toastTimerRef.current);
+      if (
+        toastTimerRef.current
+      ) {
+        window.clearTimeout(
+          toastTimerRef.current
+        );
       }
     };
   }, []);
 
-  async function handleGetPriceFromPnj() {
-    if (isLoadingPnjPrice) {
+  function buildResultMessage(
+    result
+  ) {
+    const updatedSources =
+      result.changedResults.map(
+        (item) => item.source
+      );
+
+    const unchangedSources =
+      result.successResults
+        .filter(
+          (item) =>
+            !item.changed
+        )
+        .map(
+          (item) =>
+            item.source
+        );
+
+    const failedSources =
+      result.failedResults.map(
+        (item) =>
+          `${item.source}: ${item.message}`
+      );
+
+    const messages = [];
+
+    if (
+      updatedSources.length > 0
+    ) {
+      messages.push(
+        `Đã cập nhật: ${updatedSources.join(
+          ", "
+        )}.`
+      );
+    }
+
+    if (
+      unchangedSources.length > 0
+    ) {
+      messages.push(
+        `Không thay đổi: ${unchangedSources.join(
+          ", "
+        )}.`
+      );
+    }
+
+    if (
+      failedSources.length > 0
+    ) {
+      messages.push(
+        `Lỗi: ${failedSources.join(
+          " | "
+        )}`
+      );
+    }
+
+    return messages.join(" ");
+  }
+
+  async function handleGetCurrentPrices() {
+    if (
+      isLoadingCurrentPrices
+    ) {
       return;
     }
 
     try {
-      setIsLoadingPnjPrice(true);
+      setIsLoadingCurrentPrices(
+        true
+      );
 
-      const result = await syncGoldPriceFromPnj();
+      const result =
+        await syncAllGoldPrices();
 
-      if (!result.changed) {
+      if (
+        result.hasSuccess &&
+        typeof onPriceUpdated ===
+          "function"
+      ) {
+        await onPriceUpdated();
+      }
+
+      const resultMessage =
+        buildResultMessage(
+          result
+        );
+
+      if (
+        result.failedResults.length >
+        0
+      ) {
         showToast(
-          result.message || 'PNJ chưa có giá mới.',
-          'info'
+          resultMessage ||
+            "Một số nguồn giá không thể cập nhật.",
+
+          result.hasSuccess
+            ? "info"
+            : "error"
         );
 
         return;
       }
 
-      if (onPriceUpdated) {
-        await onPriceUpdated();
+      if (!result.changed) {
+        showToast(
+          resultMessage ||
+            "PNJ, Mi Hồng và SJC chưa có giá mới.",
+
+          "info"
+        );
+
+        return;
       }
 
       showToast(
-        result.message ||
-        'Đã cập nhật giá mới từ PNJ và lưu lịch sử.',
-        'success'
+        resultMessage ||
+          "Đã cập nhật giá vàng hiện tại.",
+
+        "success"
       );
     } catch (error) {
       console.error(
-        'Lỗi lấy giá hiện tại từ PNJ:',
+        "Lỗi lấy giá hiện tại:",
         error
       );
 
       showToast(
         error instanceof Error
           ? error.message
-          : 'Không thể lấy giá hiện tại từ PNJ.',
-        'error'
+          : "Không thể lấy giá hiện tại.",
+
+        "error"
       );
     } finally {
-      setIsLoadingPnjPrice(false);
+      setIsLoadingCurrentPrices(
+        false
+      );
     }
   }
 
   function getToastIcon() {
-    if (toast?.type === 'success') {
-      return <CheckCircle2 size={20} />;
+    if (
+      toast?.type ===
+      "success"
+    ) {
+      return (
+        <CheckCircle2
+          size={20}
+        />
+      );
     }
 
-    if (toast?.type === 'error') {
-      return <AlertCircle size={20} />;
+    if (
+      toast?.type ===
+      "error"
+    ) {
+      return (
+        <AlertCircle
+          size={20}
+        />
+      );
     }
 
-    return <Info size={20} />;
+    return (
+      <Info size={20} />
+    );
   }
 
   return (
     <>
       {toast && (
         <div
-          className={`app-toast app-toast-${toast.type}`}
+          className={
+            `app-toast ` +
+            `app-toast-${toast.type}`
+          }
           role="status"
           aria-live="polite"
         >
@@ -145,11 +456,13 @@ function CurrentPriceForm({
 
           <div className="app-toast-content">
             <strong className="app-toast-title">
-              {toast.type === 'success'
-                ? 'Thành công'
-                : toast.type === 'error'
-                  ? 'Có lỗi xảy ra'
-                  : 'Thông tin'}
+              {toast.type ===
+              "success"
+                ? "Thành công"
+                : toast.type ===
+                    "error"
+                  ? "Có lỗi xảy ra"
+                  : "Thông tin"}
             </strong>
 
             <span className="app-toast-message">
@@ -168,170 +481,146 @@ function CurrentPriceForm({
         </div>
       )}
 
-      <form className="card" onSubmit={onSubmit}>
-        <h2 className="section-title">
-          <RefreshCcw size={20} />
-          Cập nhật giá cá nhân
-        </h2>
+      <section className="card current-market-prices">
+        <div className="current-market-prices__header">
+          <div>
+            <h2 className="section-title">
+              <RefreshCcw
+                size={20}
+              />
 
-        <p className="small-text">
-          Giá cá nhân do bạn tự nhập và chỉ thuộc tài khoản của bạn.
-        </p>
+              Giá vàng hiện tại
+            </h2>
 
-        <label>Loại vàng</label>
+            <p className="small-text">
+              Dữ liệu mới nhất từ
+              PNJ, SJC và Mi Hồng.
+            </p>
+          </div>
 
-        <input
-          value={priceForm.gold_type}
-          onChange={(event) =>
-            setPriceForm({
-              ...priceForm,
-              gold_type: event.target.value,
-            })
-          }
-          placeholder="Nhẫn 9999"
-        />
-
-        <label>Giá cửa hàng mua vào mỗi chỉ</label>
-
-        <input
-          type="number"
-          value={priceForm.current_price_per_chi}
-          onChange={(event) =>
-            setPriceForm({
-              ...priceForm,
-              current_price_per_chi:
-                event.target.value,
-            })
-          }
-          placeholder="Ví dụ: 14320000"
-        />
-
-        <label>Giá cửa hàng bán ra mỗi chỉ</label>
-
-        <input
-          type="number"
-          value={priceForm.sell_price_per_chi}
-          onChange={(event) =>
-            setPriceForm({
-              ...priceForm,
-              sell_price_per_chi:
-                event.target.value,
-            })
-          }
-          placeholder="Ví dụ: 14690000"
-        />
-
-        <label>Ghi chú giá</label>
-
-        <input
-          value={priceForm.note}
-          onChange={(event) =>
-            setPriceForm({
-              ...priceForm,
-              note: event.target.value,
-            })
-          }
-          placeholder="Ví dụ: Giá PNJ sáng nay"
-        />
-
-        <div className="form-actions">
           <button
-            type="submit"
-            className="icon-button"
+            type="button"
+            className="pnj-button icon-button current-market-prices__refresh"
+            onClick={
+              handleGetCurrentPrices
+            }
+            disabled={
+              isLoadingCurrentPrices
+            }
           >
-            <RefreshCcw size={17} />
+            <CloudDownload
+              size={17}
+            />
 
-            {editingPriceId
-              ? 'Lưu giá đã sửa'
-              : 'Cập nhật giá'}
+            {isLoadingCurrentPrices
+              ? "Đang cập nhật..."
+              : "Làm mới giá"}
           </button>
-
-          {!editingPriceId && (
-            <button
-              type="button"
-              className="pnj-button icon-button"
-              onClick={handleGetPriceFromPnj}
-              disabled={isLoadingPnjPrice}
-            >
-              <CloudDownload size={17} />
-
-              {isLoadingPnjPrice
-                ? 'Đang lấy giá PNJ...'
-                : 'Lấy giá hiện tại từ PNJ'}
-            </button>
-          )}
-
-          {editingPriceId && (
-            <button
-              type="button"
-              className="secondary-button icon-button"
-              onClick={onCancel}
-            >
-              <XCircle size={17} />
-              Hủy sửa giá
-            </button>
-          )}
         </div>
 
-        <h3>Giá hiện tại</h3>
-
-        {prices.length === 0 ? (
-          <p className="small-text">
-            Chưa có giá hiện tại.
-          </p>
+        {normalizedPrices.length ===
+        0 ? (
+          <div className="current-market-prices__empty">
+            Chưa có dữ liệu giá
+            hiện tại.
+          </div>
         ) : (
-          <ul className="price-list">
-            {prices.map((item) => (
-              <li key={item.id}>
-                <div className="price-info">
-                  <span>{item.gold_type}</span>
+          <div className="current-market-prices__list">
+            {normalizedPrices.map(
+              (item, index) => {
+                const sourceLabel =
+                  getSourceLabel(
+                    item
+                      .normalizedSourceCode
+                  );
 
-                  <strong>
-                    Mua vào:{' '}
-                    {formatMoney(
-                      item.current_price_per_chi
-                    )}{' '}
-                    VND/chỉ
-                  </strong>
+                const isSjc =
+                  item
+                    .normalizedSourceCode ===
+                  "SJC";
 
-                  <strong>
-                    Bán ra:{' '}
-                    {formatMoney(
-                      item.sell_price_per_chi
-                    )}{' '}
-                    VND/chỉ
-                  </strong>
-                </div>
-
-                <div className="price-actions">
-                  <button
-                    type="button"
-                    className="edit-button icon-button table-icon-button"
-                    onClick={() => onEdit(item)}
-                  >
-                    <Pencil size={15} />
-                    Sửa
-                  </button>
-
-                  <button
-                    type="button"
-                    className="danger-button icon-button table-icon-button"
-                    onClick={() =>
-                      onDelete(
-                        item.id,
-                        item.gold_type
-                      )
+                return (
+                  <article
+                    key={
+                      item.id ??
+                      `${item.normalizedSourceCode}-${item.normalizedProductName}-${index}`
                     }
+                    className="current-market-price-item"
                   >
-                    <Trash2 size={15} />
-                    Xóa
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+                    <div className="current-market-price-item__top">
+                      <div>
+                        <strong>
+                          {sourceLabel}
+                        </strong>
+
+                        <p>
+                          {
+                            item.normalizedProductName
+                          }
+                        </p>
+                      </div>
+
+                      <time
+                        dateTime={
+                          item.normalizedUpdatedAt ??
+                          undefined
+                        }
+                        title={formatUpdatedTime(
+                          item.normalizedUpdatedAt
+                        )}
+                      >
+                        {formatUpdatedTime(
+                          item.normalizedUpdatedAt
+                        )}
+                      </time>
+                    </div>
+
+                    <div className="current-market-price-item__values">
+                      <div>
+                        <span>
+                          Cửa hàng mua vào
+                        </span>
+
+                        <strong>
+                          {item.normalizedBuyPrice >
+                          0
+                            ? `${formatMoney(
+                                item.normalizedBuyPrice
+                              )} VND/chỉ`
+                            : "Chưa có"}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>
+                          Cửa hàng bán ra
+                        </span>
+
+                        <strong>
+                          {item.normalizedSellPrice >
+                          0
+                            ? `${formatMoney(
+                                item.normalizedSellPrice
+                              )} VND/chỉ`
+                            : "Chưa có"}
+                        </strong>
+                      </div>
+                    </div>
+
+                    {isSjc && (
+                      <p className="current-market-price-item__note">
+                        Giá SJC đã được
+                        quy đổi từ VND/lượng
+                        sang VND/chỉ.
+                      </p>
+                    )}
+                  </article>
+                );
+              }
+            )}
+          </div>
         )}
-      </form>
+      </section>
     </>
   );
 }

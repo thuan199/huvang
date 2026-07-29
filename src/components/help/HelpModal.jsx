@@ -227,12 +227,12 @@ function GuideContent() {
           Hoặc nhấn
           <strong>
             {" "}
-            Lấy giá hiện tại từ PNJ
+            Làm mới giá
           </strong>
           {" "}
           để hệ thống tự động lấy
           giá mua và giá bán mới
-          nhất từ PNJ.
+          nhất từ SJC, PNJ, Mi Hồng.
         </p>
       </HelpStep>
 
@@ -896,7 +896,7 @@ function AboutContent() {
           </strong>
 
           <span>
-            PNJ, Vietcombank,
+            SJC, PNJ, Mi Hồng, Vietcombank,
             XAU/USD
           </span>
         </div>

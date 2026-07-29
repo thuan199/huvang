@@ -1,27 +1,29 @@
 import { supabase } from '../supabaseClient';
 
-const PNJ_AREA_CODE = 'TPHCM';
-const PNJ_GOLD_TYPE = 'Nhẫn 9999';
-
-/*
- * Dùng chung request đang chạy để hạn chế gọi trùng
- * khi component render lại nhiều lần.
- */
+const MARKET_SOURCE_CODES = ['SJC', 'MI_HONG', 'PNJ'];
 const pendingRequests = new Map();
 
-/**
- * Gọi Edge Function để lấy giá mới nhất từ PNJ.
- *
- * Edge Function sẽ:
- * - Kiểm tra người gọi đã đăng nhập.
- * - Lấy giá PNJ.
- * - Lấy giá vàng thế giới.
- * - Cập nhật pnj_current_price.
- * - Thêm lịch sử vào pnj_price_history nếu giá thay đổi.
- *
- * Edge Function không cập nhật gold_prices cá nhân.
- */
-export async function syncGoldPriceFromPnj() {
+function normalizeSourceCode(value) {
+  return String(value ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, '_');
+}
+
+function toNumber(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function getRelationItem(value) {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+
+  return value ?? null;
+}
+
+async function invokeGoldSync(functionName, sourceLabel) {
   const {
     data: sessionData,
     error: sessionError,
@@ -44,7 +46,7 @@ export async function syncGoldPriceFromPnj() {
 
   const { data, error } =
     await supabase.functions.invoke(
-      'get-pnj-gold-price',
+      functionName,
       {
         method: 'POST',
         body: {},
@@ -55,11 +57,6 @@ export async function syncGoldPriceFromPnj() {
     );
 
   if (error) {
-    console.error(
-      'Lỗi gọi Edge Function:',
-      error
-    );
-
     let detailMessage = '';
 
     try {
@@ -74,7 +71,7 @@ export async function syncGoldPriceFromPnj() {
       }
     } catch (parseError) {
       console.error(
-        'Không đọc được nội dung lỗi Edge Function:',
+        `Không đọc được lỗi đồng bộ ${sourceLabel}:`,
         parseError
       );
     }
@@ -82,25 +79,133 @@ export async function syncGoldPriceFromPnj() {
     throw new Error(
       detailMessage ||
       error.message ||
-      'Không thể gọi Edge Function'
+      `Không thể đồng bộ giá ${sourceLabel}`
     );
   }
 
-  if (!data?.success) {
+  if (data?.success === false) {
     throw new Error(
       data?.message ||
-      'Không thể đồng bộ giá PNJ'
+      `Không thể đồng bộ giá ${sourceLabel}`
     );
   }
 
   return data;
 }
 
-/**
- * Lấy giao dịch cá nhân.
- *
- * Mỗi user chỉ lấy dữ liệu có user_id của mình.
+export function syncGoldPriceFromPnj() {
+  return invokeGoldSync(
+    'get-pnj-gold-price',
+    'PNJ'
+  );
+}
+
+/*
+ * Hai hàm này được chuẩn bị sẵn cho bước tiếp theo.
+ * Chỉ sử dụng sau khi Edge Function tương ứng được tạo.
  */
+export function syncGoldPriceFromSjc() {
+  return invokeGoldSync(
+    'get-sjc-gold-price',
+    'SJC'
+  );
+}
+
+export function syncGoldPriceFromMiHong() {
+  return invokeGoldSync(
+    'get-mihong-gold-price',
+    'Mi Hồng'
+  );
+}
+
+export async function syncAllGoldPrices() {
+  const jobs = [
+    {
+      sourceCode: 'PNJ',
+      sourceLabel: 'PNJ',
+      run: syncGoldPriceFromPnj,
+    },
+    {
+      sourceCode: 'MI_HONG',
+      sourceLabel: 'Mi Hồng',
+      run: syncGoldPriceFromMiHong,
+    },
+    {
+      sourceCode: 'SJC',
+      sourceLabel: 'SJC',
+      run: syncGoldPriceFromSjc,
+    },
+  ];
+
+  const settled = await Promise.allSettled(
+    jobs.map((job) => job.run())
+  );
+
+  const results = jobs.map((job, index) => {
+    const result = settled[index];
+
+    if (result.status === 'fulfilled') {
+      const data = result.value ?? {};
+
+      return {
+        source: job.sourceCode,
+        sourceCode: job.sourceCode,
+        sourceLabel: job.sourceLabel,
+        success: true,
+        changed: Boolean(data.changed),
+        historySaved: Boolean(
+          data.historySaved
+        ),
+        message:
+          data.message ||
+          (data.changed
+            ? `Đã cập nhật giá ${job.sourceLabel}.`
+            : `Giá ${job.sourceLabel} không thay đổi.`),
+        data,
+      };
+    }
+
+    return {
+      source: job.sourceCode,
+      sourceCode: job.sourceCode,
+      sourceLabel: job.sourceLabel,
+      success: false,
+      changed: false,
+      historySaved: false,
+      message:
+        result.reason instanceof Error
+          ? result.reason.message
+          : `Không thể đồng bộ giá ${job.sourceLabel}.`,
+      error:
+        result.reason instanceof Error
+          ? result.reason.message
+          : `Không thể đồng bộ giá ${job.sourceLabel}.`,
+    };
+  });
+
+  const successResults = results.filter(
+    (item) => item.success
+  );
+
+  const failedResults = results.filter(
+    (item) => !item.success
+  );
+
+  const changedResults = successResults.filter(
+    (item) => item.changed
+  );
+
+  return {
+    success: failedResults.length === 0,
+    hasSuccess: successResults.length > 0,
+    changed: changedResults.length > 0,
+    results,
+    successResults,
+    failedResults,
+    changedResults,
+  };
+}
+
 async function fetchTransactions(userId) {
   const { data, error } = await supabase
     .from('gold_transactions')
@@ -119,20 +224,55 @@ async function fetchTransactions(userId) {
     );
   }
 
-  return data ?? [];
+  return (data ?? []).map((item) => ({
+    ...item,
+    gold_type:
+      item.gold_type ??
+      item.gold_name ??
+      '',
+    price_per_chi: toNumber(
+      item.price_per_chi ??
+      item.unit_price
+    ),
+    quantity_chi: toNumber(
+      item.quantity_chi
+    ),
+    location:
+      item.location ??
+      item.seller_name ??
+      '',
+  }));
 }
 
-/**
- * Lấy giá cá nhân do user tự nhập.
- *
- * Bảng gold_prices vẫn tách theo user_id.
- */
 async function fetchCurrentPrices(userId) {
   const { data, error } = await supabase
-    .from('gold_prices')
-    .select('*')
+    .from('user_gold_preferences')
+    .select(`
+      id,
+      user_id,
+      gold_type_id,
+      preferred_source_id,
+      preferred_source_product_id,
+      manual_buy_price,
+      manual_sell_price,
+      use_manual_price,
+      is_favorite,
+      display_order,
+      created_at,
+      updated_at,
+      gold_type:gold_types (
+        id,
+        code,
+        name,
+        purity,
+        unit
+      )
+    `)
     .eq('user_id', userId)
-    .order('gold_type', {
+    .order('display_order', {
+      ascending: true,
+    })
+    .order('created_at', {
       ascending: true,
     });
 
@@ -142,179 +282,311 @@ async function fetchCurrentPrices(userId) {
     );
   }
 
-  return data ?? [];
-}
+  return (data ?? []).map((item) => {
+    const goldTypeRelation =
+      Array.isArray(item.gold_type)
+        ? item.gold_type[0]
+        : item.gold_type;
 
-/**
- * Lấy lịch sử giá cá nhân.
- *
- * Đây không phải lịch sử PNJ dùng chung.
- */
-async function fetchPersonalPriceHistory(
-  userId
-) {
-  const { data, error } = await supabase
-    .from('gold_price_history')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', {
-      ascending: false,
-    })
-    .limit(1000);
-
-  if (error) {
-    throw new Error(
-      `Không tải được lịch sử giá cá nhân: ${error.message}`
+    const buyPrice = toNumber(
+      item.manual_buy_price
     );
-  }
 
-  return data ?? [];
+    const sellPrice = toNumber(
+      item.manual_sell_price
+    );
+
+    return {
+      ...item,
+
+      gold_type:
+        goldTypeRelation?.name ?? '',
+
+      gold_type_code:
+        goldTypeRelation?.code ?? '',
+
+      gold_type_name:
+        goldTypeRelation?.name ?? '',
+
+      current_price_per_chi:
+        buyPrice,
+
+      price_per_chi:
+        buyPrice,
+
+      buy_price_per_chi:
+        buyPrice,
+
+      sell_price_per_chi:
+        sellPrice,
+
+      source: 'MANUAL',
+      source_code: 'MANUAL',
+    };
+  });
 }
 
-/**
- * Ánh xạ dữ liệu giá PNJ hiện tại.
- *
- * Giữ cả tên cột database mới và thêm tên cột tương thích
- * với giao diện cũ.
+/*
+ * Schema V2 không còn bảng lịch sử giá cá nhân riêng.
+ * Giá người dùng tự nhập nằm trong user_gold_preferences.
  */
-function mapPnjCurrentPrice(item) {
-  if (!item) {
-    return null;
-  }
+async function fetchPersonalPriceHistory() {
+  return [];
+}
 
-  const buyPrice = Number(
-    item.buy_price_per_chi ?? 0
+function mapMarketPrice(item) {
+  const product = getRelationItem(
+    item.source_product ??
+    item.product
   );
 
-  const sellPrice = Number(
-    item.sell_price_per_chi ?? 0
+  const source = getRelationItem(
+    product?.source
   );
+
+  const goldType = getRelationItem(
+    product?.gold_type
+  );
+
+  const sourceCode =
+    normalizeSourceCode(
+      source?.code ??
+      item.source_code ??
+      item.source
+    );
+
+  const buyPrice = toNumber(
+    item.buy_price ??
+    item.buy_price_per_chi ??
+    item.price_per_chi
+  );
+
+  const sellPrice = toNumber(
+    item.sell_price ??
+    item.sell_price_per_chi
+  );
+
+  const displayDate =
+    item.source_updated_at ??
+    item.fetched_at ??
+    item.updated_at ??
+    item.created_at ??
+    null;
 
   return {
     ...item,
 
-    current_price_per_chi: buyPrice,
-    price_per_chi: buyPrice,
-    buy_price_per_chi: buyPrice,
-    sell_price_per_chi: sellPrice,
+    source_product: product,
+
+    source_product_id:
+      item.source_product_id ??
+      product?.id ??
+      null,
+
+    source_code: sourceCode,
+    source: sourceCode,
+
+    source_name:
+      source?.name ??
+      sourceCode,
+
+    product_code:
+      product?.product_code ??
+      '',
+
+    product_name:
+      product?.product_name ??
+      goldType?.name ??
+      '',
+
+    gold_type_id:
+      product?.gold_type_id ??
+      goldType?.id ??
+      null,
+
+    gold_type_code:
+      goldType?.code ??
+      '',
+
+    gold_type_name:
+      product?.product_name ??
+      goldType?.name ??
+
+      '',
+
+    gold_type:
+      product?.product_name ??
+      goldType?.name ??
+      '',
+
+    source_unit:
+      product?.source_unit ??
+      'chi',
+
+    conversion_to_chi:
+      toNumber(
+        product?.conversion_to_chi,
+        1
+      ),
 
     buy_price: buyPrice,
     sell_price: sellPrice,
 
+    current_price_per_chi:
+      buyPrice,
+
+    price_per_chi:
+      buyPrice,
+
+    buy_price_per_chi:
+      buyPrice,
+
+    sell_price_per_chi:
+      sellPrice,
+
     price_date:
-      item.source_updated_at ??
-      item.updated_at ??
-      item.created_at,
+      displayDate,
 
-    is_pnj_shared_price: true,
-    source_name: 'PNJ',
+    updated_at:
+      displayDate,
+
+    note:
+      item.note ??
+      item.raw_data?.note ??
+      '',
+
+    is_active:
+      product?.is_active !== false,
+
+    is_shared_market_price:
+      true,
+
+    is_pnj_shared_price:
+      sourceCode === 'PNJ',
+
+    is_mihong_shared_price:
+      sourceCode === 'MI_HONG',
+
+    is_sjc_shared_price:
+      sourceCode === 'SJC',
   };
 }
 
-/**
- * Ánh xạ một dòng lịch sử PNJ.
- *
- * Database mới:
- * - old_buy_price_per_chi
- * - old_sell_price_per_chi
- * - new_buy_price_per_chi
- * - new_sell_price_per_chi
- *
- * Giao diện cũ:
- * - old_price_per_chi
- * - old_sell_price_per_chi
- * - price_per_chi
- * - sell_price_per_chi
- */
-function mapPnjPriceHistoryItem(item) {
-  const newBuyPrice = Number(
-    item.new_buy_price_per_chi ?? 0
-  );
+const MARKET_PRICE_RELATIONS = `
+  source_product:gold_source_products!inner (
+    id,
+    source_id,
+    gold_type_id,
+    product_code,
+    product_name,
+    source_unit,
+    conversion_to_chi,
+    display_order,
+    is_active,
+    source:gold_price_sources!inner (
+      id,
+      code,
+      name
+    ),
+    gold_type:gold_types (
+      id,
+      code,
+      name,
+      purity,
+      unit
+    )
+  )
+`;
 
-  const newSellPrice = Number(
-    item.new_sell_price_per_chi ?? 0
-  );
+const MARKET_LATEST_SELECT = `
+  id,
+  source_product_id,
+  buy_price,
+  sell_price,
+  source_updated_at,
+  fetched_at,
+  updated_at,
+  raw_data,
+  ${MARKET_PRICE_RELATIONS}
+`;
 
-  const oldBuyPrice =
-    item.old_buy_price_per_chi == null
-      ? null
-      : Number(
-        item.old_buy_price_per_chi
-      );
+const MARKET_HISTORY_SELECT = `
+  id,
+  source_product_id,
+  buy_price,
+  sell_price,
+  source_updated_at,
+  fetched_at,
+  raw_data,
+  note,
+  ${MARKET_PRICE_RELATIONS}
+`;
 
-  const oldSellPrice =
-    item.old_sell_price_per_chi == null
-      ? null
-      : Number(
-        item.old_sell_price_per_chi
-      );
-
-  const displayDate =
-    item.source_updated_at ??
-    item.created_at;
-
-  return {
-    ...item,
-
-    price_per_chi: newBuyPrice,
-    current_price_per_chi: newBuyPrice,
-    buy_price_per_chi: newBuyPrice,
-    sell_price_per_chi: newSellPrice,
-
-    old_price_per_chi: oldBuyPrice,
-    old_buy_price_per_chi: oldBuyPrice,
-    old_sell_price_per_chi: oldSellPrice,
-
-    price_date: displayDate,
-    updated_at: displayDate,
-
-    is_pnj_shared_price: true,
-    source_name: 'PNJ',
-  };
-}
-
-/**
- * Lấy giá PNJ hiện tại dùng chung cho tất cả user.
- *
- * Không lọc theo user_id.
- */
-export async function getPnjCurrentPrice() {
+export async function getMarketCurrentPrices() {
   const { data, error } = await supabase
-    .from('pnj_current_price')
-    .select('*')
-    .eq('area_code', PNJ_AREA_CODE)
-    .eq('gold_type', PNJ_GOLD_TYPE)
-    .maybeSingle();
+    .from('gold_price_latest')
+    .select(MARKET_LATEST_SELECT)
+    .order('fetched_at', {
+      ascending: false,
+      nullsFirst: false,
+    });
 
   if (error) {
     throw new Error(
-      `Không tải được giá PNJ hiện tại: ${error.message}`
+      `Không tải được giá vàng hiện tại: ${error.message}`
     );
   }
 
-  return mapPnjCurrentPrice(data);
+  const mappedPrices = (data ?? [])
+    .map(mapMarketPrice)
+    .filter((item) => {
+      const sourceCode =
+        normalizeSourceCode(
+          item.source_code ??
+          item.source
+        );
+
+      const isActive =
+        item.source_product?.is_active ??
+        item.product?.is_active ??
+        true;
+
+      return (
+        isActive &&
+        MARKET_SOURCE_CODES.includes(
+          sourceCode
+        )
+      );
+    });
+
+  return mappedPrices;
 }
 
-/**
- * Lấy lịch sử PNJ dùng chung.
- *
- * Không lọc theo user_id.
- */
-export async function getPnjPriceHistory({
-  limit = 1000,
+export async function getMarketPriceHistory({
+  sourceCode,
+  limit = 3000,
 } = {}) {
   let query = supabase
-    .from('pnj_price_history')
-    .select('*')
-    .eq('area_code', PNJ_AREA_CODE)
-    .eq('gold_type', PNJ_GOLD_TYPE)
+    .from('gold_price_history')
+    .select(MARKET_HISTORY_SELECT)
     .order('source_updated_at', {
       ascending: false,
       nullsFirst: false,
     })
-    .order('created_at', {
+    .order('fetched_at', {
       ascending: false,
-    });
+      nullsFirst: false,
+    })
+
+  const normalizedSourceCode =
+    normalizeSourceCode(sourceCode);
+
+  if (normalizedSourceCode) {
+    query = query.eq(
+      'source_product.source.code',
+      normalizedSourceCode
+    );
+  }
 
   if (
     Number.isInteger(limit) &&
@@ -327,34 +599,171 @@ export async function getPnjPriceHistory({
 
   if (error) {
     throw new Error(
-      `Không tải được lịch sử giá PNJ: ${error.message}`
+      `Không tải được lịch sử giá vàng: ${error.message}`
     );
   }
 
-  return (data ?? []).map(
-    mapPnjPriceHistoryItem
-  );
+  return (data ?? [])
+    .map(mapMarketPrice)
+    .filter((item) =>
+      MARKET_SOURCE_CODES.includes(
+        item.source_code
+      )
+    );
 }
 
-/**
- * Tải toàn bộ dữ liệu dùng trong màn hình chính.
- *
- * Dữ liệu cá nhân:
- * - transactions
- * - prices
- * - priceHistory
- *
- * Dữ liệu PNJ dùng chung:
- * - pnjCurrentPrice
- * - pnjPriceHistory
- *
- * force = false:
- * Dùng lại request đang chạy nếu có.
- *
- * force = true:
- * Luôn tải lại sau khi thêm, sửa, xóa
- * hoặc đồng bộ PNJ.
- */
+export function groupPricesBySource(
+  items = []
+) {
+  const result = {
+    PNJ: [],
+    MI_HONG: [],
+    SJC: [],
+  };
+
+  for (const originalItem of items) {
+    const sourceCode =
+      normalizeSourceCode(
+        originalItem.source_code ??
+        originalItem.source
+      );
+
+    if (!Object.prototype.hasOwnProperty.call(
+      result,
+      sourceCode
+    )) {
+      continue;
+    }
+
+    result[sourceCode].push({
+      ...originalItem,
+      source_code: sourceCode,
+      source: sourceCode,
+    });
+  }
+
+  return result;
+}
+
+export async function getPnjCurrentPrice() {
+  const prices =
+    await getMarketCurrentPrices();
+
+  return prices.find(
+    (item) =>
+      item.source_code === 'PNJ'
+  ) ?? null;
+}
+
+export async function getPnjPriceHistory(options = {}) {
+  return getMarketPriceHistory({
+    ...options,
+    sourceCode: 'PNJ',
+  });
+}
+
+export async function saveManualGoldPrice({
+  userId,
+  goldType,
+  buyPrice,
+  sellPrice,
+}) {
+  if (!userId) {
+    throw new Error(
+      'Thiếu thông tin người dùng.'
+    );
+  }
+
+  const normalizedGoldType =
+    String(goldType ?? '').trim();
+
+  if (!normalizedGoldType) {
+    throw new Error(
+      'Vui lòng nhập loại vàng.'
+    );
+  }
+
+  const {
+    data: goldTypes,
+    error: goldTypeError,
+  } = await supabase
+    .from('gold_types')
+    .select('id, code, name')
+    .eq('is_active', true);
+
+  if (goldTypeError) {
+    throw new Error(
+      `Không tải được danh mục loại vàng: ${goldTypeError.message}`
+    );
+  }
+
+  const normalizedSearch =
+    normalizedGoldType.toLowerCase();
+
+  const matchedGoldType =
+    (goldTypes ?? []).find((item) => {
+      return (
+        String(item.name ?? '')
+          .trim()
+          .toLowerCase() === normalizedSearch ||
+        String(item.code ?? '')
+          .trim()
+          .toLowerCase() === normalizedSearch
+      );
+    });
+
+  if (!matchedGoldType) {
+    throw new Error(
+      `Không tìm thấy loại vàng "${normalizedGoldType}" trong bảng gold_types.`
+    );
+  }
+
+  const payload = {
+    user_id: userId,
+    gold_type_id: matchedGoldType.id,
+    manual_buy_price:
+      toNumber(buyPrice),
+    manual_sell_price:
+      toNumber(sellPrice),
+    use_manual_price: true,
+    is_favorite: true,
+  };
+
+  const { data, error } = await supabase
+    .from('user_gold_preferences')
+    .upsert(payload, {
+      onConflict:
+        'user_id,gold_type_id',
+    })
+    .select('*')
+    .single();
+
+  if (error) {
+    throw new Error(
+      `Không lưu được giá thủ công: ${error.message}`
+    );
+  }
+
+  return data;
+}
+
+export async function deleteManualGoldPrice({
+  userId,
+  preferenceId,
+}) {
+  const { error } = await supabase
+    .from('user_gold_preferences')
+    .delete()
+    .eq('id', preferenceId)
+    .eq('user_id', userId);
+
+  if (error) {
+    throw new Error(
+      `Không xóa được giá thủ công: ${error.message}`
+    );
+  }
+}
+
 export async function getGoldData(
   userId,
   { force = false } = {}
@@ -365,6 +774,12 @@ export async function getGoldData(
       prices: [],
       priceHistory: [],
       personalPriceHistory: [],
+      marketCurrentPrices: [],
+      marketPriceHistory: [],
+      currentPricesBySource:
+        groupPricesBySource(),
+      priceHistoryBySource:
+        groupPricesBySource(),
       pnjCurrentPrice: null,
       pnjPriceHistory: [],
     };
@@ -381,42 +796,46 @@ export async function getGoldData(
     fetchTransactions(userId),
     fetchCurrentPrices(userId),
     fetchPersonalPriceHistory(userId),
-    getPnjCurrentPrice(),
-    getPnjPriceHistory(),
+    getMarketCurrentPrices(),
+    getMarketPriceHistory(),
   ])
-    .then(
-      ([
-        transactions,
-        prices,
-        personalPriceHistory,
-        pnjCurrentPrice,
-        pnjPriceHistory,
-      ]) => ({
-        /*
-         * Dữ liệu cá nhân.
-         */
-        transactions,
-        prices,
+    .then(([
+      transactions,
+      prices,
+      personalPriceHistory,
+      marketCurrentPrices,
+      marketPriceHistory,
+    ]) => {
+      const currentPricesBySource =
+        groupPricesBySource(
+          marketCurrentPrices
+        );
 
-        /*
-         * Giữ tên priceHistory để không làm hỏng
-         * các phần giao diện cũ đang sử dụng.
-         */
+      const priceHistoryBySource =
+        groupPricesBySource(
+          marketPriceHistory
+        );
+
+      return {
+        transactions,
+        prices,
         priceHistory:
           personalPriceHistory,
-
-        /*
-         * Tên rõ nghĩa hơn để sử dụng về sau.
-         */
         personalPriceHistory,
 
-        /*
-         * Dữ liệu PNJ dùng chung.
-         */
-        pnjCurrentPrice,
-        pnjPriceHistory,
-      })
-    )
+        marketCurrentPrices,
+        marketPriceHistory,
+        currentPricesBySource,
+        priceHistoryBySource,
+
+        /* Tương thích với App hiện tại. */
+        pnjCurrentPrice:
+          currentPricesBySource.PNJ[0] ??
+          null,
+        pnjPriceHistory:
+          priceHistoryBySource.PNJ,
+      };
+    })
     .finally(() => {
       if (
         pendingRequests.get(userId) ===
