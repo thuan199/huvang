@@ -39,11 +39,65 @@ import {
   useState,
 } from 'react';
 
+import {
+  BadgeDollarSign,
+  ChartNoAxesCombined,
+  CirclePlus,
+  Globe2,
+  History,
+  Newspaper,
+  ReceiptText,
+  Wallet,
+} from 'lucide-react';
+
 import useGoldSummary from './hooks/useGoldSummary';
 import useWorldGold from './hooks/useWorldGold';
 import usePriceChartData from './hooks/usePriceChartData';
 import useToast from './hooks/useToast';
 import useConfirm from './hooks/useConfirm';
+
+const MOBILE_TABS = [
+  {
+    id: 'assets',
+    label: 'Tài sản',
+    icon: Wallet,
+  },
+  {
+    id: 'add-transaction',
+    label: 'Thêm mới',
+    icon: CirclePlus,
+  },
+  {
+    id: 'current-price',
+    label: 'Giá vàng',
+    icon: BadgeDollarSign,
+  },
+  {
+    id: 'transactions',
+    label: 'Giao dịch',
+    icon: ReceiptText,
+  },
+  {
+    id: 'store-history',
+    label: 'Lịch sử giá',
+    icon: History,
+  },
+  {
+    id: 'charts',
+    label: 'Biểu đồ',
+    icon: ChartNoAxesCombined,
+  },
+  {
+    id: 'world-gold',
+    label: 'Thế giới',
+    icon: Globe2,
+  },
+  {
+    id: 'news',
+    label: 'Tin tức',
+    icon: Newspaper,
+  },
+];
 
 function App() {
   const [
@@ -157,6 +211,51 @@ function App() {
     activeGoldTab,
     setActiveGoldTab,
   ] = useState('local');
+
+  const [
+    activeMobileTab,
+    setActiveMobileTab,
+  ] = useState('assets');
+
+  const [
+    isMobileView,
+    setIsMobileView,
+  ] = useState(() =>
+    window.matchMedia(
+      '(max-width: 768px)'
+    ).matches
+  );
+
+  useEffect(() => {
+    const mediaQuery =
+      window.matchMedia(
+        '(max-width: 768px)'
+      );
+
+    function handleViewportChange(
+      event
+    ) {
+      setIsMobileView(
+        event.matches
+      );
+    }
+
+    setIsMobileView(
+      mediaQuery.matches
+    );
+
+    mediaQuery.addEventListener(
+      'change',
+      handleViewportChange
+    );
+
+    return () => {
+      mediaQuery.removeEventListener(
+        'change',
+        handleViewportChange
+      );
+    };
+  }, []);
 
 
   /*
@@ -1320,6 +1419,12 @@ function App() {
         tx.note ?? '',
     });
 
+    if (isMobileView) {
+      setActiveMobileTab(
+        'add-transaction'
+      );
+    }
+
     window.scrollTo({
       top: 0,
       behavior: 'smooth',
@@ -1429,6 +1534,258 @@ function App() {
           .worldGoldVndPerLuong
       ) * 100
       : 0;
+
+  function renderPriceHistoryTable() {
+    return (
+      <PriceHistoryTable
+        activeSource={activeHistorySource}
+        onSourceChange={
+          setActiveHistorySource
+        }
+        priceHistory={
+          priceHistory
+        }
+        paginatedPriceHistory={
+          paginatedPriceHistory
+        }
+        historyPage={historyPage}
+        historyTotalPages={
+          historyTotalPages
+        }
+        onPreviousPage={() =>
+          setHistoryPage(
+            (page) =>
+              Math.max(
+                1,
+                page - 1
+              )
+          )
+        }
+        onNextPage={() =>
+          setHistoryPage(
+            (page) =>
+              Math.min(
+                historyTotalPages,
+                page + 1
+              )
+          )
+        }
+      />
+    );
+  }
+
+  function renderLocalGoldChart() {
+    return (
+      <LocalGoldChart
+        activeGoldTab={activeGoldTab}
+        setActiveGoldTab={
+          setActiveGoldTab
+        }
+        activeHistorySource={
+          activeHistorySource
+        }
+        setActiveHistorySource={
+          setActiveHistorySource
+        }
+        chartRange={chartRange}
+        setChartRange={
+          setChartRange
+        }
+        priceChartData={
+          priceChartData
+        }
+        theme={displayTheme}
+      />
+    );
+  }
+
+  function renderWorldGoldComparison() {
+    return (
+      <WorldGoldComparison
+        worldGold={worldGold}
+        worldGoldLoading={
+          worldGoldLoading
+        }
+        worldGoldError={
+          worldGoldError
+        }
+        worldGoldMarketMessage={
+          worldGoldMarketMessage
+        }
+        shopGold={shopGold}
+        shopSellPriceVndPerLuong={
+          shopSellPriceVndPerLuong
+        }
+        goldDifference={
+          goldDifference
+        }
+        goldDifferencePercent={
+          goldDifferencePercent
+        }
+      />
+    );
+  }
+
+  function renderMobileHomeContent() {
+    switch (activeMobileTab) {
+      case 'assets':
+        return (
+          <section className="mobile-tab-panel">
+            <h2 className="mobile-tab-title">
+              Tài sản hiện có
+            </h2>
+
+            <SummaryCards
+              summary={summary}
+            />
+          </section>
+        );
+
+      case 'add-transaction':
+        return (
+          <section className="mobile-tab-panel">
+            <h2 className="mobile-tab-title">
+              Thêm giao dịch mới
+            </h2>
+
+            <TransactionForm
+              editingId={editingId}
+              transactionForm={
+                transactionForm
+              }
+              setTransactionForm={
+                setTransactionForm
+              }
+              marketCurrentPrices={
+                marketCurrentPrices
+              }
+              onSubmit={
+                saveTransaction
+              }
+              onCancel={
+                cancelEdit
+              }
+            />
+          </section>
+        );
+
+      case 'current-price':
+        return (
+          <section className="mobile-tab-panel">
+            <h2 className="mobile-tab-title">
+              Giá vàng hiện tại
+            </h2>
+
+            <CurrentPriceForm
+              prices={
+                marketCurrentPrices
+              }
+              onPriceUpdated={
+                reloadGoldData
+              }
+            />
+          </section>
+        );
+
+      case 'transactions':
+        return (
+          <section className="mobile-tab-panel">
+            <h2 className="mobile-tab-title">
+              Danh sách giao dịch
+            </h2>
+
+            <TransactionTable
+              loading={loading}
+              transactions={
+                transactions
+              }
+              calculateTransactionResult={
+                calculateTransactionResult
+              }
+              onEdit={
+                editTransaction
+              }
+              onDelete={
+                deleteTransaction
+              }
+            />
+          </section>
+        );
+
+      case 'store-history':
+        return (
+          <section className="mobile-tab-panel">
+            <h2 className="mobile-tab-title">
+              Lịch sử cập nhật giá cửa hàng
+            </h2>
+
+            {renderPriceHistoryTable()}
+          </section>
+        );
+
+      case 'charts':
+        return (
+          <section className="mobile-tab-panel">
+            <h2 className="mobile-tab-title">
+              Biểu đồ lịch sử giá
+            </h2>
+
+            {renderLocalGoldChart()}
+          </section>
+        );
+
+      case 'world-gold':
+        return (
+          <section className="mobile-tab-panel">
+            <h2 className="mobile-tab-title">
+              Giá vàng thế giới
+            </h2>
+
+            {renderWorldGoldComparison()}
+          </section>
+        );
+
+      case 'news':
+        return (
+          <section className="mobile-tab-panel">
+            <h2 className="mobile-tab-title">
+              Tin tức thị trường
+            </h2>
+
+            <MarketNews />
+          </section>
+        );
+
+      default:
+        return null;
+    }
+  }
+
+  function handleMobileTabChange(
+  tabId
+) {
+  setActiveMobileTab(tabId);
+
+  window.requestAnimationFrame(
+    () => {
+      const activeButton =
+        document.querySelector(
+          `[data-mobile-tab="${tabId}"]`
+        );
+
+      activeButton?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
+    }
+  );
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+}
 
   /*
    * Trang callback chạy trong popup Google.
@@ -1622,132 +1979,71 @@ function App() {
               />
             )}
 
-            <SummaryCards
-              summary={summary}
-            />
+            {isMobileView ? (
+              <main className="mobile-app-content">
+                {renderMobileHomeContent()}
+              </main>
+            ) : (
+              <main className="desktop-app-content">
+                <SummaryCards
+                  summary={summary}
+                />
 
-            <div className="grid">
-              <TransactionForm
-                editingId={editingId}
-                transactionForm={
-                  transactionForm
-                }
-                setTransactionForm={
-                  setTransactionForm
-                }
-                marketCurrentPrices={
-                  marketCurrentPrices
-                }
-                onSubmit={
-                  saveTransaction
-                }
-                onCancel={
-                  cancelEdit
-                }
-              />
+                <div className="grid">
+                  <TransactionForm
+                    editingId={editingId}
+                    transactionForm={
+                      transactionForm
+                    }
+                    setTransactionForm={
+                      setTransactionForm
+                    }
+                    marketCurrentPrices={
+                      marketCurrentPrices
+                    }
+                    onSubmit={
+                      saveTransaction
+                    }
+                    onCancel={
+                      cancelEdit
+                    }
+                  />
 
-              <CurrentPriceForm
-                prices={
-                  marketCurrentPrices
-                }
-                onPriceUpdated={
-                  reloadGoldData
-                }
-              />
-            </div>
+                  <CurrentPriceForm
+                    prices={
+                      marketCurrentPrices
+                    }
+                    onPriceUpdated={
+                      reloadGoldData
+                    }
+                  />
+                </div>
 
-            <TransactionTable
-              loading={loading}
-              transactions={
-                transactions
-              }
-              calculateTransactionResult={
-                calculateTransactionResult
-              }
-              onEdit={editTransaction}
-              onDelete={
-                deleteTransaction
-              }
-            />
+                <TransactionTable
+                  loading={loading}
+                  transactions={
+                    transactions
+                  }
+                  calculateTransactionResult={
+                    calculateTransactionResult
+                  }
+                  onEdit={
+                    editTransaction
+                  }
+                  onDelete={
+                    deleteTransaction
+                  }
+                />
 
-            <PriceHistoryTable
-              activeSource={activeHistorySource}
-              onSourceChange={
-                setActiveHistorySource
-              }
-              priceHistory={
-                priceHistory
-              }
-              paginatedPriceHistory={
-                paginatedPriceHistory
-              }
-              historyPage={historyPage}
-              historyTotalPages={
-                historyTotalPages
-              }
-              onPreviousPage={() =>
-                setHistoryPage(
-                  (page) =>
-                    Math.max(
-                      1,
-                      page - 1
-                    )
-                )
-              }
-              onNextPage={() =>
-                setHistoryPage(
-                  (page) =>
-                    Math.min(
-                      historyTotalPages,
-                      page + 1
-                    )
-                )
-              }
-            />
+                {renderPriceHistoryTable()}
 
-            <LocalGoldChart
-              activeGoldTab={activeGoldTab}
-              setActiveGoldTab={setActiveGoldTab}
+                {renderLocalGoldChart()}
 
-              activeHistorySource={
-                activeHistorySource
-              }
-              setActiveHistorySource={
-                setActiveHistorySource
-              }
+                {renderWorldGoldComparison()}
 
-              chartRange={chartRange}
-              setChartRange={setChartRange}
-              priceChartData={priceChartData}
-              theme={displayTheme}
-            />
-
-            <WorldGoldComparison
-              worldGold={worldGold}
-              worldGoldLoading={
-                worldGoldLoading
-              }
-              worldGoldError={
-                worldGoldError
-              }
-              worldGoldMarketMessage={
-                worldGoldMarketMessage
-              }
-              shopGold={shopGold}
-              shopSellPriceVndPerLuong={
-                shopSellPriceVndPerLuong
-              }
-              goldDifference={
-                goldDifference
-              }
-              goldDifferencePercent={
-                goldDifferencePercent
-              }
-            />
-
-
-
-            <MarketNews />
+                <MarketNews />
+              </main>
+            )}
           </>
         ) : activePage ===
           "ai-chat" ? (
@@ -1765,6 +2061,55 @@ function App() {
           </div>
         ) : null}
       </div>
+
+      {activePage === 'home' &&
+        isMobileView && (
+          <nav
+            className="mobile-bottom-tabs"
+            aria-label="Điều hướng ứng dụng"
+          >
+            {MOBILE_TABS.map(
+              ({
+                id,
+                label,
+                icon: Icon,
+              }) => {
+                const isActive =
+                  activeMobileTab ===
+                  id;
+
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    className={`mobile-bottom-tab ${
+                      isActive
+                        ? 'is-active'
+                        : ''
+                    }`}
+                    onClick={() =>
+                      handleMobileTabChange(
+                        id
+                      )
+                    }
+                    aria-current={
+                      isActive
+                        ? 'page'
+                        : undefined
+                    }
+                    title={label}
+                  >
+                    <Icon size={21} />
+
+                    <span>
+                      {label}
+                    </span>
+                  </button>
+                );
+              }
+            )}
+          </nav>
+        )}
 
       <ToastContainer
         toasts={toasts}
