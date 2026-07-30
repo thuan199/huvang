@@ -2095,7 +2095,8 @@ function App() {
       </div>
 
       {activePage === 'home' &&
-        isMobileView && (
+        isMobileView &&
+        !helpOpen && (
           <nav
             className="mobile-bottom-tabs"
             aria-label="Điều hướng ứng dụng"
