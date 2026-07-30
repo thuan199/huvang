@@ -1631,10 +1631,6 @@ function App() {
       case 'assets':
         return (
           <section className="mobile-tab-panel">
-            <h2 className="mobile-tab-title">
-              Tài sản hiện có
-            </h2>
-
             <SummaryCards
               summary={summary}
             />
@@ -1644,9 +1640,7 @@ function App() {
       case 'add-transaction':
         return (
           <section className="mobile-tab-panel">
-            <h2 className="mobile-tab-title">
-              Thêm giao dịch mới
-            </h2>
+
 
             <TransactionForm
               editingId={editingId}
@@ -1672,9 +1666,7 @@ function App() {
       case 'current-price':
         return (
           <section className="mobile-tab-panel">
-            <h2 className="mobile-tab-title">
-              Giá vàng hiện tại
-            </h2>
+
 
             <CurrentPriceForm
               prices={
@@ -1690,9 +1682,7 @@ function App() {
       case 'transactions':
         return (
           <section className="mobile-tab-panel">
-            <h2 className="mobile-tab-title">
-              Danh sách giao dịch
-            </h2>
+
 
             <TransactionTable
               loading={loading}
@@ -1715,9 +1705,7 @@ function App() {
       case 'store-history':
         return (
           <section className="mobile-tab-panel">
-            <h2 className="mobile-tab-title">
-              Lịch sử cập nhật giá cửa hàng
-            </h2>
+
 
             {renderPriceHistoryTable()}
           </section>
@@ -1726,9 +1714,7 @@ function App() {
       case 'charts':
         return (
           <section className="mobile-tab-panel">
-            <h2 className="mobile-tab-title">
-              Biểu đồ lịch sử giá
-            </h2>
+
 
             {renderLocalGoldChart()}
           </section>
@@ -1737,9 +1723,7 @@ function App() {
       case 'world-gold':
         return (
           <section className="mobile-tab-panel">
-            <h2 className="mobile-tab-title">
-              Giá vàng thế giới
-            </h2>
+
 
             {renderWorldGoldComparison()}
           </section>
@@ -1748,9 +1732,7 @@ function App() {
       case 'news':
         return (
           <section className="mobile-tab-panel">
-            <h2 className="mobile-tab-title">
-              Tin tức thị trường
-            </h2>
+
 
             <MarketNews />
           </section>
@@ -1762,30 +1744,30 @@ function App() {
   }
 
   function handleMobileTabChange(
-  tabId
-) {
-  setActiveMobileTab(tabId);
+    tabId
+  ) {
+    setActiveMobileTab(tabId);
 
-  window.requestAnimationFrame(
-    () => {
-      const activeButton =
-        document.querySelector(
-          `[data-mobile-tab="${tabId}"]`
-        );
+    window.requestAnimationFrame(
+      () => {
+        const activeButton =
+          document.querySelector(
+            `[data-mobile-tab="${tabId}"]`
+          );
 
-      activeButton?.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-        inline: "center",
-      });
-    }
-  );
+        activeButton?.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "center",
+        });
+      }
+    );
 
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth",
-  });
-}
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
 
   /*
    * Trang callback chạy trong popup Google.
@@ -2082,11 +2064,10 @@ function App() {
                   <button
                     key={id}
                     type="button"
-                    className={`mobile-bottom-tab ${
-                      isActive
+                    className={`mobile-bottom-tab ${isActive
                         ? 'is-active'
                         : ''
-                    }`}
+                      }`}
                     onClick={() =>
                       handleMobileTabChange(
                         id
