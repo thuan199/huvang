@@ -1748,6 +1748,10 @@ function App() {
   ) {
     setActiveMobileTab(tabId);
 
+    // Khi người dùng chọn tab mobile,
+    // tự động đóng cửa sổ Help.
+    setHelpOpen(false);
+
     window.requestAnimationFrame(
       () => {
         const activeButton =

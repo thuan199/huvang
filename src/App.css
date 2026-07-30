@@ -7211,3 +7211,40 @@ body.dark-theme .mobile-bottom-tabs {
     text-overflow: ellipsis !important;
   }
 }
+
+/* Giữ AppHeader cố định khi cuộn trang */
+.app-header-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 1100;
+
+  width: 100%;
+
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  border-bottom: 1px solid rgba(148, 116, 38, 0.12);
+}
+
+/* Dark mode */
+.dark-theme .app-header-sticky {
+  background: rgba(19, 20, 24, 0.94);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 768px) {
+  .app-header-sticky {
+    top: 0;
+    z-index: 1200;
+  }
+}
+
+@media (max-width: 768px) {
+  .mobile-app-content,
+  .ai-chat-page,
+  .public-chat {
+    scroll-margin-top: 72px;
+  }
+}
+

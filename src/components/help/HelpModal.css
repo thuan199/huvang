@@ -1107,3 +1107,105 @@ body.help-modal-open {
   box-shadow: none;
   filter: none;
 }
+
+/* Mobile: thu gọn khu vực menu Help */
+@media (max-width: 768px) {
+  .help-modal__body {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .help-modal__tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    column-gap: 8px;
+    row-gap: 2px;
+
+    padding: 8px 12px 10px;
+    margin: 0;
+
+    flex: 0 0 auto;
+  }
+
+  .help-tab {
+    min-height: 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 7px;
+
+    padding: 0px 4px;
+    margin: 0;
+
+    border-radius: 10px;
+
+    font-size: 12px;
+    line-height: 1.15;
+  }
+
+  .help-tab > span:first-child {
+    flex: 0 0 auto;
+    width: 18px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 13px;
+    line-height: 1;
+  }
+
+  .help-tab > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .help-modal__content {
+    min-height: 0;
+    flex: 1 1 auto;
+
+    padding-top: 8px;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .help-modal-overlay {
+    align-items: flex-start;
+    padding-top: 18px;
+    padding-bottom: 82px;
+  }
+
+  .help-modal {
+    width: calc(100% - 12px);
+    max-width: none;
+
+    height: calc(100dvh - 60px);
+    max-height: calc(100dvh - 60px);
+
+    margin: 0 auto;
+
+    display: flex;
+    flex-direction: column;
+  }
+
+  .help-modal__header {
+    flex: 0 0 auto;
+  }
+
+  .help-modal__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .help-modal__content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding-bottom: 24px;
+  }
+}
