@@ -17,7 +17,6 @@ const HELP_TABS = [
     label: "Giá vàng thế giới",
     icon: "🌍",
   },
-
   {
     id: "faq",
     label: "Câu hỏi thường gặp",
@@ -32,6 +31,11 @@ const HELP_TABS = [
     id: "about",
     label: "Giới thiệu",
     icon: "ℹ️",
+  },
+  {
+    id: "coffee",
+    label: "Tặng trà sữa",
+    icon: "🧋",
   },
 ];
 
@@ -177,6 +181,11 @@ export default function HelpModal({
             {activeTab ===
               "faq" && (
                 <FaqContent />
+              )}
+
+            {activeTab ===
+              "coffee" && (
+                <CoffeeContent />
               )}
 
             {activeTab ===
@@ -740,6 +749,232 @@ function FaqContent() {
           khoản.
         </p>
       </details>
+    </div>
+  );
+}
+
+const COFFEE_BANK_INFO = {
+  bankName: "Techcombank",
+  accountName: "PHAM NGOC THUAN",
+  accountNumber: "19028046257017",
+  transferContent: "UNG HO HU VANG",
+  qrImage: "/qrphamngocthuan.png",
+};
+
+function CoffeeContent() {
+  const [copiedField, setCopiedField] =
+    useState("");
+
+  async function copyText(value, fieldName) {
+    if (
+      !value ||
+      value === "VUI_LONG_NHAP_SO_TAI_KHOAN"
+    ) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedField(fieldName);
+
+      window.setTimeout(() => {
+        setCopiedField("");
+      }, 1800);
+    } catch (error) {
+      console.error("Không thể sao chép:", error);
+    }
+  }
+
+  return (
+    <div className="help-section help-coffee">
+      <div style={{ textAlign: "center", marginBottom: 18 }}>
+        <div
+          aria-hidden="true"
+          style={{ fontSize: 52, lineHeight: 1, marginBottom: 10 }}
+        >
+          🧋
+        </div>
+
+        <h3 style={{ marginBottom: 8 }}>
+          Tặng tác giả một ly trà sữa
+        </h3>
+
+        <p
+          style={{
+            maxWidth: 560,
+            margin: "0 auto",
+            lineHeight: 1.7,
+          }}
+        >
+          Hũ Vàng được phát triển và duy trì hoàn toàn bởi cá nhân.
+          Nếu ứng dụng hữu ích với bạn, một ly trà sữa sẽ giúp
+          mình có thêm động lực để tiếp tục cải thiện ứng dụng.
+        </p>
+      </div>
+
+      <div className="help-info-section" style={{ textAlign: "center" }}>
+        <h4 className="help-info-section__title">
+          <span aria-hidden="true">❤️</span>
+          <span>Cảm ơn bạn đã đồng hành</span>
+        </h4>
+
+        <div className="help-info-section__content">
+          <p>
+            Ứng dụng hiện không có quảng cáo, không thu phí sử dụng
+            và không bán dữ liệu cá nhân.
+          </p>
+          <p>
+            Mọi khoản ủng hộ đều hoàn toàn tự nguyện và không ảnh hưởng
+            đến các chức năng của tài khoản.
+          </p>
+        </div>
+      </div>
+
+      <div className="help-info-section" style={{ marginTop: 16 }}>
+        <h4 className="help-info-section__title">
+          <span aria-hidden="true">📱</span>
+          <span>Quét mã để ủng hộ</span>
+        </h4>
+
+        <div
+          className="help-info-section__content"
+          style={{ display: "grid", gap: 16, justifyItems: "center" }}
+        >
+          <img
+            src={COFFEE_BANK_INFO.qrImage}
+            alt="Mã QR ủng hộ ứng dụng Hũ Vàng"
+            style={{
+              display: "block",
+              width: "min(260px, 100%)",
+              aspectRatio: "1 / 1",
+              objectFit: "contain",
+              borderRadius: 18,
+              border: "1px solid rgba(180, 140, 40, 0.22)",
+              background: "#ffffff",
+              padding: 10,
+            }}
+            onError={(event) => {
+              event.currentTarget.style.display = "none";
+            }}
+          />
+
+          <small style={{ opacity: 0.72, textAlign: "center" }}>
+            
+          </small>
+        </div>
+      </div>
+
+      <div className="help-info-section" style={{ marginTop: 16 }}>
+        <h4 className="help-info-section__title">
+          <span aria-hidden="true">🏦</span>
+          <span>Thông tin chuyển khoản</span>
+        </h4>
+
+        <div className="help-info-section__content">
+          <CoffeeInfoRow
+            label="Ngân hàng"
+            value={COFFEE_BANK_INFO.bankName}
+          />
+          <CoffeeInfoRow
+            label="Chủ tài khoản"
+            value={COFFEE_BANK_INFO.accountName}
+          />
+          <CoffeeInfoRow
+            label="Số tài khoản"
+            value={COFFEE_BANK_INFO.accountNumber}
+            canCopy
+            copied={copiedField === "accountNumber"}
+            onCopy={() =>
+              copyText(COFFEE_BANK_INFO.accountNumber, "accountNumber")
+            }
+          />
+          <CoffeeInfoRow
+            label="Nội dung"
+            value={COFFEE_BANK_INFO.transferContent}
+            canCopy
+            copied={copiedField === "transferContent"}
+            onCopy={() =>
+              copyText(COFFEE_BANK_INFO.transferContent, "transferContent")
+            }
+          />
+        </div>
+      </div>
+
+      <div
+        className="help-world-gold__notice"
+        style={{ marginTop: 16, textAlign: "center" }}
+      >
+        Cảm ơn bạn rất nhiều vì đã sử dụng và ủng hộ Hũ Vàng. ❤️
+      </div>
+    </div>
+  );
+}
+
+function CoffeeInfoRow({
+  label,
+  value,
+  canCopy = false,
+  copied = false,
+  onCopy,
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        padding: "12px 0",
+        borderBottom: "1px solid rgba(128, 128, 128, 0.16)",
+      }}
+    >
+      <span style={{ opacity: 0.72 }}>{label}</span>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          gap: 8,
+          minWidth: 0,
+        }}
+      >
+        <strong
+          style={{
+            textAlign: "right",
+            overflowWrap: "anywhere",
+          }}
+        >
+          {value}
+        </strong>
+
+        {canCopy && (
+          <button
+            type="button"
+            onClick={onCopy}
+            disabled={value === "VUI_LONG_NHAP_SO_TAI_KHOAN"}
+            aria-label={`Sao chép ${label}`}
+            style={{
+              flex: "0 0 auto",
+              border: "1px solid rgba(180, 140, 40, 0.28)",
+              borderRadius: 9,
+              padding: "6px 9px",
+              background: "rgba(218, 173, 57, 0.1)",
+              color: "inherit",
+              cursor:
+                value === "VUI_LONG_NHAP_SO_TAI_KHOAN"
+                  ? "not-allowed"
+                  : "pointer",
+              opacity:
+                value === "VUI_LONG_NHAP_SO_TAI_KHOAN"
+                  ? 0.5
+                  : 1,
+            }}
+          >
+            {copied ? "Đã chép" : "Sao chép"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
