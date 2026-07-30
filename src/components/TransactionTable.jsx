@@ -86,7 +86,13 @@ function TransactionTable({
                           {formatMoney(transaction.price_per_chi)}
                         </td>
 
-                        <td>
+                        <td
+                          title={
+                            result.isLiveMarketPrice
+                              ? 'Giá mua vào hiện tại vừa đồng bộ từ cửa hàng'
+                              : 'Giá đã lưu cùng giao dịch'
+                          }
+                        >
                           {result.hasMarketPrice
                             ? `${formatMoney(result.currentPrice)} VND/chỉ`
                             : 'Chưa có giá'}
@@ -202,7 +208,13 @@ function TransactionTable({
 
                       <tr>
                         <th>Giá cửa hàng thu lại</th>
-                        <td>
+                        <td
+                          title={
+                            mobileResult.isLiveMarketPrice
+                              ? 'Giá mua vào hiện tại vừa đồng bộ từ cửa hàng'
+                              : 'Giá đã lưu cùng giao dịch'
+                          }
+                        >
                           {mobileResult.hasMarketPrice
                             ? `${formatMoney(
                               mobileResult.currentPrice

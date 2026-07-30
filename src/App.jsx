@@ -711,7 +711,7 @@ function App() {
     calculateTransactionResult,
   } = useGoldSummary(
     transactions,
-    priceHistory
+    marketCurrentPrices
   );
 
   const [historyPage, setHistoryPage] =

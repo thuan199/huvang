@@ -73,32 +73,62 @@ function getItemSourceCode(item) {
   );
 }
 
+function normalizeProductName(value) {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getItemProductName(item) {
+  return (
+    item?.product_name ??
+    item?.gold_type_name ??
+    item?.source_product_name ??
+    item?.gold_type ??
+    ''
+  );
+}
+
 function getMarketBuybackPrice(
   marketCurrentPrices,
   sourceCode,
+  goldType,
 ) {
   const normalizedSource =
     normalizeSourceCode(sourceCode);
 
-  const marketPrice =
-    marketCurrentPrices.find(
-      (item) => {
-        const itemSource =
-          getItemSourceCode(item);
+  const normalizedGoldType =
+    normalizeProductName(goldType);
 
-        const buybackPrice = Number(
+  const sourceRows =
+    marketCurrentPrices.filter(
+      (item) =>
+        getItemSourceCode(item) ===
+        normalizedSource,
+    );
+
+  const marketPrice =
+    sourceRows.find(
+      (item) =>
+        normalizeProductName(
+          getItemProductName(item),
+        ) === normalizedGoldType,
+    ) ??
+    sourceRows.find(
+      (item) =>
+        Number(
           item.buy_price ??
             item.buy_price_per_chi ??
             item.current_price_per_chi ??
             item.price_per_chi ??
             0,
-        );
-
-        return (
-          itemSource === normalizedSource &&
-          buybackPrice > 0
-        );
-      },
+        ) > 0,
     );
 
   return Number(
@@ -181,6 +211,7 @@ function TransactionForm({
       getMarketBuybackPrice(
         marketCurrentPrices,
         sourceCode,
+        firstProduct?.value,
       );
 
     setTransactionForm(
@@ -202,9 +233,26 @@ function TransactionForm({
   }
 
   function handleGoldTypeChange(event) {
-    updateFormField(
-      'gold_type',
-      event.target.value,
+    const nextGoldType =
+      event.target.value;
+
+    const buybackPrice =
+      getMarketBuybackPrice(
+        marketCurrentPrices,
+        selectedSourceCode,
+        nextGoldType,
+      );
+
+    setTransactionForm(
+      (currentForm) => ({
+        ...currentForm,
+        gold_type:
+          nextGoldType,
+        sell_price_per_chi:
+          buybackPrice > 0
+            ? String(buybackPrice)
+            : currentForm.sell_price_per_chi,
+      }),
     );
   }
 
