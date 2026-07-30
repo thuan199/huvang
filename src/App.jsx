@@ -23,7 +23,6 @@ import CurrentPriceForm from './components/CurrentPriceForm';
 import LocalGoldChart from './components/LocalGoldChart';
 import WorldGoldComparison from './components/WorldGoldComparison';
 import AppHeader from './components/AppHeader';
-import WorldGoldMiniWidget from './components/WorldGoldMiniWidget';
 import ToastContainer from './components/ToastContainer';
 import ConfirmModal from './components/ConfirmModal';
 import PublicChat from './components/public-chat/PublicChat';
@@ -207,6 +206,14 @@ function App() {
   const authInitializedRef =
     useRef(false);
 
+  const appHeaderRef =
+    useRef(null);
+
+  const [
+    appHeaderHeight,
+    setAppHeaderHeight,
+  ] = useState(0);
+
   const [
     activeGoldTab,
     setActiveGoldTab,
@@ -253,6 +260,46 @@ function App() {
       mediaQuery.removeEventListener(
         'change',
         handleViewportChange
+      );
+    };
+  }, []);
+
+  useEffect(() => {
+    const headerElement =
+      appHeaderRef.current;
+
+    if (!headerElement) {
+      return undefined;
+    }
+
+    function updateHeaderHeight() {
+      setAppHeaderHeight(
+        headerElement.getBoundingClientRect().height
+      );
+    }
+
+    updateHeaderHeight();
+
+    const resizeObserver =
+      new ResizeObserver(
+        updateHeaderHeight
+      );
+
+    resizeObserver.observe(
+      headerElement
+    );
+
+    window.addEventListener(
+      "resize",
+      updateHeaderHeight
+    );
+
+    return () => {
+      resizeObserver.disconnect();
+
+      window.removeEventListener(
+        "resize",
+        updateHeaderHeight
       );
     };
   }, []);
@@ -543,7 +590,6 @@ function App() {
         if (event === 'SIGNED_OUT') {
           setActiveAdminPanel(null);
           setIsDisplayNameOpen(false);
-          setIsWorldGoldOpen(false);
           setActivePage('home');
           setUser(null);
         }
@@ -774,7 +820,6 @@ function App() {
   async function handleLogout() {
     setActiveAdminPanel(null);
     setIsDisplayNameOpen(false);
-    setIsWorldGoldOpen(false);
     setActivePage('home');
 
     try {
@@ -979,12 +1024,6 @@ function App() {
 
   const [editingId, setEditingId] =
     useState(null);
-
-
-  const [
-    isWorldGoldOpen,
-    setIsWorldGoldOpen,
-  ] = useState(false);
 
   const [
     chartRange,
@@ -1831,8 +1870,12 @@ function App() {
 
   return (
     <>
-      <div className="container">
-        <AppHeader
+      <div
+        ref={appHeaderRef}
+        className="app-header-fixed"
+      >
+        <div className="container app-header-fixed__inner">
+          <AppHeader
           user={user}
           theme={displayTheme}
           isAdmin={isAdmin}
@@ -1848,7 +1891,11 @@ function App() {
             setActivePage(page);
 
             setActiveAdminPanel(null);
-            setIsWorldGoldOpen(false);
+
+            window.scrollTo({
+              top: 0,
+              behavior: "smooth",
+            });
           }}
           onOpenMaintenance={() =>
             setActiveAdminPanel(
@@ -1891,7 +1938,16 @@ function App() {
             handleToggleTheme
           }
         />
+        </div>
+      </div>
 
+      <div
+        className="container"
+        style={{
+          paddingTop:
+            appHeaderHeight,
+        }}
+      >
         <ChangeDisplayNameModal
           isOpen={isDisplayNameOpen}
           currentName={
@@ -1951,20 +2007,9 @@ function App() {
             />
           )}
 
-        {activePage === "home" ? (
+        {!helpOpen && (
+          activePage === "home" ? (
           <>
-            {!helpOpen && (
-              <WorldGoldMiniWidget
-                isOpen={isWorldGoldOpen}
-                onOpen={() =>
-                  setIsWorldGoldOpen(true)
-                }
-                onClose={() =>
-                  setIsWorldGoldOpen(false)
-                }
-              />
-            )}
-
             {isMobileView ? (
               <main className="mobile-app-content">
                 {renderMobileHomeContent()}
@@ -2045,7 +2090,8 @@ function App() {
           >
             <PublicChat />
           </div>
-        ) : null}
+        ) : null
+        )}
       </div>
 
       {activePage === 'home' &&
@@ -2068,6 +2114,7 @@ function App() {
                   <button
                     key={id}
                     type="button"
+                    data-mobile-tab={id}
                     className={`mobile-bottom-tab ${isActive
                         ? 'is-active'
                         : ''
