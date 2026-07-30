@@ -6037,6 +6037,7 @@ input[type="date"] {
     height: 15px;
   }
 }
+
 @media (max-width: 600px) {
   .header-navigation {
     display: grid;
@@ -6130,13 +6131,12 @@ input[type="date"] {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  
+
 }
 
 .price-history-tab {
   border: none;
-  border-bottom: 3px solid
-    transparent;
+  border-bottom: 3px solid transparent;
   background: transparent;
   padding: 9px 16px;
   font-size: 14px;
@@ -6190,7 +6190,8 @@ input[type="date"] {
 }
 
 .price-history-tab {
-  padding: 11px 22px;       /* cao hơn một chút */
+  padding: 11px 22px;
+  /* cao hơn một chút */
   min-height: 44px;
 
   border: 1px solid #e6dfd1;
@@ -6228,15 +6229,14 @@ input[type="date"] {
   border-color: #c79a28;
 
   box-shadow:
-    0 3px 10px rgba(199,154,40,.10);
+    0 3px 10px rgba(199, 154, 40, .10);
 }
 
 .transaction-unit-note {
   margin: 4px 0 8px;
   padding: 8px 10px;
 
-  border: 1px solid
-    rgba(191, 145, 25, 0.22);
+  border: 1px solid rgba(191, 145, 25, 0.22);
   border-radius: 9px;
 
   background:
@@ -6260,14 +6260,13 @@ input[type="date"] {
 .gold-entry-layout {
   display: grid;
   grid-template-columns:
-    minmax(0, 1.25fr)
-    minmax(340px, 0.75fr);
+    minmax(0, 1.25fr) minmax(340px, 0.75fr);
   gap: 18px;
   align-items: start;
   margin-bottom: 18px;
 }
 
-.gold-entry-layout > .card {
+.gold-entry-layout>.card {
   width: 100%;
   min-width: 0;
   margin-bottom: 0;
@@ -6330,7 +6329,7 @@ input[type="date"] {
   font-size: 11px;
 }
 
-.current-market-price-item > p {
+.current-market-price-item>p {
   margin: 5px 0 11px;
   color: var(--muted);
   font-size: 13px;
@@ -6343,7 +6342,7 @@ input[type="date"] {
   gap: 9px;
 }
 
-.current-market-price-item__values > div {
+.current-market-price-item__values>div {
   min-width: 0;
   padding: 10px;
   border-radius: 11px;
@@ -6378,23 +6377,19 @@ input[type="date"] {
   background: #0f172a;
 }
 
-.dark-theme
-.current-market-price-item__values > div {
+.dark-theme .current-market-price-item__values>div {
   background: #1e293b;
 }
 
-.dark-theme
-.current-market-price-item__top strong {
+.dark-theme .current-market-price-item__top strong {
   color: #facc15;
 }
 
-.dark-theme
-.current-market-price-item__values strong {
+.dark-theme .current-market-price-item__values strong {
   color: #f8fafc;
 }
 
-.dark-theme
-.current-market-prices__empty {
+.dark-theme .current-market-prices__empty {
   border-color: #475569;
   color: #94a3b8;
 }
@@ -6453,8 +6448,7 @@ input[type="date"] {
   background: #c58b00;
   color: #fff;
   box-shadow:
-    0 8px 18px
-    rgba(197, 139, 0, 0.25);
+    0 8px 18px rgba(197, 139, 0, 0.25);
 }
 
 .change-password-info {

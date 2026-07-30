@@ -1,6 +1,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -44,7 +45,7 @@ function getAuthErrorMessage(
   ) {
     return (
       "Tài khoản của bạn đang bị khóa. " +
-      "Vui lòng liên hệ quản trị viên."
+      "Vui lòng liên hệ quản trị viên qua email: thu2toite@gmail.com."
     );
   }
 
@@ -188,6 +189,93 @@ function formatRemainingTime(
   return parts.join(" ");
 }
 
+function getOAuthErrorFromUrl(
+  urlValue,
+) {
+  if (!urlValue) {
+    return "";
+  }
+
+  try {
+    const url =
+      new URL(urlValue);
+
+    const searchParams =
+      url.searchParams;
+
+    const hashParams =
+      new URLSearchParams(
+        url.hash.replace(
+          /^#/,
+          "",
+        ),
+      );
+
+    return (
+      searchParams.get(
+        "error_description",
+      ) ||
+      searchParams.get(
+        "error",
+      ) ||
+      hashParams.get(
+        "error_description",
+      ) ||
+      hashParams.get(
+        "error",
+      ) ||
+      ""
+    );
+  } catch {
+    return "";
+  }
+}
+
+function getGoogleLoginErrorMessage(
+  errorValue,
+) {
+  const normalizedError =
+    String(
+      errorValue || "",
+    ).toLowerCase();
+
+  if (
+    normalizedError.includes(
+      "user is banned",
+    ) ||
+    normalizedError.includes(
+      "user_banned",
+    ) ||
+    normalizedError.includes(
+      "banned",
+    )
+  ) {
+    return (
+      "Tài khoản của bạn đang bị khóa. " +
+      "Vui lòng liên hệ quản trị viên."
+    );
+  }
+
+  if (
+    normalizedError.includes(
+      "access_denied",
+    ) ||
+    normalizedError.includes(
+      "access denied",
+    )
+  ) {
+    return (
+      "Bạn đã hủy hoặc từ chối " +
+      "đăng nhập bằng Google."
+    );
+  }
+
+  return (
+    errorValue ||
+    "Không thể đăng nhập bằng Google."
+  );
+}
+
 async function readJsonResponse(
   response,
 ) {
@@ -262,6 +350,15 @@ export default function Login() {
     remainingLockTime,
     setRemainingLockTime,
   ] = useState("");
+
+  const googlePopupRef =
+    useRef(null);
+
+  const googlePopupWatcherRef =
+    useRef(null);
+
+  const googleLoginFinishedRef =
+    useRef(false);
 
   const supabaseUrl =
     import.meta.env
@@ -366,6 +463,114 @@ export default function Login() {
       );
     };
   }, [bannedUntil]);
+
+  function stopGooglePopupWatcher() {
+    if (
+      googlePopupWatcherRef.current
+    ) {
+      window.clearInterval(
+        googlePopupWatcherRef.current,
+      );
+
+      googlePopupWatcherRef.current =
+        null;
+    }
+  }
+
+  function finishGoogleLogin({
+    message: nextMessage = "",
+    closePopup = true,
+  } = {}) {
+    googleLoginFinishedRef.current =
+      true;
+
+    stopGooglePopupWatcher();
+
+    if (
+      closePopup &&
+      googlePopupRef.current &&
+      !googlePopupRef.current.closed
+    ) {
+      googlePopupRef.current.close();
+    }
+
+    googlePopupRef.current =
+      null;
+
+    setLoading(false);
+
+    if (nextMessage) {
+      setMessage(nextMessage);
+    }
+  }
+
+  /*
+   * Nhận kết quả từ OAuthCallback.
+   *
+   * OAuthCallback nên gửi:
+   * - GOOGLE_LOGIN_SUCCESS
+   * - GOOGLE_LOGIN_ERROR
+   */
+  useEffect(() => {
+    function handleOAuthMessage(
+      event,
+    ) {
+      if (
+        event.origin !==
+        window.location.origin
+      ) {
+        return;
+      }
+
+      if (
+        event.data?.type ===
+        "GOOGLE_LOGIN_ERROR"
+      ) {
+        clearBanStatus();
+
+        finishGoogleLogin({
+          message:
+            getGoogleLoginErrorMessage(
+              event.data?.message,
+            ),
+        });
+
+        return;
+      }
+
+      if (
+        event.data?.type ===
+        "GOOGLE_LOGIN_SUCCESS"
+      ) {
+        clearBanStatus();
+
+        finishGoogleLogin({
+          message: "",
+        });
+      }
+    }
+
+    window.addEventListener(
+      "message",
+      handleOAuthMessage,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "message",
+        handleOAuthMessage,
+      );
+
+      stopGooglePopupWatcher();
+
+      if (
+        googlePopupRef.current &&
+        !googlePopupRef.current.closed
+      ) {
+        googlePopupRef.current.close();
+      }
+    };
+  }, []);
 
   async function loginWithPassword(
     normalizedEmail,
@@ -693,13 +898,15 @@ export default function Login() {
       return;
     }
 
-    let popup = null;
-
     setMessage("");
     clearBanStatus();
+    setLoading(true);
+
+    googleLoginFinishedRef.current =
+      false;
 
     try {
-      popup =
+      const popup =
         window.open(
           "",
           "google-login",
@@ -711,6 +918,9 @@ export default function Login() {
           "Trình duyệt đang chặn cửa sổ đăng nhập. Vui lòng cho phép popup.",
         );
       }
+
+      googlePopupRef.current =
+        popup;
 
       popup.document.title =
         "Đang mở đăng nhập Google...";
@@ -763,20 +973,95 @@ export default function Login() {
 
       popup.location.href =
         data.url;
-    } catch (error) {
-      popup?.close();
 
+      stopGooglePopupWatcher();
+
+      /*
+       * Theo dõi popup:
+       * - Nếu popup quay về cùng domain, đọc lỗi trong URL.
+       * - Nếu user tự đóng popup, tắt trạng thái loading.
+       *
+       * Trong thời gian popup đang ở Google/Supabase,
+       * trình duyệt sẽ chặn đọc location vì khác domain.
+       * Trường hợp đó chỉ cần bỏ qua và kiểm tra lại.
+       */
+      googlePopupWatcherRef.current =
+        window.setInterval(
+          () => {
+            const currentPopup =
+              googlePopupRef.current;
+
+            if (!currentPopup) {
+              stopGooglePopupWatcher();
+              setLoading(false);
+              return;
+            }
+
+            if (currentPopup.closed) {
+              stopGooglePopupWatcher();
+              googlePopupRef.current =
+                null;
+
+              setLoading(false);
+
+              if (
+                !googleLoginFinishedRef.current
+              ) {
+                setMessage(
+                  "Cửa sổ đăng nhập Google đã đóng trước khi hoàn tất.",
+                );
+              }
+
+              return;
+            }
+
+            try {
+              const popupUrl =
+                currentPopup.location.href;
+
+              if (
+                !popupUrl.startsWith(
+                  window.location.origin,
+                )
+              ) {
+                return;
+              }
+
+              const oauthError =
+                getOAuthErrorFromUrl(
+                  popupUrl,
+                );
+
+              if (oauthError) {
+                finishGoogleLogin({
+                  message:
+                    getGoogleLoginErrorMessage(
+                      oauthError,
+                    ),
+                });
+              }
+            } catch {
+              /*
+               * Popup vẫn đang ở domain Google hoặc Supabase.
+               * Không xử lý gì và tiếp tục chờ.
+               */
+            }
+          },
+          400,
+        );
+    } catch (error) {
       console.error(
         "Lỗi đăng nhập Google:",
         error,
       );
 
-      setMessage(
-        getAuthErrorMessage(
-          error,
-          "Không thể đăng nhập bằng Google.",
-        ),
-      );
+      finishGoogleLogin({
+        message:
+          getAuthErrorMessage(
+            error,
+            "Không thể đăng nhập bằng Google.",
+          ),
+      });
     }
   }
 

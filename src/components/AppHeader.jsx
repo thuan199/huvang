@@ -5,6 +5,8 @@ import {
   useState,
 } from "react";
 
+import { createPortal } from "react-dom";
+
 import HelpModal from "./help/HelpModal";
 
 import {
@@ -51,8 +53,16 @@ function AppHeader({
     setIsSettingsMenuOpen,
   ] = useState(false);
 
-  const settingsMenuRef =
+  const settingsMenuTriggerRef =
     useRef(null);
+
+  const settingsMenuPanelRef =
+    useRef(null);
+
+  const [
+    settingsMenuStyle,
+    setSettingsMenuStyle,
+  ] = useState({});
 
   const metadata =
     user?.user_metadata ?? {};
@@ -89,17 +99,163 @@ function AppHeader({
   }, [avatarUrl]);
 
   /*
+   * Menu cài đặt được render trực tiếp vào document.body
+   * bằng Portal để không bị cắt bởi topbar hoặc container.
+   *
+   * Trên mobile:
+   * - Menu cách hai mép màn hình 12px.
+   * - Có chiều cao tối đa và tự cuộn.
+   *
+   * Trên desktop:
+   * - Menu nằm ngay dưới nút cài đặt.
+   */
+  const updateSettingsMenuPosition =
+    useCallback(() => {
+      const trigger =
+        settingsMenuTriggerRef.current;
+
+      if (!trigger) {
+        return;
+      }
+
+      const rect =
+        trigger.getBoundingClientRect();
+
+      const viewportWidth =
+        window.innerWidth;
+
+      const viewportHeight =
+        window.innerHeight;
+
+      const isMobile =
+        viewportWidth <= 768;
+
+      const gap = 8;
+      const edge = 12;
+
+      if (isMobile) {
+        const preferredTop =
+          rect.bottom + gap;
+
+        const top =
+          Math.min(
+            Math.max(
+              edge,
+              preferredTop,
+            ),
+            Math.max(
+              edge,
+              viewportHeight - 260,
+            ),
+          );
+
+        setSettingsMenuStyle({
+          position: "fixed",
+          top: `${top}px`,
+          left: `${edge}px`,
+          right: `${edge}px`,
+          width: "auto",
+          maxWidth: "none",
+          maxHeight:
+            `calc(100dvh - ${top + edge}px)`,
+          overflowY: "auto",
+          overscrollBehavior:
+            "contain",
+          zIndex: 10000,
+        });
+
+        return;
+      }
+
+      const menuWidth = 360;
+
+      const left =
+        Math.min(
+          Math.max(
+            edge,
+            rect.right - menuWidth,
+          ),
+          viewportWidth -
+            menuWidth -
+            edge,
+        );
+
+      const top =
+        Math.min(
+          rect.bottom + gap,
+          viewportHeight - 260,
+        );
+
+      setSettingsMenuStyle({
+        position: "fixed",
+        top: `${Math.max(edge, top)}px`,
+        left: `${left}px`,
+        width: `${menuWidth}px`,
+        maxHeight:
+          `calc(100dvh - ${Math.max(
+            edge,
+            top,
+          ) + edge}px)`,
+        overflowY: "auto",
+        overscrollBehavior:
+          "contain",
+        zIndex: 10000,
+      });
+    }, []);
+
+  useEffect(() => {
+    if (!isSettingsMenuOpen) {
+      return undefined;
+    }
+
+    updateSettingsMenuPosition();
+
+    window.addEventListener(
+      "resize",
+      updateSettingsMenuPosition,
+    );
+
+    window.addEventListener(
+      "scroll",
+      updateSettingsMenuPosition,
+      true,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "resize",
+        updateSettingsMenuPosition,
+      );
+
+      window.removeEventListener(
+        "scroll",
+        updateSettingsMenuPosition,
+        true,
+      );
+    };
+  }, [
+    isSettingsMenuOpen,
+    updateSettingsMenuPosition,
+  ]);
+
+  /*
    * Đóng menu cài đặt khi:
    * - Nhấn ra ngoài menu.
    * - Nhấn phím Escape.
    */
   useEffect(() => {
     function handleClickOutside(event) {
+      const clickedTrigger =
+        settingsMenuTriggerRef.current
+          ?.contains(event.target);
+
+      const clickedPanel =
+        settingsMenuPanelRef.current
+          ?.contains(event.target);
+
       if (
-        settingsMenuRef.current &&
-        !settingsMenuRef.current.contains(
-          event.target
-        )
+        !clickedTrigger &&
+        !clickedPanel
       ) {
         setIsSettingsMenuOpen(false);
       }
@@ -371,7 +527,7 @@ function AppHeader({
 
                   <div
                     className="header-admin-tools"
-                    ref={settingsMenuRef}
+                    ref={settingsMenuTriggerRef}
                   >
                     <button
                       type="button"
@@ -403,10 +559,15 @@ function AppHeader({
                       />
                     </button>
 
-                    {isSettingsMenuOpen && (
+                    {isSettingsMenuOpen &&
+                      typeof document !==
+                        "undefined" &&
+                      createPortal(
                       <div
-                        className="header-admin-menu"
+                        ref={settingsMenuPanelRef}
+                        className="header-admin-menu header-admin-menu--portal"
                         role="menu"
+                        style={settingsMenuStyle}
                       >
                         <div className="header-admin-menu__header">
                           <Settings2
@@ -570,7 +731,8 @@ function AppHeader({
                             </div>
                           </div>
                         )}
-                      </div>
+                      </div>,
+                      document.body
                     )}
                   </div>
                 </div>
