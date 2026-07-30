@@ -189,48 +189,6 @@ function formatRemainingTime(
   return parts.join(" ");
 }
 
-function getOAuthErrorFromUrl(
-  urlValue,
-) {
-  if (!urlValue) {
-    return "";
-  }
-
-  try {
-    const url =
-      new URL(urlValue);
-
-    const searchParams =
-      url.searchParams;
-
-    const hashParams =
-      new URLSearchParams(
-        url.hash.replace(
-          /^#/,
-          "",
-        ),
-      );
-
-    return (
-      searchParams.get(
-        "error_description",
-      ) ||
-      searchParams.get(
-        "error",
-      ) ||
-      hashParams.get(
-        "error_description",
-      ) ||
-      hashParams.get(
-        "error",
-      ) ||
-      ""
-    );
-  } catch {
-    return "";
-  }
-}
-
 function getGoogleLoginErrorMessage(
   errorValue,
 ) {
@@ -468,7 +426,7 @@ export default function Login() {
     if (
       googlePopupWatcherRef.current
     ) {
-      window.clearInterval(
+      window.clearTimeout(
         googlePopupWatcherRef.current,
       );
 
@@ -479,29 +437,25 @@ export default function Login() {
 
   function finishGoogleLogin({
     message: nextMessage = "",
-    closePopup = true,
   } = {}) {
     googleLoginFinishedRef.current =
       true;
 
     stopGooglePopupWatcher();
 
-    if (
-      closePopup &&
-      googlePopupRef.current &&
-      !googlePopupRef.current.closed
-    ) {
-      googlePopupRef.current.close();
-    }
-
+    /*
+     * Không gọi popup.close() từ cửa sổ cha.
+     * COOP có thể chặn thao tác này sau khi popup
+     * đã đi qua Google hoặc Supabase.
+     *
+     * OAuthCallback sẽ tự đóng chính nó sau khi
+     * gửi postMessage về cửa sổ cha.
+     */
     googlePopupRef.current =
       null;
 
     setLoading(false);
-
-    if (nextMessage) {
-      setMessage(nextMessage);
-    }
+    setMessage(nextMessage);
   }
 
   /*
@@ -563,12 +517,8 @@ export default function Login() {
 
       stopGooglePopupWatcher();
 
-      if (
-        googlePopupRef.current &&
-        !googlePopupRef.current.closed
-      ) {
-        googlePopupRef.current.close();
-      }
+      googlePopupRef.current =
+        null;
     };
   }, []);
 
@@ -977,77 +927,34 @@ export default function Login() {
       stopGooglePopupWatcher();
 
       /*
-       * Theo dõi popup:
-       * - Nếu popup quay về cùng domain, đọc lỗi trong URL.
-       * - Nếu user tự đóng popup, tắt trạng thái loading.
+       * Không kiểm tra currentPopup.closed và không đọc
+       * currentPopup.location.href vì COOP có thể chặn.
        *
-       * Trong thời gian popup đang ở Google/Supabase,
-       * trình duyệt sẽ chặn đọc location vì khác domain.
-       * Trường hợp đó chỉ cần bỏ qua và kiểm tra lại.
+       * OAuthCallback gửi kết quả về bằng postMessage().
+       * Timeout này chỉ tránh trạng thái loading kéo dài.
        */
       googlePopupWatcherRef.current =
-        window.setInterval(
+        window.setTimeout(
           () => {
-            const currentPopup =
-              googlePopupRef.current;
+            googlePopupWatcherRef.current =
+              null;
 
-            if (!currentPopup) {
-              stopGooglePopupWatcher();
-              setLoading(false);
+            if (
+              googleLoginFinishedRef.current
+            ) {
               return;
             }
 
-            if (currentPopup.closed) {
-              stopGooglePopupWatcher();
-              googlePopupRef.current =
-                null;
+            googlePopupRef.current =
+              null;
 
-              setLoading(false);
+            setLoading(false);
 
-              if (
-                !googleLoginFinishedRef.current
-              ) {
-                setMessage(
-                  "Cửa sổ đăng nhập Google đã đóng trước khi hoàn tất.",
-                );
-              }
-
-              return;
-            }
-
-            try {
-              const popupUrl =
-                currentPopup.location.href;
-
-              if (
-                !popupUrl.startsWith(
-                  window.location.origin,
-                )
-              ) {
-                return;
-              }
-
-              const oauthError =
-                getOAuthErrorFromUrl(
-                  popupUrl,
-                );
-
-              if (oauthError) {
-                finishGoogleLogin({
-                  message:
-                    getGoogleLoginErrorMessage(
-                      oauthError,
-                    ),
-                });
-              }
-            } catch {
-              /*
-               * Popup vẫn đang ở domain Google hoặc Supabase.
-               * Không xử lý gì và tiếp tục chờ.
-               */
-            }
+            setMessage(
+              "Phiên đăng nhập Google đã hết thời gian. Bạn có thể đóng cửa sổ Google và thử lại.",
+            );
           },
-          400,
+          120000,
         );
     } catch (error) {
       console.error(
