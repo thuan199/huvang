@@ -1656,46 +1656,6 @@ function App() {
               />
             </div>
 
-            <LocalGoldChart
-              activeGoldTab={activeGoldTab}
-              setActiveGoldTab={setActiveGoldTab}
-
-              activeHistorySource={
-                activeHistorySource
-              }
-              setActiveHistorySource={
-                setActiveHistorySource
-              }
-
-              chartRange={chartRange}
-              setChartRange={setChartRange}
-              priceChartData={priceChartData}
-              theme={displayTheme}
-            />
-
-            <WorldGoldComparison
-              worldGold={worldGold}
-              worldGoldLoading={
-                worldGoldLoading
-              }
-              worldGoldError={
-                worldGoldError
-              }
-              worldGoldMarketMessage={
-                worldGoldMarketMessage
-              }
-              shopGold={shopGold}
-              shopSellPriceVndPerLuong={
-                shopSellPriceVndPerLuong
-              }
-              goldDifference={
-                goldDifference
-              }
-              goldDifferencePercent={
-                goldDifferencePercent
-              }
-            />
-
             <TransactionTable
               loading={loading}
               transactions={
@@ -1744,6 +1704,48 @@ function App() {
                 )
               }
             />
+
+            <LocalGoldChart
+              activeGoldTab={activeGoldTab}
+              setActiveGoldTab={setActiveGoldTab}
+
+              activeHistorySource={
+                activeHistorySource
+              }
+              setActiveHistorySource={
+                setActiveHistorySource
+              }
+
+              chartRange={chartRange}
+              setChartRange={setChartRange}
+              priceChartData={priceChartData}
+              theme={displayTheme}
+            />
+
+            <WorldGoldComparison
+              worldGold={worldGold}
+              worldGoldLoading={
+                worldGoldLoading
+              }
+              worldGoldError={
+                worldGoldError
+              }
+              worldGoldMarketMessage={
+                worldGoldMarketMessage
+              }
+              shopGold={shopGold}
+              shopSellPriceVndPerLuong={
+                shopSellPriceVndPerLuong
+              }
+              goldDifference={
+                goldDifference
+              }
+              goldDifferencePercent={
+                goldDifferencePercent
+              }
+            />
+
+
 
             <MarketNews />
           </>

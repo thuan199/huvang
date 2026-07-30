@@ -886,7 +886,6 @@ select:-webkit-autofill {
   }
 }
 
-
 @keyframes goldShine {
   0% {
     left: -70%;
@@ -1111,8 +1110,6 @@ table td:last-child {
   color: #f8fafc;
 }
 
-
-
 .dark-theme input::placeholder,
 .dark-theme textarea::placeholder {
   color: #94a3b8;
@@ -1257,7 +1254,6 @@ table td:last-child {
   box-shadow: 0 12px 40px rgba(0, 0, 0, .08);
 
 }
-
 
 .login-card h1 {
 
@@ -1895,12 +1891,6 @@ body.dark-theme .message.warning {
   font-size: 9px;
 }
 
-
-
-
-
-
-
 .chart-change-label {
   font-size: 10px;
   font-weight: 700;
@@ -2160,39 +2150,6 @@ body.dark-theme .message.warning {
   background: #273449;
 }
 
-/* =========================
-   Responsive transaction view
-========================= */
-
-.transaction-desktop-table {
-  display: block;
-}
-
-.transaction-mobile-list {
-  display: none;
-}
-
-@media (max-width: 768px) {
-  .transaction-desktop-table {
-    display: none !important;
-  }
-
-  .transaction-mobile-list {
-    display: grid !important;
-    gap: 12px;
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
 .chart-scroll {
   width: 100%;
   overflow-x: auto;
@@ -2226,205 +2183,6 @@ body.dark-theme .message.warning {
 
 .dark-theme .chart-swipe-hint {
   color: #94a3b8;
-}
-
-.transaction-mobile-table-wrap {
-  width: 100%;
-  margin-top: 12px;
-
-  overflow: hidden;
-
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-}
-
-.transaction-mobile-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-
-.transaction-mobile-table th,
-.transaction-mobile-table td {
-  padding: 11px 12px;
-  vertical-align: middle;
-
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.transaction-mobile-table tr:last-child th,
-.transaction-mobile-table tr:last-child td {
-  border-bottom: none;
-}
-
-.transaction-mobile-table th {
-  width: 42%;
-
-  color: #64748b;
-  background: #f8fafc;
-
-  font-size: 12px;
-  font-weight: 600;
-  text-align: left;
-
-  border-right: 1px solid #e2e8f0;
-}
-
-.transaction-mobile-table td {
-  width: 58%;
-
-  color: #0f172a;
-
-  font-size: 13px;
-  font-weight: 700;
-  text-align: right;
-
-  overflow-wrap: anywhere;
-}
-
-.transaction-mobile-table td.profit {
-  color: #16a34a;
-}
-
-.transaction-mobile-table td.loss {
-  color: #dc2626;
-}
-
-.dark-theme .transaction-mobile-table-wrap {
-  border-color: rgba(148, 163, 184, 0.2);
-}
-
-.dark-theme .transaction-mobile-table th,
-.dark-theme .transaction-mobile-table td {
-  border-bottom-color: rgba(148, 163, 184, 0.2);
-}
-
-.dark-theme .transaction-mobile-table th {
-  color: #94a3b8;
-  background: #1f2937;
-
-  border-right-color: rgba(148, 163, 184, 0.2);
-}
-
-.dark-theme .transaction-mobile-table td {
-  color: #f8fafc;
-}
-
-.dark-theme .transaction-mobile-table td.profit {
-  color: #4ade80;
-}
-
-.dark-theme .transaction-mobile-table td.loss {
-  color: #f87171;
-}
-
-/* =========================
-   Fix mobile transaction overflow
-========================= */
-
-.transaction-mobile-list {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-}
-
-.transaction-mobile-card {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-.transaction-mobile-header {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-
-  box-sizing: border-box;
-}
-
-.transaction-mobile-header strong,
-.transaction-mobile-header span {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.transaction-mobile-table-wrap {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-.transaction-mobile-table {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-
-  table-layout: fixed;
-  border-collapse: collapse;
-}
-
-.transaction-mobile-table th,
-.transaction-mobile-table td {
-  min-width: 0;
-  max-width: 0;
-
-  box-sizing: border-box;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  white-space: normal;
-}
-
-.transaction-mobile-table th {
-  width: 40%;
-}
-
-.transaction-mobile-table td {
-  width: 60%;
-}
-
-.transaction-mobile-actions {
-  width: 100%;
-  max-width: 100%;
-
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 8px;
-
-  box-sizing: border-box;
-}
-
-@media (max-width: 768px) {
-  .card {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-
-    box-sizing: border-box;
-  }
-
-  .transaction-mobile-list,
-  .transaction-mobile-card,
-  .transaction-mobile-table-wrap {
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .transaction-mobile-table th,
-  .transaction-mobile-table td {
-    padding: 10px 8px;
-    font-size: 12px;
-  }
-
-  .transaction-mobile-header {
-    padding: 0 0 10px;
-  }
 }
 
 .gold-price-actions {
@@ -2924,8 +2682,6 @@ body.dark-theme .message.warning {
   }
 }
 
-
-
 .login-footer {
   margin-top: 32px;
   text-align: center;
@@ -3374,8 +3130,6 @@ body.dark-theme .message.warning {
   color: #fff;
 }
 
-
-
 .password-input-wrapper .change-password-input {
   width: 100%;
   height: 50px;
@@ -3438,8 +3192,6 @@ body.dark-theme .message.warning {
   flex-shrink: 0;
   pointer-events: none;
 }
-
-
 
 .dark-theme .password-eye-button {
   color: #bcbcbc;
@@ -3624,8 +3376,6 @@ body.dark-theme .message.warning {
     max-width: 110px;
   }
 }
-
-
 
 .header-user-info {
   display: flex;
@@ -4005,8 +3755,6 @@ body.dark-theme .message.warning {
   pointer-events: auto;
 }
 
-
-
 .toast {
   min-width: 320px;
   max-width: 420px;
@@ -4355,18 +4103,6 @@ body.dark-theme .toast-info {
   bottom: auto;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 .admin-user-manager {
   margin-bottom: 24px;
 }
@@ -4667,7 +4403,6 @@ body.dark-theme .toast-info {
   height: 75px;
   margin: 0 auto 0px;
 }
-
 
 .login-logo__image {
   display: block;
@@ -5179,8 +4914,6 @@ body.dark-theme .toast-info {
   cursor: pointer;
 }
 
-
-
 .app-logo-button .login-logo {
   display: block;
   width: 100%;
@@ -5239,62 +4972,6 @@ body.dark-theme .toast-info {
   pointer-events: none;
   z-index: 2;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* =========================
    DARK THEME - HEADER MENU
@@ -5786,8 +5463,6 @@ body.dark-theme .header-admin-menu__item:disabled .header-admin-menu__item-icon,
 .dark-theme .topbar .welcome-text {
   color: #cbd5e1;
 }
-
-
 
 /* Nút đăng xuất */
 .dark-theme .topbar .logout-button {
@@ -6327,7 +6002,6 @@ input[type="date"] {
   }
 }
 
-
 @media (max-width: 768px) {
   .header-navigation {
     display: grid;
@@ -6792,131 +6466,124 @@ input[type="date"] {
   line-height: 1.5;
 }
 
+/* =========================================================
+   DANH SÁCH GIAO DỊCH - DESKTOP / MOBILE / LIGHT / DARK
+========================================================= */
+.transaction-desktop-table {
+  display: block;
+}
+
+.transaction-mobile-list {
+  display: none;
+  width: 100%;
+  min-width: 0;
+}
+
 @media (max-width: 768px) {
+  .transaction-desktop-table {
+    display: none !important;
+  }
+
   .transaction-mobile-list {
-    width: 100%;
+    display: grid !important;
+    gap: 12px;
   }
 
   .transaction-mobile-card {
-    background: #111827;
-    border: 1px solid #334155;
-    border-radius: 14px;
+    width: 100%;
+    min-width: 0;
     overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
   }
 
   .transaction-mobile-table-wrap {
     width: 100%;
+    min-width: 0;
     overflow-x: auto;
   }
 
   .transaction-mobile-table {
     width: 100%;
+    min-width: 0;
     border-collapse: collapse;
     table-layout: fixed;
-    background: #111827;
+    background: #ffffff;
   }
 
   .transaction-mobile-table th,
   .transaction-mobile-table td {
-    padding: 13px 10px;
-    border-bottom: 1px solid #334155;
+    min-width: 0;
+    padding: 12px 10px;
+    border-bottom: 1px solid #e2e8f0;
     vertical-align: middle;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
   }
 
-  /* Cột tên thông tin bên trái */
   .transaction-mobile-table th {
     width: 40%;
-    background: #1e293b;
-    color: #94a3b8;
+    border-right: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #64748b;
     font-size: 13px;
     font-weight: 600;
     text-align: center;
-    border-right: 1px solid #334155;
   }
 
-  /* Cột dữ liệu bên phải */
   .transaction-mobile-table td {
     width: 60%;
-    background: #111827;
-    color: #e5e7eb;
+    background: #ffffff;
+    color: #0f172a;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     text-align: center;
-    overflow-wrap: anywhere;
   }
 
-  /* Dòng xen kẽ, chỉ đổi màu nhẹ */
   .transaction-mobile-table tr:nth-child(even) td {
-    background: #172033;
-  }
-
-  /* Xóa nền trắng hoặc nền vàng từ CSS cũ */
-  .transaction-mobile-table tr:nth-child(odd) td,
-  .transaction-mobile-table tr:nth-child(even) td {
-    color: #e5e7eb;
+    background: #f8fafc;
   }
 
   .transaction-mobile-table tr:hover th {
-    background: #243047;
+    background: #f1f5f9;
   }
 
   .transaction-mobile-table tr:hover td {
-    background: #1f2937;
+    background: #f1f5f9;
   }
 
-  /* Màu lời/lỗ */
-  .transaction-mobile-table td.profit {
-    color: #4ade80;
-  }
-
-  .transaction-mobile-table td.loss {
-    color: #f87171;
-  }
-
-  /* Bỏ đường viền dòng cuối */
   .transaction-mobile-table tr:last-child th,
   .transaction-mobile-table tr:last-child td {
     border-bottom: none;
   }
 
+  .transaction-mobile-table td.profit {
+    color: #16a34a !important;
+  }
+
+  .transaction-mobile-table td.loss {
+    color: #dc2626 !important;
+  }
+
   .transaction-mobile-actions {
     display: flex;
     justify-content: flex-end;
+    flex-wrap: wrap;
     gap: 10px;
+    width: 100%;
     padding: 12px;
-    background: #0f172a;
-    border-top: 1px solid #334155;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
   }
 
   .transaction-mobile-actions .icon-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
     min-width: 76px;
+    margin-top: 0;
     padding: 9px 14px;
-    border: none;
     border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .transaction-mobile-actions .edit-button {
-    background: #1d4ed8;
-    color: #ffffff;
-  }
-
-  .transaction-mobile-actions .edit-button:hover {
-    background: #2563eb;
-  }
-
-  .transaction-mobile-actions .danger-button {
-    background: #b91c1c;
-    color: #ffffff;
-  }
-
-  .transaction-mobile-actions .danger-button:hover {
-    background: #dc2626;
   }
 
   .transaction-mobile-pagination {
@@ -6928,21 +6595,93 @@ input[type="date"] {
   }
 
   .transaction-mobile-pagination button {
+    margin-top: 0;
     padding: 8px 12px;
-    background: #1e293b;
-    color: #e5e7eb;
-    border: 1px solid #475569;
+    border: 1px solid #cbd5e1;
     border-radius: 8px;
+    background: #ffffff;
+    color: #334155;
+    box-shadow: none;
+  }
+
+  .transaction-mobile-pagination button:hover:not(:disabled) {
+    background: #f1f5f9;
   }
 
   .transaction-mobile-pagination button:disabled {
-    opacity: 0.45;
     cursor: not-allowed;
+    opacity: 0.45;
   }
 
   .transaction-mobile-pagination span {
-    color: #cbd5e1;
+    color: #475569;
     font-size: 13px;
     font-weight: 600;
+  }
+
+  /* Dark theme chỉ ghi đè màu, không lặp lại cấu trúc. */
+  .dark-theme .transaction-mobile-card {
+    border-color: #334155;
+    background: #111827;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+  }
+
+  .dark-theme .transaction-mobile-table {
+    background: #111827;
+  }
+
+  .dark-theme .transaction-mobile-table th,
+  .dark-theme .transaction-mobile-table td {
+    border-bottom-color: #334155;
+  }
+
+  .dark-theme .transaction-mobile-table th {
+    border-right-color: #334155;
+    background: #1e293b;
+    color: #94a3b8;
+  }
+
+  .dark-theme .transaction-mobile-table td {
+    background: #111827;
+    color: #e5e7eb;
+  }
+
+  .dark-theme .transaction-mobile-table tr:nth-child(even) td {
+    background: #172033;
+  }
+
+  .dark-theme .transaction-mobile-table tr:hover th {
+    background: #243047;
+  }
+
+  .dark-theme .transaction-mobile-table tr:hover td {
+    background: #1f2937;
+  }
+
+  .dark-theme .transaction-mobile-table td.profit {
+    color: #4ade80 !important;
+  }
+
+  .dark-theme .transaction-mobile-table td.loss {
+    color: #f87171 !important;
+  }
+
+  .dark-theme .transaction-mobile-actions {
+    border-top-color: #334155;
+    background: #0f172a;
+  }
+
+  .dark-theme .transaction-mobile-pagination button {
+    border-color: #475569;
+    background: #1e293b;
+    color: #e5e7eb;
+  }
+
+  .dark-theme .transaction-mobile-pagination button:hover:not(:disabled) {
+    background: #334155;
+  }
+
+  .dark-theme .transaction-mobile-pagination span {
+    color: #cbd5e1;
   }
 }

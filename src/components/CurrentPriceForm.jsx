@@ -513,7 +513,7 @@ function CurrentPriceForm({
             />
 
             {isLoadingCurrentPrices
-              ? "Đang lấy giá mới từ Mi Hồng, PNJ và SJC..."
+              ? "Đang lấy giá mới..."
               : "Click để lấy giá mới"}
           </button>
         </div>
