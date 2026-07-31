@@ -1138,6 +1138,16 @@ function App() {
     defaultTransactionForm
   );
 
+  /*
+   * Ghi nhớ cửa hàng + loại vàng đã được tự động nạp giá.
+   * Mục đích:
+   * - Đổi cửa hàng/loại vàng: tự lấy giá hiện hành.
+   * - Người dùng sửa giá trên form: không tự ghi đè lại.
+   * - Dữ liệu giá thị trường refresh: không làm mất giá nhập tay.
+   */
+  const lastAutoBuybackSelectionRef =
+    useRef("");
+
   function getCurrentBuybackPrice(
     sourceCode,
     goldType
@@ -1224,13 +1234,47 @@ function App() {
   }
 
   useEffect(() => {
+    const selectionKey = [
+      normalizeSourceCode(
+        transactionForm.source_code
+      ),
+      normalizeProductName(
+        transactionForm.gold_type
+      ),
+    ].join("|");
+
+    const selectionChanged =
+      lastAutoBuybackSelectionRef.current !==
+      selectionKey;
+
+    /*
+     * Cập nhật key ngay cả khi dữ liệu giá chưa tải xong.
+     * Khi marketCurrentPrices tải xong, ô giá vẫn được nạp
+     * nếu hiện tại đang trống.
+     */
+    lastAutoBuybackSelectionRef.current =
+      selectionKey;
+
+    /*
+     * Khi đang chỉnh sửa giao dịch cũ, luôn giữ nguyên
+     * giá đã lưu trong giao dịch.
+     */
+    if (editingId) {
+      return;
+    }
+
     const existingSellPrice = Number(
       transactionForm.sell_price_per_chi ||
       0
     );
 
+    /*
+     * Nếu người dùng không đổi cửa hàng/loại vàng
+     * và ô giá đã có dữ liệu, xem đó là giá người dùng
+     * đang sử dụng. Không ghi đè bằng giá hiện hành.
+     */
     if (
-      editingId &&
+      !selectionChanged &&
       existingSellPrice > 0
     ) {
       return;
@@ -1249,24 +1293,11 @@ function App() {
       return;
     }
 
+    const nextSellPrice =
+      String(currentBuybackPrice);
+
     setTransactionForm(
       (currentForm) => {
-        const currentSellPrice =
-          Number(
-            currentForm.sell_price_per_chi ||
-            0
-          );
-
-        if (
-          editingId &&
-          currentSellPrice > 0
-        ) {
-          return currentForm;
-        }
-
-        const nextSellPrice =
-          String(currentBuybackPrice);
-
         if (
           currentForm.sell_price_per_chi ===
           nextSellPrice
@@ -1285,7 +1316,6 @@ function App() {
     editingId,
     transactionForm.source_code,
     transactionForm.gold_type,
-    transactionForm.sell_price_per_chi,
     marketCurrentPrices,
   ]);
 
@@ -1389,9 +1419,29 @@ function App() {
         );
       }
 
-      setTransactionForm(
-        defaultTransactionForm
-      );
+      const defaultBuybackPrice =
+        getCurrentBuybackPrice(
+          defaultTransactionForm.source_code,
+          defaultTransactionForm.gold_type
+        );
+
+      setTransactionForm({
+        ...defaultTransactionForm,
+
+        sell_price_per_chi:
+          defaultBuybackPrice > 0
+            ? String(defaultBuybackPrice)
+            : "",
+      });
+
+      lastAutoBuybackSelectionRef.current = [
+        normalizeSourceCode(
+          defaultTransactionForm.source_code
+        ),
+        normalizeProductName(
+          defaultTransactionForm.gold_type
+        ),
+      ].join("|");
 
       setEditingId(null);
 
@@ -1479,9 +1529,29 @@ function App() {
   function cancelEdit() {
     setEditingId(null);
 
-    setTransactionForm(
-      defaultTransactionForm
-    );
+    const defaultBuybackPrice =
+      getCurrentBuybackPrice(
+        defaultTransactionForm.source_code,
+        defaultTransactionForm.gold_type
+      );
+
+    setTransactionForm({
+      ...defaultTransactionForm,
+
+      sell_price_per_chi:
+        defaultBuybackPrice > 0
+          ? String(defaultBuybackPrice)
+          : "",
+    });
+
+    lastAutoBuybackSelectionRef.current = [
+      normalizeSourceCode(
+        defaultTransactionForm.source_code
+      ),
+      normalizeProductName(
+        defaultTransactionForm.gold_type
+      ),
+    ].join("|");
 
     setMessage('');
   }

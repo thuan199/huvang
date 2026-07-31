@@ -63,13 +63,13 @@ function getItemSourceCode(item) {
 
   return normalizeSourceCode(
     item?.source_code ??
-      item?.sourceCode ??
-      nestedSource?.code ??
-      nestedSource?.source_code ??
-      joinedSource?.code ??
-      joinedSource?.source_code ??
-      item?.source_name ??
-      item?.source,
+    item?.sourceCode ??
+    nestedSource?.code ??
+    nestedSource?.source_code ??
+    joinedSource?.code ??
+    joinedSource?.source_code ??
+    item?.source_name ??
+    item?.source,
   );
 }
 
@@ -124,19 +124,19 @@ function getMarketBuybackPrice(
       (item) =>
         Number(
           item.buy_price ??
-            item.buy_price_per_chi ??
-            item.current_price_per_chi ??
-            item.price_per_chi ??
-            0,
+          item.buy_price_per_chi ??
+          item.current_price_per_chi ??
+          item.price_per_chi ??
+          0,
         ) > 0,
     );
 
   return Number(
     marketPrice?.buy_price ??
-      marketPrice?.buy_price_per_chi ??
-      marketPrice?.current_price_per_chi ??
-      marketPrice?.price_per_chi ??
-      0,
+    marketPrice?.buy_price_per_chi ??
+    marketPrice?.current_price_per_chi ??
+    marketPrice?.price_per_chi ??
+    0,
   );
 }
 
@@ -407,9 +407,8 @@ function TransactionForm({
       </label>
 
       <p className="transaction-price-note">
-        Giá được tự động lấy theo nguồn
-        vàng đã chọn và được lưu cùng giao
-        dịch.
+        Giá được tự động lấy theo cửa hàng và loại vàng đã chọn.
+        Bạn vẫn có thể điều chỉnh lại trước khi lưu.
       </p>
 
       <input
@@ -427,14 +426,8 @@ function TransactionForm({
             event.target.value,
           )
         }
-        placeholder="Chưa có giá cửa hàng thu lại"
+        placeholder="Nhập giá cửa hàng thu lại"
       />
-
-      <p className="transaction-price-note">
-        Giá được tự động lấy theo nguồn
-        vàng đã chọn. Bạn vẫn có thể điều
-        chỉnh lại trước khi lưu.
-      </p>
 
       <label htmlFor="transaction-date">
         Ngày giao dịch

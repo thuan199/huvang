@@ -8,6 +8,50 @@ import {
 
 import { formatMoney } from '../utils/formatters';
 
+function calculateSavedTransactionResult(transaction) {
+  const quantity = Number(
+    transaction.quantity_chi || 0
+  );
+
+  const purchasePrice = Number(
+    transaction.price_per_chi ??
+    transaction.unit_price ??
+    0
+  );
+
+  const savedBuybackPrice = Number(
+    transaction.sell_price_per_chi || 0
+  );
+
+  const hasSavedBuybackPrice =
+    savedBuybackPrice > 0;
+
+  const profit = hasSavedBuybackPrice
+    ? (
+      savedBuybackPrice -
+      purchasePrice
+    ) * quantity
+    : 0;
+
+  const investedAmount =
+    purchasePrice * quantity;
+
+  const profitPercent =
+    hasSavedBuybackPrice &&
+      investedAmount > 0
+      ? (
+        profit /
+        investedAmount
+      ) * 100
+      : 0;
+
+  return {
+    hasSavedBuybackPrice,
+    profit,
+    profitPercent,
+  };
+}
+
 function TransactionTable({
   loading,
   transactions,
@@ -20,7 +64,9 @@ function TransactionTable({
   const mobileTotalPages = Math.max(1, transactions.length);
   const mobileTransaction = transactions[mobilePage - 1] || null;
   const mobileResult = mobileTransaction
-    ? calculateTransactionResult(mobileTransaction)
+    ? calculateSavedTransactionResult(
+      mobileTransaction
+    )
     : null;
 
   useEffect(() => {
@@ -52,7 +98,7 @@ function TransactionTable({
                     <th>Vàng</th>
                     <th>Số chỉ</th>
                     <th>Giá tại thời điểm mua</th>
-                    <th>Giá cửa hàng thu lại hiện tại</th>
+                    <th>Giá cửa hàng thu lại lúc giao dịch</th>
                     <th>Nơi mua/bán</th>
                     <th>Lời/lỗ</th>
                     <th>Lời/lỗ %</th>
@@ -64,16 +110,25 @@ function TransactionTable({
                 <tbody>
                   {transactions.map((transaction) => {
                     const result =
-                      calculateTransactionResult(transaction);
+                      calculateSavedTransactionResult(
+                        transaction
+                      );
 
                     return (
                       <tr key={transaction.id}>
                         <td>{transaction.transaction_date}</td>
 
                         <td>
-                          {transaction.transaction_type === 'BUY'
-                            ? 'Mua'
-                            : 'Bán'}
+                          <span
+                            className={`transaction-type-badge ${transaction.transaction_type === 'BUY'
+                              ? 'transaction-type-badge--buy'
+                              : 'transaction-type-badge--sell'
+                              }`}
+                          >
+                            {transaction.transaction_type === 'BUY'
+                              ? 'Mua'
+                              : 'Bán'}
+                          </span>
                         </td>
 
                         <td>{transaction.gold_type}</td>
@@ -86,15 +141,13 @@ function TransactionTable({
                           {formatMoney(transaction.price_per_chi)}
                         </td>
 
-                        <td
-                          title={
-                            result.isLiveMarketPrice
-                              ? 'Giá mua vào hiện tại vừa đồng bộ từ cửa hàng'
-                              : 'Giá đã lưu cùng giao dịch'
-                          }
-                        >
-                          {result.hasMarketPrice
-                            ? `${formatMoney(result.currentPrice)} VND/chỉ`
+                        <td title="Giá cửa hàng thu lại đã lưu cùng giao dịch">
+                          {Number(
+                            transaction.sell_price_per_chi || 0
+                          ) > 0
+                            ? `${formatMoney(
+                              transaction.sell_price_per_chi
+                            )} VND/chỉ`
                             : 'Chưa có giá'}
                         </td>
 
@@ -111,20 +164,38 @@ function TransactionTable({
 
                         <td
                           className={
-                            result.profit >= 0 ? 'profit' : 'loss'
+                            result.hasSavedBuybackPrice
+                              ? (
+                                result.profit >= 0
+                                  ? 'profit'
+                                  : 'loss'
+                              )
+                              : ''
                           }
                         >
-                          {formatMoney(result.profit)} VND
+                          {result.hasSavedBuybackPrice
+                            ? `${formatMoney(
+                              result.profit
+                            )} VND`
+                            : '-'}
                         </td>
 
                         <td
                           className={
-                            result.profitPercent >= 0
-                              ? 'profit'
-                              : 'loss'
+                            result.hasSavedBuybackPrice
+                              ? (
+                                result.profitPercent >= 0
+                                  ? 'profit'
+                                  : 'loss'
+                              )
+                              : ''
                           }
                         >
-                          {result.profitPercent.toFixed(2)}%
+                          {result.hasSavedBuybackPrice
+                            ? `${result.profitPercent.toFixed(
+                              2
+                            )}%`
+                            : '-'}
                         </td>
 
                         <td>{transaction.note || '-'}</td>
@@ -175,9 +246,16 @@ function TransactionTable({
                       <tr>
                         <th>Loại</th>
                         <td>
-                          {mobileTransaction.transaction_type === 'BUY'
-                            ? 'Mua'
-                            : 'Bán'}
+                          <span
+                            className={`transaction-type-badge ${mobileTransaction.transaction_type === 'BUY'
+                                ? 'transaction-type-badge--buy'
+                                : 'transaction-type-badge--sell'
+                              }`}
+                          >
+                            {mobileTransaction.transaction_type === 'BUY'
+                              ? 'Mua'
+                              : 'Bán'}
+                          </span>
                         </td>
                       </tr>
 
@@ -207,17 +285,13 @@ function TransactionTable({
                       </tr>
 
                       <tr>
-                        <th>Giá cửa hàng thu lại</th>
-                        <td
-                          title={
-                            mobileResult.isLiveMarketPrice
-                              ? 'Giá mua vào hiện tại vừa đồng bộ từ cửa hàng'
-                              : 'Giá đã lưu cùng giao dịch'
-                          }
-                        >
-                          {mobileResult.hasMarketPrice
+                        <th>Giá thu lại lúc giao dịch</th>
+                        <td title="Giá cửa hàng thu lại đã lưu cùng giao dịch">
+                          {Number(
+                            mobileTransaction.sell_price_per_chi || 0
+                          ) > 0
                             ? `${formatMoney(
-                              mobileResult.currentPrice
+                              mobileTransaction.sell_price_per_chi
                             )} VND/chỉ`
                             : 'Chưa có giá'}
                         </td>
@@ -232,12 +306,20 @@ function TransactionTable({
                         <th>Lời/lỗ</th>
                         <td
                           className={
-                            mobileResult.profit >= 0
-                              ? 'profit'
-                              : 'loss'
+                            mobileResult.hasSavedBuybackPrice
+                              ? (
+                                mobileResult.profit >= 0
+                                  ? 'profit'
+                                  : 'loss'
+                              )
+                              : ''
                           }
                         >
-                          {formatMoney(mobileResult.profit)} VND
+                          {mobileResult.hasSavedBuybackPrice
+                            ? `${formatMoney(
+                              mobileResult.profit
+                            )} VND`
+                            : '-'}
                         </td>
                       </tr>
 
@@ -245,15 +327,27 @@ function TransactionTable({
                         <th>Lời/lỗ %</th>
                         <td
                           className={
-                            mobileResult.profitPercent >= 0
-                              ? 'profit'
-                              : 'loss'
+                            mobileResult.hasSavedBuybackPrice
+                              ? (
+                                mobileResult.profitPercent >= 0
+                                  ? 'profit'
+                                  : 'loss'
+                              )
+                              : ''
                           }
                         >
-                          {mobileResult.profitPercent >= 0
-                            ? '↑ +'
-                            : '↓ '}
-                          {mobileResult.profitPercent.toFixed(2)}%
+                          {mobileResult.hasSavedBuybackPrice
+                            ? (
+                              <>
+                                {mobileResult.profitPercent >= 0
+                                  ? '↑ +'
+                                  : '↓ '}
+                                {mobileResult.profitPercent.toFixed(
+                                  2
+                                )}%
+                              </>
+                            )
+                            : '-'}
                         </td>
                       </tr>
 
