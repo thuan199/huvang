@@ -21,6 +21,7 @@ import {
   Sun,
   Users,
   Wrench,
+  LogIn,
 } from "lucide-react";
 
 import ChangePassword from "./ChangePassword";
@@ -42,6 +43,8 @@ function AppHeader({
   onAvatarChanged,
   onLogout,
   onToggleTheme,
+  onLogin,
+  onLoginRequired,
 }) {
   const [
     avatarError,
@@ -305,6 +308,15 @@ function AppHeader({
   function changePage(page) {
     closeSettingsMenu();
     onCloseHelp?.();
+
+    if (
+      !user &&
+      ["chat", "ai-chat"].includes(page)
+    ) {
+      onLoginRequired?.();
+      return;
+    }
+
     onChangePage?.(page);
   }
 
@@ -409,9 +421,15 @@ function AppHeader({
               <button
                 type="button"
                 className={
-                  activePage === "chat"
-                    ? "header-nav-button header-nav-button--active"
-                    : "header-nav-button"
+                  `header-nav-button ${
+                    activePage === "chat"
+                      ? "header-nav-button--active"
+                      : ""
+                  } ${
+                    !user
+                      ? "header-nav-button--locked"
+                      : ""
+                  }`
                 }
                 onClick={() =>
                   changePage("chat")
@@ -437,9 +455,15 @@ function AppHeader({
               <button
                 type="button"
                 className={
-                  activePage === "ai-chat"
-                    ? "header-nav-button header-nav-button--active"
-                    : "header-nav-button"
+                  `header-nav-button ${
+                    activePage === "ai-chat"
+                      ? "header-nav-button--active"
+                      : ""
+                  } ${
+                    !user
+                      ? "header-nav-button--locked"
+                      : ""
+                  }`
                 }
                 onClick={() =>
                   changePage("ai-chat")
@@ -485,273 +509,197 @@ function AppHeader({
               />
             </nav>
 
-            <div className="header-user-info">
-              <div className="header-avatar-wrapper">
-                <div className="header-avatar">
-                  {showAvatarImage ? (
-                    <img
-                      src={avatarUrl}
-                      alt={`Ảnh đại diện của ${displayName}`}
-                      referrerPolicy="no-referrer"
-                      onError={() =>
-                        setAvatarError(true)
+            {user ? (
+              <>
+                <div className="header-user-info">
+                  <div className="header-avatar-wrapper">
+                    <div className="header-avatar">
+                      {showAvatarImage ? (
+                        <img
+                          src={avatarUrl}
+                          alt={`Ảnh đại diện của ${displayName}`}
+                          referrerPolicy="no-referrer"
+                          onError={() =>
+                            setAvatarError(true)
+                          }
+                        />
+                      ) : (
+                        <span>{avatarLetter}</span>
+                      )}
+                    </div>
+
+                    <ChangeAvatar
+                      user={user}
+                      onAvatarChanged={
+                        onAvatarChanged
                       }
                     />
-                  ) : (
-                    <span>
-                      {avatarLetter}
+                  </div>
+
+                  <div className="header-user-text">
+                    <span className="header-welcome">
+                      Xin chào,
                     </span>
-                  )}
-                </div>
 
-                <ChangeAvatar
-                  user={user}
-                  onAvatarChanged={
-                    onAvatarChanged
-                  }
-                />
-              </div>
-
-              <div className="header-user-text">
-                <span className="header-welcome">
-                  Xin chào,
-                </span>
-
-                <div className="header-name-row">
-                  <strong
-                    className="header-display-name"
-                    title={displayName}
-                  >
-                    {displayName}
-                  </strong>
-
-                  <div
-                    className="header-admin-tools"
-                    ref={settingsMenuTriggerRef}
-                  >
-                    <button
-                      type="button"
-                      className="header-maintenance-button"
-                      onClick={() =>
-                        setIsSettingsMenuOpen(
-                          (current) =>
-                            !current
-                        )
-                      }
-                      title={
-                        isAdmin
-                          ? "Bảng điều khiển quản trị"
-                          : "Cài đặt tài khoản"
-                      }
-                      aria-label={
-                        isAdmin
-                          ? "Bảng điều khiển quản trị"
-                          : "Cài đặt tài khoản"
-                      }
-                      aria-haspopup="menu"
-                      aria-expanded={
-                        isSettingsMenuOpen
-                      }
-                    >
-                      <Settings2
-                        size={17}
-                        strokeWidth={2.2}
-                      />
-                    </button>
-
-                    {isSettingsMenuOpen &&
-                      typeof document !==
-                        "undefined" &&
-                      createPortal(
-                      <div
-                        ref={settingsMenuPanelRef}
-                        className="header-admin-menu header-admin-menu--portal"
-                        role="menu"
-                        style={settingsMenuStyle}
+                    <div className="header-name-row">
+                      <strong
+                        className="header-display-name"
+                        title={displayName}
                       >
-                        <div className="header-admin-menu__header">
+                        {displayName}
+                      </strong>
+
+                      <div
+                        className="header-admin-tools"
+                        ref={settingsMenuTriggerRef}
+                      >
+                        <button
+                          type="button"
+                          className="header-maintenance-button"
+                          onClick={() =>
+                            setIsSettingsMenuOpen(
+                              (current) => !current
+                            )
+                          }
+                          title={
+                            isAdmin
+                              ? "Bảng điều khiển quản trị"
+                              : "Cài đặt tài khoản"
+                          }
+                          aria-label={
+                            isAdmin
+                              ? "Bảng điều khiển quản trị"
+                              : "Cài đặt tài khoản"
+                          }
+                          aria-haspopup="menu"
+                          aria-expanded={
+                            isSettingsMenuOpen
+                          }
+                        >
                           <Settings2
-                            size={18}
-                            strokeWidth={2}
+                            size={17}
+                            strokeWidth={2.2}
                           />
+                        </button>
 
-                          <div className="header-admin-menu__header-content">
-                            <span className="header-admin-menu__header-title">
-                              {isAdmin
-                                ? "Bảng điều khiển quản trị"
-                                : "Cài đặt tài khoản"}
-                            </span>
-
-                            <span className="header-admin-menu__header-description">
-                              {isAdmin
-                                ? "Quản lý tài khoản và hệ thống"
-                                : "Quản lý thông tin cá nhân"}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Cài đặt tài khoản */}
-                        <div className="header-admin-menu__group">
-                          <div className="header-admin-menu__group-title">
-                            <span className="header-admin-menu__group-icon">
-                              <Pencil
-                                size={14}
-                                strokeWidth={2}
-                              />
-                            </span>
-
-                            <span className="header-admin-menu__group-title-text">
-                              Tài khoản cá nhân
-                            </span>
-                          </div>
-
-                          <div className="header-admin-menu__group-content">
-                            <button
-                              type="button"
-                              className="header-admin-menu__item"
-                              onClick={
-                                handleChangeDisplayName
-                              }
-                              role="menuitem"
+                        {isSettingsMenuOpen &&
+                          typeof document !==
+                            "undefined" &&
+                          createPortal(
+                            <div
+                              ref={settingsMenuPanelRef}
+                              className="header-admin-menu header-admin-menu--portal"
+                              role="menu"
+                              style={settingsMenuStyle}
                             >
-                              <span className="header-admin-menu__item-icon">
-                                <Pencil
-                                  size={17}
-                                  strokeWidth={2}
-                                />
-                              </span>
-
-                              <span className="header-admin-menu__item-content">
-                                <span className="header-admin-menu__item-title">
-                                  Đổi tên hiển thị
-                                </span>
-
-                                <span className="header-admin-menu__item-description">
-                                  Thay đổi tên hiển thị trong hệ thống
-                                </span>
-                              </span>
-                            </button>
-
-                            <ChangePassword
-                              onSuccess={(
-                                successMessage
-                              ) => {
-                                closeSettingsMenu();
-
-                                onPasswordChanged?.(
-                                  successMessage ||
-                                  "Đã đổi mật khẩu thành công."
-                                );
-                              }}
-                              buttonClassName="header-admin-menu__item"
-                              buttonIcon={
-                                <span className="header-admin-menu__item-icon">
-                                  <KeyRound
-                                    size={17}
-                                    strokeWidth={2}
-                                  />
-                                </span>
-                              }
-                            />
-                          </div>
-                        </div>
-
-                        {/* Công cụ quản trị */}
-                        {isAdmin && (
-                          <div className="header-admin-menu__group">
-                            <div className="header-admin-menu__section-header">
-                              <Settings2
-                                size={17}
-                                strokeWidth={2}
-                              />
-
-                              <div className="header-admin-menu__section-content">
-                                <span className="header-admin-menu__section-title">
-                                  Quản trị hệ thống
-                                </span>
-
-                                <span className="header-admin-menu__section-description">
-                                  Công cụ dành cho quản trị viên
-                                </span>
+                              <div className="header-admin-menu__header">
+                                <Settings2 size={18} />
+                                <div className="header-admin-menu__header-content">
+                                  <span className="header-admin-menu__header-title">
+                                    {isAdmin
+                                      ? "Bảng điều khiển quản trị"
+                                      : "Cài đặt tài khoản"}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
 
-                            <div className="header-admin-menu__group-content">
-                              <button
-                                type="button"
-                                className="header-admin-menu__item"
-                                onClick={
-                                  handleOpenMaintenance
-                                }
-                                role="menuitem"
-                              >
-                                <span className="header-admin-menu__item-icon">
-                                  <Wrench
-                                    size={17}
-                                    strokeWidth={2}
-                                  />
-                                </span>
-
-                                <span className="header-admin-menu__item-content">
-                                  <span className="header-admin-menu__item-title">
-                                    Bảo trì hệ thống
+                              <div className="header-admin-menu__group">
+                                <button
+                                  type="button"
+                                  className="header-admin-menu__item"
+                                  onClick={handleChangeDisplayName}
+                                  role="menuitem"
+                                >
+                                  <span className="header-admin-menu__item-icon">
+                                    <Pencil size={17} />
                                   </span>
-
-                                  <span className="header-admin-menu__item-description">
-                                    Quản lý trạng thái và bảo trì ứng dụng
+                                  <span className="header-admin-menu__item-content">
+                                    <span className="header-admin-menu__item-title">
+                                      Đổi tên hiển thị
+                                    </span>
                                   </span>
-                                </span>
-                              </button>
+                                </button>
 
-                              <button
-                                type="button"
-                                className="header-admin-menu__item"
-                                onClick={
-                                  handleOpenUserManager
-                                }
-                                role="menuitem"
-                              >
-                                <span className="header-admin-menu__item-icon">
-                                  <Users
-                                    size={17}
-                                    strokeWidth={2}
-                                  />
-                                </span>
+                                <ChangePassword
+                                  onSuccess={(successMessage) => {
+                                    closeSettingsMenu();
+                                    onPasswordChanged?.(
+                                      successMessage ||
+                                      "Đã đổi mật khẩu thành công."
+                                    );
+                                  }}
+                                  buttonClassName="header-admin-menu__item"
+                                  buttonIcon={
+                                    <span className="header-admin-menu__item-icon">
+                                      <KeyRound size={17} />
+                                    </span>
+                                  }
+                                />
+                              </div>
 
-                                <span className="header-admin-menu__item-content">
-                                  <span className="header-admin-menu__item-title">
-                                    Quản lý người dùng
-                                  </span>
+                              {isAdmin && (
+                                <div className="header-admin-menu__group">
+                                  <button
+                                    type="button"
+                                    className="header-admin-menu__item"
+                                    onClick={handleOpenMaintenance}
+                                    role="menuitem"
+                                  >
+                                    <span className="header-admin-menu__item-icon">
+                                      <Wrench size={17} />
+                                    </span>
+                                    <span className="header-admin-menu__item-content">
+                                      <span className="header-admin-menu__item-title">
+                                        Chế độ bảo trì
+                                      </span>
+                                    </span>
+                                  </button>
 
-                                  <span className="header-admin-menu__item-description">
-                                    Xem và quản lý tài khoản thành viên
-                                  </span>
-                                </span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>,
-                      document.body
-                    )}
+                                  <button
+                                    type="button"
+                                    className="header-admin-menu__item"
+                                    onClick={handleOpenUserManager}
+                                    role="menuitem"
+                                  >
+                                    <span className="header-admin-menu__item-icon">
+                                      <Users size={17} />
+                                    </span>
+                                    <span className="header-admin-menu__item-content">
+                                      <span className="header-admin-menu__item-title">
+                                        Quản lý người dùng
+                                      </span>
+                                    </span>
+                                  </button>
+                                </div>
+                              )}
+                            </div>,
+                            document.body
+                          )}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <button
-              type="button"
-              className="logout-button"
-              onClick={handleLogout}
-              title="Đăng xuất"
-              aria-label="Đăng xuất"
-            >
-              <LogOut size={16} />
-
-              <span>
-                Đăng xuất
-              </span>
-            </button>
+                <button
+                  type="button"
+                  className="logout-button"
+                  onClick={handleLogout}
+                  title="Đăng xuất"
+                >
+                  <LogOut size={16} />
+                  <span>Đăng xuất</span>
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="header-login-button"
+                onClick={onLogin}
+              >
+                <LogIn size={17} />
+                <span>Đăng nhập</span>
+              </button>
+            )}
 
             <button
               type="button"

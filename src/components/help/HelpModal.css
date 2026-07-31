@@ -48,7 +48,8 @@ body.dark,
 
 .help-modal {
   width: min(920px, 100%);
-  max-height: 90vh;
+  max-height: auto;
+  max-height: 100dvh;
 
   display: flex;
   flex-direction: column;
@@ -1349,5 +1350,63 @@ body.help-modal-open {
   .help-tab__icon {
     flex: 0 0 auto;
     font-size: 13px;
+  }
+}
+
+/* =========================================================
+   FIX MOBILE: LOẠI BỎ KHOẢNG TRỐNG PHÍA DƯỚI HELP MODAL
+   Đặt đoạn này ở CUỐI FILE để ghi đè các media query phía trên.
+========================================================= */
+@media (max-width: 768px) {
+  .help-modal-overlay {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .help-modal {
+    width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    max-height: 100dvh;
+    margin: 0;
+
+    border-radius: 0;
+    overflow: hidden;
+  }
+
+  .help-modal__header {
+    flex: 0 0 auto;
+  }
+
+  .help-modal__body {
+    flex: 1 1 0;
+    min-height: 0;
+
+    /* Ghi đè height/max-height của CSS desktop */
+    height: auto;
+    max-height: none;
+
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .help-modal__tabs {
+    flex: 0 0 auto;
+  }
+
+  .help-modal__content {
+    flex: 1 1 0;
+    min-height: 0;
+
+    height: auto;
+    max-height: none;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    padding: 12px 18px 20px;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 }

@@ -317,15 +317,6 @@ function useGoldData(userId) {
       async ({
         force = false,
       } = {}) => {
-        if (!userId) {
-          const emptyData =
-            createEmptyGoldData();
-
-          resetGoldData();
-
-          return emptyData;
-        }
-
         const requestId =
           requestIdRef.current + 1;
 
@@ -400,18 +391,12 @@ function useGoldData(userId) {
     );
 
   useEffect(() => {
-    if (!userId) {
-      resetGoldData();
-      return;
-    }
-
     loadGoldData().catch(
       () => {}
     );
   }, [
     userId,
     loadGoldData,
-    resetGoldData,
   ]);
 
   /*
@@ -492,10 +477,6 @@ function useGoldData(userId) {
    * - Mi Hồng
    */
   useEffect(() => {
-    if (!userId) {
-      return undefined;
-    }
-
     let reloadTimer;
 
     function scheduleMarketReload() {
@@ -517,7 +498,7 @@ function useGoldData(userId) {
     const marketChannel =
       supabase
         .channel(
-          `shared-gold-market-data-${userId}`
+          `shared-gold-market-data-${userId || 'guest'}`
         )
         .on(
           'postgres_changes',
@@ -576,13 +557,10 @@ function useGoldData(userId) {
   ]);
 
   /*
-   * Tải lại dữ liệu khi user quay lại tab.
+   * Tải lại dữ liệu khi người dùng quay lại tab.
+   * Áp dụng cho cả khách để giá công khai luôn mới.
    */
   useEffect(() => {
-    if (!userId) {
-      return undefined;
-    }
-
     function handleVisibilityChange() {
       if (
         document.visibilityState ===

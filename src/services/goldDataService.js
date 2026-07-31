@@ -148,21 +148,14 @@ async function invokeGoldSync(
   functionName,
   sourceLabel
 ) {
-  const accessToken =
-    await getValidAccessToken();
-
   const {
     data,
     error,
   } = await supabase.functions.invoke(
     functionName,
     {
-      method: 'POST',
+      method: "POST",
       body: {},
-      headers: {
-        Authorization:
-          `Bearer ${accessToken}`,
-      },
     }
   );
 
@@ -861,34 +854,36 @@ export async function getGoldData(
   userId,
   { force = false } = {}
 ) {
-  if (!userId) {
-    return {
-      transactions: [],
-      prices: [],
-      priceHistory: [],
-      personalPriceHistory: [],
-      marketCurrentPrices: [],
-      marketPriceHistory: [],
-      currentPricesBySource:
-        groupPricesBySource(),
-      priceHistoryBySource:
-        groupPricesBySource(),
-      pnjCurrentPrice: null,
-      pnjPriceHistory: [],
-    };
-  }
+  /*
+   * Khách chưa đăng nhập vẫn được tải dữ liệu thị trường.
+   * Chỉ dữ liệu cá nhân (giao dịch, giá riêng) cần userId.
+   */
+  const requestKey =
+    userId || 'PUBLIC_GUEST';
 
   if (
     !force &&
-    pendingRequests.has(userId)
+    pendingRequests.has(requestKey)
   ) {
-    return pendingRequests.get(userId);
+    return pendingRequests.get(
+      requestKey
+    );
   }
 
+  const personalRequests = userId
+    ? [
+      fetchTransactions(userId),
+      fetchCurrentPrices(userId),
+      fetchPersonalPriceHistory(userId),
+    ]
+    : [
+      Promise.resolve([]),
+      Promise.resolve([]),
+      Promise.resolve([]),
+    ];
+
   const request = Promise.all([
-    fetchTransactions(userId),
-    fetchCurrentPrices(userId),
-    fetchPersonalPriceHistory(userId),
+    ...personalRequests,
     getMarketCurrentPrices(),
     getMarketPriceHistory(),
   ])
@@ -921,7 +916,6 @@ export async function getGoldData(
         currentPricesBySource,
         priceHistoryBySource,
 
-        /* Tương thích với App hiện tại. */
         pnjCurrentPrice:
           currentPricesBySource.PNJ[0] ??
           null,
@@ -931,15 +925,18 @@ export async function getGoldData(
     })
     .finally(() => {
       if (
-        pendingRequests.get(userId) ===
-        request
+        pendingRequests.get(
+          requestKey
+        ) === request
       ) {
-        pendingRequests.delete(userId);
+        pendingRequests.delete(
+          requestKey
+        );
       }
     });
 
   pendingRequests.set(
-    userId,
+    requestKey,
     request
   );
 

@@ -47,6 +47,8 @@ import {
   Newspaper,
   ReceiptText,
   Wallet,
+  LockKeyhole,
+  LogIn,
 } from 'lucide-react';
 
 import useGoldSummary from './hooks/useGoldSummary';
@@ -98,6 +100,51 @@ const MOBILE_TABS = [
   },
 ];
 
+function LoginRequiredOverlay({
+  children,
+  locked,
+  onLoginRequired,
+  label = "Đăng nhập để sử dụng chức năng này",
+}) {
+  if (!locked) {
+    return children;
+  }
+
+  function handleOpenLogin() {
+    onLoginRequired?.();
+  }
+
+  return (
+    <div
+      className="login-required-wrapper"
+      role="button"
+      tabIndex={0}
+      onClick={handleOpenLogin}
+      onKeyDown={(event) => {
+        if (
+          event.key === "Enter" ||
+          event.key === " "
+        ) {
+          event.preventDefault();
+          handleOpenLogin();
+        }
+      }}
+      aria-label={label}
+    >
+      <div className="login-required-content">
+        {children}
+      </div>
+
+      <div className="login-required-overlay">
+        <div className="login-required-message">
+          <LockKeyhole size={20} />
+          <span>{label}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [
     toast,
@@ -111,6 +158,11 @@ function App() {
   const [
     helpOpen,
     setHelpOpen,
+  ] = useState(false);
+
+  const [
+    showLoginScreen,
+    setShowLoginScreen,
   ] = useState(false);
 
   function showToast(
@@ -129,6 +181,19 @@ function App() {
       ...current,
       isOpen: false,
     }));
+  }
+
+  function handleLoginRequired() {
+    showToast(
+      "Vui lòng đăng nhập để sử dụng chức năng này.",
+      "info"
+    );
+  }
+
+  function openLoginScreen() {
+    setShowLoginScreen(true);
+    setHelpOpen(false);
+    window.scrollTo({ top: 0 });
   }
 
   useEffect(() => {
@@ -537,26 +602,26 @@ function App() {
             const previousBuyPrice =
               previousItem
                 ? Number(
-                    previousItem.buy_price ??
-                    previousItem.price_per_chi ??
-                    previousItem
-                      .new_buy_price_per_chi ??
-                    previousItem
-                      .buy_price_per_chi ??
-                    0
-                  )
+                  previousItem.buy_price ??
+                  previousItem.price_per_chi ??
+                  previousItem
+                    .new_buy_price_per_chi ??
+                  previousItem
+                    .buy_price_per_chi ??
+                  0
+                )
                 : null;
 
             const previousSellPrice =
               previousItem
                 ? Number(
-                    previousItem.sell_price ??
-                    previousItem
-                      .sell_price_per_chi ??
-                    previousItem
-                      .new_sell_price_per_chi ??
-                    0
-                  )
+                  previousItem.sell_price ??
+                  previousItem
+                    .sell_price_per_chi ??
+                  previousItem
+                    .new_sell_price_per_chi ??
+                  0
+                )
                 : null;
 
             result.push({
@@ -573,13 +638,13 @@ function App() {
               buyPriceChange:
                 previousItem
                   ? currentBuyPrice -
-                    previousBuyPrice
+                  previousBuyPrice
                   : null,
 
               sellPriceChange:
                 previousItem
                   ? currentSellPrice -
-                    previousSellPrice
+                  previousSellPrice
                   : null,
             });
           }
@@ -750,6 +815,10 @@ function App() {
           session?.user ?? null
         );
 
+        if (session?.user) {
+          setShowLoginScreen(false);
+        }
+
         if (event === 'SIGNED_OUT') {
           setActiveAdminPanel(null);
           setIsDisplayNameOpen(false);
@@ -834,6 +903,20 @@ function App() {
     appInitialized,
     authLoading,
     maintenanceLoading,
+  ]);
+
+  useEffect(() => {
+    if (
+      appInitialized &&
+      !user &&
+      activeMobileTab === "assets"
+    ) {
+      setActiveMobileTab("current-price");
+    }
+  }, [
+    appInitialized,
+    user,
+    activeMobileTab,
   ]);
 
   const [message, setMessage] =
@@ -1395,6 +1478,11 @@ function App() {
   ) {
     event.preventDefault();
 
+    if (!user) {
+      handleLoginRequired();
+      return;
+    }
+
     setMessage('');
     setMessageType('success');
 
@@ -1811,9 +1899,17 @@ function App() {
       case 'assets':
         return (
           <section className="mobile-tab-panel">
-            <SummaryCards
-              summary={summary}
-            />
+            <LoginRequiredOverlay
+              locked={!user}
+              onLoginRequired={
+                handleLoginRequired
+              }
+              label="Đăng nhập để xem tài sản cá nhân"
+            >
+              <SummaryCards
+                summary={summary}
+              />
+            </LoginRequiredOverlay>
           </section>
         );
 
@@ -1822,24 +1918,32 @@ function App() {
           <section className="mobile-tab-panel">
 
 
-            <TransactionForm
-              editingId={editingId}
-              transactionForm={
-                transactionForm
+            <LoginRequiredOverlay
+              locked={!user}
+              onLoginRequired={
+                handleLoginRequired
               }
-              setTransactionForm={
-                setTransactionForm
-              }
-              marketCurrentPrices={
-                marketCurrentPrices
-              }
-              onSubmit={
-                saveTransaction
-              }
-              onCancel={
-                cancelEdit
-              }
-            />
+              label="Đăng nhập để thêm giao dịch"
+            >
+              <TransactionForm
+                editingId={editingId}
+                transactionForm={
+                  transactionForm
+                }
+                setTransactionForm={
+                  setTransactionForm
+                }
+                marketCurrentPrices={
+                  marketCurrentPrices
+                }
+                onSubmit={
+                  saveTransaction
+                }
+                onCancel={
+                  cancelEdit
+                }
+              />
+            </LoginRequiredOverlay>
           </section>
         );
 
@@ -1849,6 +1953,7 @@ function App() {
 
 
             <CurrentPriceForm
+              user={user}
               prices={
                 marketCurrentPrices
               }
@@ -1867,21 +1972,25 @@ function App() {
           <section className="mobile-tab-panel">
 
 
-            <TransactionTable
-              loading={loading}
-              transactions={
-                transactions
+            <LoginRequiredOverlay
+              locked={!user}
+              onLoginRequired={
+                handleLoginRequired
               }
-              calculateTransactionResult={
-                calculateTransactionResult
-              }
-              onEdit={
-                editTransaction
-              }
-              onDelete={
-                deleteTransaction
-              }
-            />
+              label="Đăng nhập để xem danh sách giao dịch"
+            >
+              <TransactionTable
+                loading={loading}
+                transactions={
+                  transactions
+                }
+                calculateTransactionResult={
+                  calculateTransactionResult
+                }
+                onEdit={editTransaction}
+                onDelete={deleteTransaction}
+              />
+            </LoginRequiredOverlay>
           </section>
         );
 
@@ -1982,6 +2091,30 @@ function App() {
     );
   }
 
+  if (showLoginScreen && !user) {
+    return (
+      <div className="guest-login-screen">
+        <div className="guest-login-back-wrap">
+          <button
+            type="button"
+            className="guest-login-back"
+            onClick={() =>
+              setShowLoginScreen(false)
+            }
+          >
+            <span className="guest-login-back__icon">
+              ←
+            </span>
+
+            <span>Quay lại xem giá vàng</span>
+          </button>
+        </div>
+
+        <Login />
+      </div>
+    );
+  }
+
   /*
    * Khi bật bảo trì:
    * - User thường sẽ thấy màn hình bảo trì.
@@ -1992,16 +2125,13 @@ function App() {
  * vào màn hình đăng nhập, kể cả khi
  * hệ thống đang bảo trì.
  */
-  if (!user) {
-    return <Login />;
-  }
-
   /*
    * Sau khi đăng nhập:
    * - Admin vẫn được vào ứng dụng.
    * - User thường sẽ thấy màn hình bảo trì.
    */
   if (
+    user &&
     maintenance.enabled &&
     !isAdmin
   ) {
@@ -2020,68 +2150,80 @@ function App() {
       >
         <div className="container app-header-fixed__inner">
           <AppHeader
-          user={user}
-          theme={displayTheme}
-          isAdmin={isAdmin}
-          activePage={activePage}
-          helpOpen={helpOpen}
-          onOpenHelp={() =>
-            setHelpOpen(true)
-          }
-          onCloseHelp={() =>
-            setHelpOpen(false)
-          }
-          onChangePage={(page) => {
-            setActivePage(page);
+            user={user}
+            theme={displayTheme}
+            isAdmin={isAdmin}
+            activePage={activePage}
+            helpOpen={helpOpen}
+            onOpenHelp={() =>
+              setHelpOpen(true)
+            }
+            onCloseHelp={() =>
+              setHelpOpen(false)
+            }
+            onChangePage={(page) => {
+              if (
+                !user &&
+                ["chat", "ai-chat"].includes(page)
+              ) {
+                handleLoginRequired();
+                return;
+              }
 
-            setActiveAdminPanel(null);
+              setActivePage(page);
 
-            window.scrollTo({
-              top: 0,
-              behavior: "smooth",
-            });
-          }}
-          onOpenMaintenance={() =>
-            setActiveAdminPanel(
-              (current) =>
-                current === "maintenance"
-                  ? null
-                  : "maintenance"
-            )
-          }
-          onOpenUserManager={() =>
-            setActiveAdminPanel(
-              (current) =>
-                current === "users"
-                  ? null
-                  : "users"
-            )
-          }
-          onChangeDisplayName={() => {
-            setDisplayNameError("");
-            setIsDisplayNameOpen(true);
-          }}
-          onPasswordChanged={(
-            successMessage
-          ) => {
-            setMessageType("success");
-            setMessage(successMessage);
-          }}
-          onAvatarChanged={(
-            updatedUser
-          ) => {
-            setUser(updatedUser);
+              setActiveAdminPanel(null);
 
-            setMessageType("success");
-            setMessage(
-              "Đã cập nhật ảnh đại diện."
-            );
-          }}
-          onLogout={handleLogout}
-          onToggleTheme={
-            handleToggleTheme
-          }
-        />
+              window.scrollTo({
+                top: 0,
+                behavior: "smooth",
+              });
+            }}
+            onOpenMaintenance={() =>
+              setActiveAdminPanel(
+                (current) =>
+                  current === "maintenance"
+                    ? null
+                    : "maintenance"
+              )
+            }
+            onOpenUserManager={() =>
+              setActiveAdminPanel(
+                (current) =>
+                  current === "users"
+                    ? null
+                    : "users"
+              )
+            }
+            onChangeDisplayName={() => {
+              setDisplayNameError("");
+              setIsDisplayNameOpen(true);
+            }}
+            onPasswordChanged={(
+              successMessage
+            ) => {
+              setMessageType("success");
+              setMessage(successMessage);
+            }}
+            onAvatarChanged={(
+              updatedUser
+            ) => {
+              setUser(updatedUser);
+
+              setMessageType("success");
+              setMessage(
+                "Đã cập nhật ảnh đại diện."
+              );
+            }}
+            onLogout={handleLogout}
+            onToggleTheme={
+              handleToggleTheme
+            }
+            onLogin={openLoginScreen}
+            onLoginRequired={
+              handleLoginRequired
+            }
+          />
         </div>
       </div>
 
@@ -2092,30 +2234,32 @@ function App() {
             appHeaderHeight,
         }}
       >
-        <ChangeDisplayNameModal
-          isOpen={isDisplayNameOpen}
-          currentName={
-            user?.user_metadata
-              ?.display_name ||
-            user?.user_metadata
-              ?.full_name ||
-            user?.user_metadata
-              ?.name ||
-            user?.email?.split("@")[0] ||
-            ""
-          }
-          saving={displayNameSaving}
-          error={displayNameError}
-          onClose={() => {
-            if (displayNameSaving) {
-              return;
+        {user && (
+          <ChangeDisplayNameModal
+            isOpen={isDisplayNameOpen}
+            currentName={
+              user?.user_metadata
+                ?.display_name ||
+              user?.user_metadata
+                ?.full_name ||
+              user?.user_metadata
+                ?.name ||
+              user?.email?.split("@")[0] ||
+              ""
             }
+            saving={displayNameSaving}
+            error={displayNameError}
+            onClose={() => {
+              if (displayNameSaving) {
+                return;
+              }
 
-            setDisplayNameError("");
-            setIsDisplayNameOpen(false);
-          }}
-          onSubmit={updateDisplayName}
-        />
+              setDisplayNameError("");
+              setIsDisplayNameOpen(false);
+            }}
+            onSubmit={updateDisplayName}
+          />
+        )}
 
         {isAdmin &&
           activeAdminPanel ===
@@ -2153,91 +2297,106 @@ function App() {
 
         {!helpOpen && (
           activePage === "home" ? (
-          <>
-            {isMobileView ? (
-              <main className="mobile-app-content">
-                {renderMobileHomeContent()}
-              </main>
-            ) : (
-              <main className="desktop-app-content">
-                <SummaryCards
-                  summary={summary}
-                />
+            <>
+              {isMobileView ? (
+                <main className="mobile-app-content">
+                  {renderMobileHomeContent()}
+                </main>
+              ) : (
+                <main className="desktop-app-content">
+                  <LoginRequiredOverlay
+                    locked={!user}
+                    onLoginRequired={
+                      handleLoginRequired
+                    }
+                    label="Đăng nhập để xem tài sản cá nhân"
+                  >
+                    <SummaryCards
+                      summary={summary}
+                    />
+                  </LoginRequiredOverlay>
 
-                <div className="grid">
-                  <TransactionForm
-                    editingId={editingId}
-                    transactionForm={
-                      transactionForm
-                    }
-                    setTransactionForm={
-                      setTransactionForm
-                    }
-                    marketCurrentPrices={
-                      marketCurrentPrices
-                    }
-                    onSubmit={
-                      saveTransaction
-                    }
-                    onCancel={
-                      cancelEdit
-                    }
-                  />
+                  <div className="grid">
+                    <LoginRequiredOverlay
+                      locked={!user}
+                      onLoginRequired={
+                        handleLoginRequired
+                      }
+                      label="Đăng nhập để thêm giao dịch"
+                    >
+                      <TransactionForm
+                        editingId={editingId}
+                        transactionForm={
+                          transactionForm
+                        }
+                        setTransactionForm={
+                          setTransactionForm
+                        }
+                        marketCurrentPrices={
+                          marketCurrentPrices
+                        }
+                        onSubmit={saveTransaction}
+                        onCancel={cancelEdit}
+                      />
+                    </LoginRequiredOverlay>
 
-                  <CurrentPriceForm
-                    prices={
-                      marketCurrentPrices
+                    <CurrentPriceForm
+                      user={user}
+                      prices={
+                        marketCurrentPrices
+                      }
+                      priceHistory={
+                        allShopPriceHistoryWithChanges
+                      }
+                      onPriceUpdated={
+                        reloadGoldData
+                      }
+                    />
+                  </div>
+
+                  <LoginRequiredOverlay
+                    locked={!user}
+                    onLoginRequired={
+                      handleLoginRequired
                     }
-                    priceHistory={
-                      allShopPriceHistoryWithChanges
-                    }
-                    onPriceUpdated={
-                      reloadGoldData
-                    }
-                  />
-                </div>
+                    label="Đăng nhập để xem danh sách giao dịch"
+                  >
+                    <TransactionTable
+                      loading={loading}
+                      transactions={transactions}
+                      calculateTransactionResult={
+                        calculateTransactionResult
+                      }
+                      onEdit={editTransaction}
+                      onDelete={deleteTransaction}
+                    />
+                  </LoginRequiredOverlay>
 
-                <TransactionTable
-                  loading={loading}
-                  transactions={
-                    transactions
-                  }
-                  calculateTransactionResult={
-                    calculateTransactionResult
-                  }
-                  onEdit={
-                    editTransaction
-                  }
-                  onDelete={
-                    deleteTransaction
-                  }
-                />
+                  {renderPriceHistoryTable()}
 
-                {renderPriceHistoryTable()}
+                  {renderLocalGoldChart()}
 
-                {renderLocalGoldChart()}
+                  {renderWorldGoldComparison()}
 
-                {renderWorldGoldComparison()}
-
-                <MarketNews />
-              </main>
-            )}
-          </>
-        ) : activePage ===
-          "ai-chat" ? (
-          <AIChatPage
-            theme={displayTheme}
-          />
-        ) : activePage === "chat" ? (
-          <div
-            style={{
-              width: "100%",
-              minWidth: 0,
-            }}
-          >
-            <PublicChat />
-          </div>
-        ) : null
+                  <MarketNews />
+                </main>
+              )}
+            </>
+          ) : activePage ===
+            "ai-chat" ? (
+            <AIChatPage
+              theme={displayTheme}
+            />
+          ) : activePage === "chat" ? (
+            <div
+              style={{
+                width: "100%",
+                minWidth: 0,
+              }}
+            >
+              <PublicChat />
+            </div>
+          ) : null
         )}
       </div>
 
@@ -2264,7 +2423,15 @@ function App() {
                     type="button"
                     data-mobile-tab={id}
                     className={`mobile-bottom-tab ${isActive
-                        ? 'is-active'
+                      ? 'is-active'
+                      : ''
+                      } ${!user &&
+                        [
+                          'assets',
+                          'add-transaction',
+                          'transactions',
+                        ].includes(id)
+                        ? 'is-login-locked'
                         : ''
                       }`}
                     onClick={() =>

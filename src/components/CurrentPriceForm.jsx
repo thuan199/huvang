@@ -487,6 +487,7 @@ function PriceCardSkeleton() {
 function CurrentPriceForm({
   prices = [],
   priceHistory = [],
+  user,
   onPriceUpdated,
 }) {
   const [
@@ -724,6 +725,14 @@ function CurrentPriceForm({
   }
 
   async function handleGetCurrentPrices() {
+    if (!user) {
+      showToast(
+        "Vui lòng đăng nhập để cập nhật giá vàng.",
+        "info"
+      );
+      return;
+    }
+
     if (
       isLoadingCurrentPrices
     ) {
@@ -903,46 +912,47 @@ function CurrentPriceForm({
             </h2>
 
             <p className="small-text">
-              Dữ liệu mới nhất từ
-              PNJ, SJC và Mi Hồng.
+              Giá được tự động cập nhật mỗi 30 phút. Bạn cũng có thể cập nhật ngay bằng nút bên dưới khi đăng nhập.
             </p>
           </div>
 
-          <button
-            type="button"
-            className={
-              `pnj-button icon-button current-market-prices__refresh ` +
-              `${isLoadingCurrentPrices ? "is-loading" : ""}`
-            }
-            onClick={
-              handleGetCurrentPrices
-            }
-            disabled={
-              isLoadingCurrentPrices
-            }
-            aria-busy={
-              isLoadingCurrentPrices
-            }
-          >
-            {isLoadingCurrentPrices ? (
-              <RefreshCcw
-                size={17}
-                className="current-market-prices__spinner"
-                aria-hidden="true"
-              />
-            ) : (
-              <CloudDownload
-                size={17}
-                aria-hidden="true"
-              />
-            )}
+          {user && (
+            <button
+              type="button"
+              className={
+                `pnj-button icon-button current-market-prices__refresh ` +
+                `${isLoadingCurrentPrices ? "is-loading" : ""}`
+              }
+              onClick={
+                handleGetCurrentPrices
+              }
+              disabled={
+                isLoadingCurrentPrices
+              }
+              aria-busy={
+                isLoadingCurrentPrices
+              }
+            >
+              {isLoadingCurrentPrices ? (
+                <RefreshCcw
+                  size={17}
+                  className="current-market-prices__spinner"
+                  aria-hidden="true"
+                />
+              ) : (
+                <CloudDownload
+                  size={17}
+                  aria-hidden="true"
+                />
+              )}
 
-            <span>
-              {isLoadingCurrentPrices
-                ? "Đang đồng bộ giá..."
-                : "Click để lấy giá mới"}
-            </span>
-          </button>
+              <span>
+                {isLoadingCurrentPrices
+                  ? "Đang đồng bộ giá..."
+                  : "Click để lấy giá mới"}
+              </span>
+            </button>
+          )}
         </div>
 
         {isLoadingCurrentPrices &&
