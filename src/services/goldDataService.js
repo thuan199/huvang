@@ -23,7 +23,18 @@ function getRelationItem(value) {
   return value ?? null;
 }
 
-async function invokeGoldSync(functionName, sourceLabel) {
+async function getValidAccessToken() {
+  const {
+    data: userData,
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !userData.user) {
+    throw new Error(
+      'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.'
+    );
+  }
+
   const {
     data: sessionData,
     error: sessionError,
@@ -35,52 +46,134 @@ async function invokeGoldSync(functionName, sourceLabel) {
     );
   }
 
-  const accessToken =
-    sessionData.session?.access_token;
+  let session = sessionData.session;
 
-  if (!accessToken) {
+  if (!session?.access_token) {
     throw new Error(
       'Không tìm thấy phiên đăng nhập. Vui lòng đăng nhập lại.'
     );
   }
 
-  const { data, error } =
-    await supabase.functions.invoke(
-      functionName,
-      {
-        method: 'POST',
-        body: {},
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
+  const expiresAt =
+    Number(session.expires_at || 0);
 
-  if (error) {
-    let detailMessage = '';
+  const now =
+    Math.floor(Date.now() / 1000);
 
-    try {
-      if (error.context) {
+  /*
+   * Làm mới token nếu còn dưới 2 phút.
+   * Việc này tránh gửi JWT sắp hết hạn khi đồng bộ đồng thời
+   * nhiều nguồn giá.
+   */
+  if (
+    expiresAt > 0 &&
+    expiresAt - now <= 120
+  ) {
+    const {
+      data: refreshData,
+      error: refreshError,
+    } = await supabase.auth.refreshSession();
+
+    if (
+      refreshError ||
+      !refreshData.session?.access_token
+    ) {
+      throw new Error(
+        refreshError?.message
+          ? `Không thể làm mới phiên đăng nhập: ${refreshError.message}`
+          : 'Không thể làm mới phiên đăng nhập.'
+      );
+    }
+
+    session = refreshData.session;
+  }
+
+  return session.access_token;
+}
+
+async function readFunctionError(
+  error,
+  sourceLabel
+) {
+  let detailMessage = '';
+
+  try {
+    if (error?.context) {
+      const clonedResponse =
+        typeof error.context.clone === 'function'
+          ? error.context.clone()
+          : error.context;
+
+      const contentType =
+        clonedResponse.headers?.get?.(
+          'content-type'
+        ) ?? '';
+
+      if (
+        contentType.includes(
+          'application/json'
+        )
+      ) {
         const errorBody =
-          await error.context.json();
+          await clonedResponse.json();
 
         detailMessage =
           errorBody?.message ||
           errorBody?.error ||
+          errorBody?.msg ||
           '';
-      }
-    } catch (parseError) {
-      console.error(
-        `Không đọc được lỗi đồng bộ ${sourceLabel}:`,
-        parseError
-      );
-    }
+      } else {
+        const responseText =
+          await clonedResponse.text();
 
-    throw new Error(
-      detailMessage ||
-      error.message ||
-      `Không thể đồng bộ giá ${sourceLabel}`
+        detailMessage =
+          responseText?.trim() || '';
+      }
+    }
+  } catch (parseError) {
+    console.error(
+      `Không đọc được lỗi đồng bộ ${sourceLabel}:`,
+      parseError
     );
+  }
+
+  return (
+    detailMessage ||
+    error?.message ||
+    `Không thể đồng bộ giá ${sourceLabel}`
+  );
+}
+
+async function invokeGoldSync(
+  functionName,
+  sourceLabel
+) {
+  const accessToken =
+    await getValidAccessToken();
+
+  const {
+    data,
+    error,
+  } = await supabase.functions.invoke(
+    functionName,
+    {
+      method: 'POST',
+      body: {},
+      headers: {
+        Authorization:
+          `Bearer ${accessToken}`,
+      },
+    }
+  );
+
+  if (error) {
+    const message =
+      await readFunctionError(
+        error,
+        sourceLabel
+      );
+
+    throw new Error(message);
   }
 
   if (data?.success === false) {
