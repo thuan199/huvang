@@ -5068,9 +5068,14 @@ body.dark-theme .header-admin-menu__item:disabled .header-admin-menu__item-icon,
 }
 
 @media (max-width: 520px) {
-  .header-admin-menu {
-    right: -42px;
-    width: min(320px, calc(100vw - 24px));
+  .current-market-price-item__top {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .current-market-price-item__time {
+    max-width: 110px;
+    font-size: 11px;
   }
 }
 
@@ -7011,5 +7016,453 @@ body.dark-theme .mobile-bottom-tab:active {
     min-width: 44px;
     padding: 3px 9px;
     font-size: 11px;
+  }
+}
+
+/* Loading spinner cho nút đồng bộ giá */
+.current-market-prices__refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 190px;
+}
+
+.current-market-prices__refresh.is-loading {
+  cursor: wait;
+  opacity: 0.85;
+}
+
+.current-market-prices__spinner {
+  animation: current-price-spin 0.85s linear infinite;
+  transform-origin: center;
+}
+
+@keyframes current-price-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .current-market-prices__spinner {
+    animation-duration: 1.8s;
+  }
+}
+
+.current-market-price-item__identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.current-market-price-item__logo {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+
+  background: rgba(212, 175, 55, 0.14);
+  border: 1px solid rgba(212, 175, 55, 0.28);
+}
+
+.current-market-price-item__source {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.current-market-price-item__product {
+  margin: 3px 0 0;
+  font-size: 13px;
+  opacity: 0.72;
+}
+
+.current-market-price-item__values {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.current-market-price-item__value-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+}
+
+.current-market-price-item__value-box span {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 12px;
+  opacity: 0.72;
+}
+
+.current-market-price-item__value-box strong {
+  display: block;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.current-market-price-item__value-box--buy {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.16);
+}
+
+.current-market-price-item__value-box--sell {
+  background: rgba(245, 158, 11, 0.09);
+  border-color: rgba(245, 158, 11, 0.18);
+}
+
+.current-market-price-item__values {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.current-market-price-item__value-box {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+}
+
+.current-market-price-item__value-box span {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  opacity: 0.72;
+}
+
+.current-market-price-item__value-box strong {
+  display: block;
+  font-size: 15px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.current-market-price-item__value-box--buy {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.18);
+}
+
+.current-market-price-item__value-box--buy strong {
+  color: #16a34a;
+}
+
+.current-market-price-item__value-box--sell {
+  background: rgba(245, 158, 11, 0.09);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.current-market-price-item__value-box--sell strong {
+  color: #d97706;
+}
+
+@media (max-width: 420px) {
+  .current-market-price-item__values {
+    grid-template-columns: 1fr;
+  }
+}
+
+.current-market-price-item {
+  position: relative;
+  transition:
+    background-color 0.35s ease,
+    border-color 0.35s ease,
+    box-shadow 0.35s ease,
+    transform 0.35s ease;
+}
+
+.current-market-price-item.is-just-updated {
+  animation: current-price-updated 1.8s ease;
+}
+
+.current-market-price-item__status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.current-market-price-item__updated-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  padding: 4px 7px;
+  border-radius: 999px;
+
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+
+  color: #15803d;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.24);
+}
+
+@keyframes current-price-updated {
+  0% {
+    transform: scale(1);
+  }
+
+  25% {
+    transform: scale(1.012);
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(34, 197, 94, 0.42);
+    box-shadow:
+      0 0 0 4px
+      rgba(34, 197, 94, 0.08);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 520px) {
+  .current-market-price-item__status {
+    max-width: 120px;
+  }
+
+  .current-market-price-item__updated-badge {
+    font-size: 10px;
+  }
+}
+
+/* =========================================================
+   NÂNG CẤP UI GIÁ VÀNG HIỆN TẠI
+   Dán phần này vào cuối file CSS đang chứa current-market-price-item
+   ========================================================= */
+
+.current-market-price-item {
+  position: relative;
+  overflow: hidden;
+  transition:
+    background-color 0.35s ease,
+    border-color 0.35s ease,
+    box-shadow 0.35s ease,
+    transform 0.35s ease;
+}
+
+.current-market-price-item.is-just-updated {
+  animation: current-price-updated 1.4s ease;
+}
+
+.current-market-price-item__source-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.current-market-price-item__newest-badge,
+.current-market-price-item__updated-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  padding: 4px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.current-market-price-item__newest-badge {
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.current-market-price-item__updated-badge {
+  color: #15803d;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.24);
+}
+
+.current-market-price-item__delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.current-market-price-item__delta--up {
+  color: #15803d;
+}
+
+.current-market-price-item__delta--down {
+  color: #dc2626;
+}
+
+.current-market-price-item__delta--flat {
+  color: #64748b;
+}
+
+.current-market-price-item__sparkline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.current-market-price-item__sparkline svg {
+  display: block;
+  width: 100%;
+  height: 42px;
+  overflow: visible;
+}
+
+.current-market-price-item__sparkline polyline,
+.current-market-price-item__sparkline circle {
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.current-market-price-item__sparkline circle {
+  fill: currentColor;
+}
+
+.current-market-price-item__sparkline.is-up {
+  color: #16a34a;
+}
+
+.current-market-price-item__sparkline.is-down {
+  color: #dc2626;
+}
+
+.current-market-price-item__sparkline.is-flat {
+  color: #64748b;
+}
+
+.current-market-price-item__sparkline > span {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted, #64748b);
+  white-space: nowrap;
+}
+
+.current-market-price-item__sparkline-empty {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  font-size: 11px;
+  color: var(--text-muted, #64748b);
+}
+
+.current-market-prices__list.is-syncing
+.current-market-price-item {
+  pointer-events: none;
+}
+
+.skeleton-block {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  background: rgba(148, 163, 184, 0.18);
+}
+
+.skeleton-block::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.34),
+      transparent
+    );
+  animation: current-price-skeleton 1.25s ease-in-out infinite;
+}
+
+.skeleton-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+}
+
+.skeleton-copy {
+  display: grid;
+  gap: 7px;
+  min-width: 110px;
+}
+
+.skeleton-line {
+  height: 11px;
+}
+
+.skeleton-line--short {
+  width: 74px;
+}
+
+.skeleton-line--medium {
+  width: 108px;
+}
+
+.skeleton-line--time {
+  width: 92px;
+}
+
+.skeleton-line--price {
+  width: min(100%, 160px);
+  height: 19px;
+  margin-top: 7px;
+}
+
+.skeleton-line--spark {
+  width: 100%;
+  height: 42px;
+  margin-top: 12px;
+}
+
+.current-market-price-item--skeleton {
+  min-height: 225px;
+}
+
+@keyframes current-price-skeleton {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes current-price-updated {
+  0% {
+    transform: scale(1);
+  }
+
+  25% {
+    transform: scale(1.008);
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(34, 197, 94, 0.42);
+    box-shadow:
+      0 0 0 4px
+      rgba(34, 197, 94, 0.08);
+  }
+
+  100% {
+    transform: scale(1);
   }
 }
