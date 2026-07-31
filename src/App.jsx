@@ -449,6 +449,169 @@ function App() {
     pnjPriceHistory,
   ]);
 
+  /*
+   * Tính tăng/giảm cho toàn bộ lịch sử của tất cả nguồn.
+   * CurrentPriceForm dùng dữ liệu này thay vì localStorage.
+   */
+  const allShopPriceHistoryWithChanges =
+    useMemo(() => {
+      const rows = Array.isArray(
+        allShopPriceHistory
+      )
+        ? allShopPriceHistory
+        : [];
+
+      const groups = new Map();
+
+      rows.forEach((item) => {
+        const sourceCode =
+          getItemSourceCode(item);
+
+        const productName =
+          normalizeProductName(
+            getItemProductName(item)
+          );
+
+        const groupKey = [
+          sourceCode,
+          productName,
+        ].join("|");
+
+        if (!groups.has(groupKey)) {
+          groups.set(groupKey, []);
+        }
+
+        groups.get(groupKey).push(item);
+      });
+
+      const result = [];
+
+      groups.forEach((groupRows) => {
+        const sortedRows = [
+          ...groupRows,
+        ].sort((first, second) => {
+          const firstDate =
+            first.source_updated_at ??
+            first.recorded_at ??
+            first.fetched_at ??
+            first.updated_at ??
+            first.created_at;
+
+          const secondDate =
+            second.source_updated_at ??
+            second.recorded_at ??
+            second.fetched_at ??
+            second.updated_at ??
+            second.created_at;
+
+          return (
+            new Date(firstDate).getTime() -
+            new Date(secondDate).getTime()
+          );
+        });
+
+        sortedRows.forEach(
+          (item, index) => {
+            const previousItem =
+              index > 0
+                ? sortedRows[index - 1]
+                : null;
+
+            const currentBuyPrice =
+              Number(
+                item.buy_price ??
+                item.price_per_chi ??
+                item.new_buy_price_per_chi ??
+                item.buy_price_per_chi ??
+                0
+              );
+
+            const currentSellPrice =
+              Number(
+                item.sell_price ??
+                item.sell_price_per_chi ??
+                item.new_sell_price_per_chi ??
+                0
+              );
+
+            const previousBuyPrice =
+              previousItem
+                ? Number(
+                    previousItem.buy_price ??
+                    previousItem.price_per_chi ??
+                    previousItem
+                      .new_buy_price_per_chi ??
+                    previousItem
+                      .buy_price_per_chi ??
+                    0
+                  )
+                : null;
+
+            const previousSellPrice =
+              previousItem
+                ? Number(
+                    previousItem.sell_price ??
+                    previousItem
+                      .sell_price_per_chi ??
+                    previousItem
+                      .new_sell_price_per_chi ??
+                    0
+                  )
+                : null;
+
+            result.push({
+              ...item,
+              source_code:
+                getItemSourceCode(item),
+
+              price_per_chi:
+                currentBuyPrice,
+
+              sell_price_per_chi:
+                currentSellPrice,
+
+              buyPriceChange:
+                previousItem
+                  ? currentBuyPrice -
+                    previousBuyPrice
+                  : null,
+
+              sellPriceChange:
+                previousItem
+                  ? currentSellPrice -
+                    previousSellPrice
+                  : null,
+            });
+          }
+        );
+      });
+
+      return result.sort(
+        (first, second) => {
+          const firstDate =
+            first.source_updated_at ??
+            first.recorded_at ??
+            first.fetched_at ??
+            first.updated_at ??
+            first.created_at;
+
+          const secondDate =
+            second.source_updated_at ??
+            second.recorded_at ??
+            second.fetched_at ??
+            second.updated_at ??
+            second.created_at;
+
+          return (
+            new Date(secondDate).getTime() -
+            new Date(firstDate).getTime()
+          );
+        }
+      );
+    }, [
+      allShopPriceHistory,
+    ]);
+
   const priceHistory = useMemo(() => {
     const selectedSource =
       normalizeSourceCode(
@@ -871,118 +1034,26 @@ function App() {
   const historyPageSize = 10;
 
   /*
-   * Tính mức tăng giảm trên toàn bộ lịch sử
-   * trước khi thực hiện phân trang.
+   * Lịch sử của nguồn đang chọn đã được tính tăng/giảm
+   * từ allShopPriceHistoryWithChanges.
    */
   const priceHistoryWithChanges =
     useMemo(() => {
-      const previousPriceByGoldType =
-        new Map();
-
-      const result =
-        new Array(
-          priceHistory.length
+      const selectedSource =
+        normalizeSourceCode(
+          activeHistorySource
         );
 
-      for (
-        let index =
-          priceHistory.length - 1;
-        index >= 0;
-        index -= 1
-      ) {
-        const item =
-          priceHistory[index];
-
-        const goldTypeKey = String(
-          item.gold_type_name ??
-          item.gold_type ??
-          item.product_name ??
-          ''
-        )
-          .trim()
-          .toLowerCase();
-
-        const previousItem =
-          previousPriceByGoldType.get(
-            goldTypeKey
-          );
-
-        const currentBuyPrice =
-          Number(
-            item.buy_price ??
-            item.price_per_chi ??
-            item.new_buy_price_per_chi ??
-            item.buy_price_per_chi ??
-            0
-          );
-
-        const currentSellPrice =
-          Number(
-            item.sell_price ??
-            item.sell_price_per_chi ??
-            item.new_sell_price_per_chi ??
-            0
-          );
-
-        const previousBuyPrice =
-          previousItem
-            ? Number(
-              previousItem.buy_price ??
-              previousItem.price_per_chi ??
-              previousItem
-                .new_buy_price_per_chi ??
-              previousItem
-                .buy_price_per_chi ??
-              0
-            )
-            : 0;
-
-        const previousSellPrice =
-          previousItem
-            ? Number(
-              previousItem.sell_price ??
-              previousItem
-                .sell_price_per_chi ??
-              previousItem
-                .new_sell_price_per_chi ??
-              0
-            )
-            : 0;
-
-        result[index] = {
-          ...item,
-
-          /*
-           * Bảo đảm component cũ đọc được
-           * tên cột đã ánh xạ.
-           */
-          price_per_chi:
-            currentBuyPrice,
-
-          sell_price_per_chi:
-            currentSellPrice,
-
-          buyPriceChange:
-            previousItem
-              ? currentBuyPrice -
-              previousBuyPrice
-              : null,
-
-          sellPriceChange:
-            previousItem
-              ? currentSellPrice -
-              previousSellPrice
-              : null,
-        };
-
-        previousPriceByGoldType.set(
-          goldTypeKey,
-          result[index]
+      return allShopPriceHistoryWithChanges
+        .filter(
+          (item) =>
+            getItemSourceCode(item) ===
+            selectedSource
         );
-      }
-
-      return result;
-    }, [priceHistory]);
+    }, [
+      activeHistorySource,
+      allShopPriceHistoryWithChanges,
+    ]);
 
   const historyTotalPages =
     Math.max(
@@ -1781,6 +1852,9 @@ function App() {
               prices={
                 marketCurrentPrices
               }
+              priceHistory={
+                allShopPriceHistoryWithChanges
+              }
               onPriceUpdated={
                 reloadGoldData
               }
@@ -2113,6 +2187,9 @@ function App() {
                   <CurrentPriceForm
                     prices={
                       marketCurrentPrices
+                    }
+                    priceHistory={
+                      allShopPriceHistoryWithChanges
                     }
                     onPriceUpdated={
                       reloadGoldData

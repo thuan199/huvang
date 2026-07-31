@@ -7466,3 +7466,35 @@ body.dark-theme .mobile-bottom-tab:active {
     transform: scale(1);
   }
 }
+
+.current-market-price-item__delta--up{
+    color:#16a34a;
+    font-weight:700;
+}
+
+.current-market-price-item__delta--down{
+    color:#dc2626;
+    font-weight:700;
+}
+
+.current-market-price-item__delta-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin-top: 6px;
+}
+
+.current-market-price-item__delta {
+  margin-top: 0;
+}
+
+.current-market-price-item__delta-note {
+  font-size: 9px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(
+    --text-muted,
+    #94a3b8
+  );
+}
