@@ -1184,7 +1184,7 @@ body.help-modal-open {
     max-width: none;
 
     height: calc(100dvh - 60px);
-    max-height: calc(100dvh - 60px);
+    
 
     margin: 0 auto;
 

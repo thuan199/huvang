@@ -1,0 +1,362 @@
+.local-gold-chart {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.local-gold-chart__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.local-gold-chart__tabs button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  min-width: 0;
+  margin: 0;
+  padding: 9px 14px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 9px;
+
+  background: #ffffff;
+  color: #374151;
+
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.local-gold-chart__tabs button:hover {
+  background: #f9fafb;
+  transform: none;
+}
+
+.local-gold-chart__tabs button.is-active {
+  border-color: #d4af37;
+  background: rgba(212, 175, 55, 0.15);
+  color: #8a6d00;
+}
+
+.local-gold-chart__source-buttons,
+.local-gold-chart__range-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.local-gold-chart__source-buttons {
+  margin: 12px 0 14px;
+}
+
+.local-gold-chart__range-buttons {
+  margin: 0 0 16px;
+}
+
+.local-gold-chart__source-buttons button,
+.local-gold-chart__range-buttons button {
+  min-width: 0;
+  margin: 0;
+  padding: 8px 14px;
+
+  border: 1px solid #d6b85a;
+  border-radius: 999px;
+
+  background: #fff8e1;
+  color: #7a5a00;
+
+  box-shadow: none;
+}
+
+.local-gold-chart__source-buttons button:hover,
+.local-gold-chart__range-buttons button:hover {
+  transform: none;
+  filter: brightness(0.98);
+}
+
+.local-gold-chart__source-buttons button.is-active,
+.local-gold-chart__range-buttons button.is-active {
+  border-color: #b8860b;
+  background: #b8860b;
+  color: #ffffff;
+
+  box-shadow:
+    0 4px 12px rgba(184, 134, 11, 0.28);
+}
+
+.local-gold-chart__canvas {
+  width: 100%;
+  min-width: 0;
+  min-height: 300px;
+
+  overflow: hidden;
+
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #fffdf7 0%,
+      #fff8e8 100%
+    );
+}
+
+.local-gold-chart__canvas .recharts-responsive-container,
+.local-gold-chart__canvas .recharts-wrapper,
+.local-gold-chart__canvas svg {
+  max-width: 100%;
+}
+
+.local-gold-chart__canvas .recharts-cartesian-grid line {
+  stroke: #eadfc8;
+}
+
+.local-gold-chart__canvas .recharts-text {
+  fill: #7a6f5a;
+  font-size: 12px;
+}
+
+.local-gold-chart__canvas .recharts-tooltip-wrapper {
+  outline: none;
+}
+
+.local-gold-chart__canvas .recharts-default-tooltip {
+  border: 1px solid #eadfc8 !important;
+  border-radius: 12px !important;
+
+  background: #fffdf7 !important;
+
+  box-shadow:
+    0 10px 24px rgba(75, 58, 24, 0.14) !important;
+}
+
+.local-gold-chart__change-label {
+  font-size: 10px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.local-gold-chart__change-label--positive {
+  fill: #16a34a;
+}
+
+.local-gold-chart__change-label--negative {
+  fill: #dc2626;
+}
+
+.local-gold-chart__world-chart {
+  width: 100%;
+  min-width: 0;
+  height: 560px;
+  margin-top: 14px;
+
+  overflow: hidden;
+  border-radius: 0 !important;
+}
+
+.local-gold-chart__world-chart > *,
+.local-gold-chart__world-chart iframe {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100% !important;
+}
+
+.dark-theme .local-gold-chart__tabs {
+  border-bottom-color: #374151;
+}
+
+.dark-theme .local-gold-chart__tabs button {
+  border-color: #4b5563;
+  background: #1f2937;
+  color: #e5e7eb;
+}
+
+.dark-theme .local-gold-chart__tabs button:hover {
+  background: #374151;
+}
+
+.dark-theme .local-gold-chart__tabs button.is-active {
+  border-color: #d4af37;
+  background: rgba(212, 175, 55, 0.18);
+  color: #f5d76e;
+}
+
+.dark-theme .local-gold-chart__source-buttons button,
+.dark-theme .local-gold-chart__range-buttons button {
+  border-color: #334155;
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.dark-theme .local-gold-chart__source-buttons button.is-active,
+.dark-theme .local-gold-chart__range-buttons button.is-active {
+  border-color: #facc15;
+  background: #facc15;
+  color: #111827;
+}
+
+.dark-theme .local-gold-chart__canvas {
+  border-color: #334155;
+  background: #111827;
+}
+
+.dark-theme .local-gold-chart__canvas .recharts-cartesian-grid line {
+  stroke: #334155;
+}
+
+.dark-theme .local-gold-chart__canvas .recharts-text {
+  fill: #cbd5e1;
+}
+
+.dark-theme .local-gold-chart__canvas .recharts-default-tooltip {
+  border-color: #334155 !important;
+  background: #0f172a !important;
+}
+
+.dark-theme .local-gold-chart__canvas .recharts-tooltip-label,
+.dark-theme .local-gold-chart__canvas .recharts-tooltip-item,
+.dark-theme .local-gold-chart__canvas .recharts-tooltip-item-name,
+.dark-theme .local-gold-chart__canvas .recharts-tooltip-item-value {
+  color: #f8fafc !important;
+}
+
+.dark-theme .local-gold-chart__change-label--positive {
+  fill: #4ade80;
+}
+
+.dark-theme .local-gold-chart__change-label--negative {
+  fill: #f87171;
+}
+
+@media (max-width: 768px) {
+  .local-gold-chart {
+    overflow: hidden;
+  }
+
+  .local-gold-chart__tabs {
+    display: grid;
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .local-gold-chart__tabs button {
+    width: 100%;
+    padding: 8px 9px;
+    font-size: 13px;
+  }
+
+  .local-gold-chart__tabs button span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .local-gold-chart__source-buttons,
+  .local-gold-chart__range-buttons {
+    gap: 7px;
+  }
+
+  .local-gold-chart__source-buttons button,
+  .local-gold-chart__range-buttons button {
+    flex: 1 1 auto;
+    padding: 7px 11px;
+    font-size: 13px;
+  }
+
+  .local-gold-chart__canvas {
+    min-height: 300px;
+  }
+
+  .local-gold-chart__canvas .recharts-text {
+    font-size: 10px;
+  }
+
+  .local-gold-chart__change-label {
+    display: none;
+  }
+
+  .local-gold-chart__world-chart {
+    height: 460px;
+  }
+}
+
+@media (max-width: 430px) {
+  .local-gold-chart__canvas {
+    min-height: 280px;
+  }
+
+  .local-gold-chart__world-chart {
+    height: 420px;
+  }
+}
+
+
+/* Bảo đảm SVG Recharts hiển thị đúng kích thước đo được */
+.local-gold-chart__canvas > .recharts-wrapper {
+  display: block;
+  width: 100% !important;
+  max-width: 100%;
+}
+
+.local-gold-chart__canvas > .recharts-wrapper > svg {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+}
+
+/* Dán xuống cuối LocalGoldChart.css */
+
+.local-gold-chart__world-chart {
+  width: 100%;
+  min-width: 0;
+  height: 560px;
+  min-height: 560px;
+  overflow: hidden;
+}
+
+.local-gold-chart__world-chart .gold-chart-wrapper,
+.local-gold-chart__world-chart .gold-chart-widget,
+.local-gold-chart__world-chart iframe {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  border-radius: 0 !important;
+}
+
+@media (max-width: 768px) {
+  .local-gold-chart__world-chart {
+    height: 620px;
+    min-height: 620px;
+  }
+
+  .local-gold-chart__world-chart .gold-chart-wrapper,
+  .local-gold-chart__world-chart .gold-chart-widget,
+  .local-gold-chart__world-chart iframe {
+    height: 620px !important;
+    min-height: 620px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .local-gold-chart__world-chart {
+    height: 600px;
+    min-height: 600px;
+  }
+
+  .local-gold-chart__world-chart .gold-chart-wrapper,
+  .local-gold-chart__world-chart .gold-chart-widget,
+  .local-gold-chart__world-chart iframe {
+    height: 600px !important;
+    min-height: 600px !important;
+  }
+}

@@ -10,6 +10,8 @@ const TRADING_VIEW_SCRIPT_ID =
 const TRADING_VIEW_SCRIPT_URL =
   "https://s3.tradingview.com/tv.js";
 
+const MOBILE_BREAKPOINT = 768;
+
 /**
  * Chỉ tải thư viện TradingView một lần.
  */
@@ -170,9 +172,49 @@ function TradingViewGoldChart({
     setError,
   ] = useState("");
 
+  const [
+    isMobile,
+    setIsMobile,
+  ] = useState(() =>
+    window.innerWidth <=
+    MOBILE_BREAKPOINT
+  );
+
+  useEffect(() => {
+    const mediaQuery =
+      window.matchMedia(
+        `(max-width: ${MOBILE_BREAKPOINT}px)`
+      );
+
+    function handleViewportChange(
+      event
+    ) {
+      setIsMobile(
+        event.matches
+      );
+    }
+
+    setIsMobile(
+      mediaQuery.matches
+    );
+
+    mediaQuery.addEventListener(
+      "change",
+      handleViewportChange
+    );
+
+    return () => {
+      mediaQuery.removeEventListener(
+        "change",
+        handleViewportChange
+      );
+    };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     let loadingTimeout = null;
+    let checkIframe = null;
 
     const container =
       containerRef.current;
@@ -184,7 +226,6 @@ function TradingViewGoldChart({
     setIsLoading(true);
     setError("");
 
-    // Xóa biểu đồ cũ khi đổi theme.
     container.innerHTML = "";
 
     const chartElement =
@@ -233,7 +274,10 @@ function TradingViewGoldChart({
               symbol:
                 "OANDA:XAUUSD",
 
-              interval: "60",
+              interval:
+                isMobile
+                  ? "60"
+                  : "60",
 
               timezone:
                 "Asia/Ho_Chi_Minh",
@@ -255,25 +299,37 @@ function TradingViewGoldChart({
               allow_symbol_change:
                 false,
 
+              /*
+               * Mobile cần ưu tiên diện tích biểu đồ.
+               * Ẩn thanh công cụ bên trái và bảng chi tiết
+               * bên phải để không bị cắt phần dưới.
+               */
               hide_side_toolbar:
-                false,
+                isMobile,
 
               hide_top_toolbar:
                 false,
 
-              hide_legend: false,
+              hide_legend:
+                false,
 
-              hide_volume: false,
+              hide_volume:
+                isMobile,
 
-              save_image: true,
+              save_image:
+                !isMobile,
 
-              calendar: false,
+              calendar:
+                false,
 
-              details: true,
+              details:
+                !isMobile,
 
-              hotlist: false,
+              hotlist:
+                false,
 
-              withdateranges: true,
+              withdateranges:
+                true,
 
               enable_publishing:
                 false,
@@ -285,10 +341,6 @@ function TradingViewGoldChart({
             }
           );
 
-        /*
-         * onChartReady có thể không tồn tại
-         * ở một số phiên bản widget.
-         */
         if (
           widgetRef.current &&
           typeof widgetRef.current
@@ -306,58 +358,79 @@ function TradingViewGoldChart({
           );
         }
 
-        /*
-         * Dự phòng: theo dõi khi iframe
-         * của TradingView được tạo.
-         */
-        const checkIframe = window.setInterval(() => {
-          if (cancelled) {
-            window.clearInterval(checkIframe);
-            return;
-          }
-
-          const iframe =
-            container.querySelector("iframe");
-
-          if (!iframe) {
-            return;
-          }
-
-          window.clearInterval(checkIframe);
-
-          const handleIframeLoad = () => {
-            if (!cancelled) {
-              setIsLoading(false);
-            }
-          };
-
-          iframe.addEventListener(
-            "load",
-            handleIframeLoad,
-            { once: true }
-          );
-
-          /*
-           * Dự phòng trong trường hợp iframe đã tải xong
-           * trước khi event listener được gắn.
-           */
-          window.setTimeout(() => {
-            if (!cancelled) {
-              setIsLoading(false);
-            }
-          }, 1500);
-        }, 250);
-
-        loadingTimeout =
-          window.setTimeout(
+        checkIframe =
+          window.setInterval(
             () => {
+              if (cancelled) {
+                window.clearInterval(
+                  checkIframe
+                );
+                return;
+              }
+
+              const iframe =
+                container.querySelector(
+                  "iframe"
+                );
+
+              if (!iframe) {
+                return;
+              }
+
               window.clearInterval(
                 checkIframe
               );
 
-              if (
-                !cancelled
-              ) {
+              iframe.style.width =
+                "100%";
+
+              iframe.style.height =
+                "100%";
+
+              iframe.style.border =
+                "0";
+
+              const handleIframeLoad =
+                () => {
+                  if (!cancelled) {
+                    setIsLoading(
+                      false
+                    );
+                  }
+                };
+
+              iframe.addEventListener(
+                "load",
+                handleIframeLoad,
+                {
+                  once: true,
+                }
+              );
+
+              window.setTimeout(
+                () => {
+                  if (!cancelled) {
+                    setIsLoading(
+                      false
+                    );
+                  }
+                },
+                1500
+              );
+            },
+            250
+          );
+
+        loadingTimeout =
+          window.setTimeout(
+            () => {
+              if (checkIframe) {
+                window.clearInterval(
+                  checkIframe
+                );
+              }
+
+              if (!cancelled) {
                 setIsLoading(
                   false
                 );
@@ -366,7 +439,7 @@ function TradingViewGoldChart({
             10000
           );
       } catch (
-      chartError
+        chartError
       ) {
         console.error(
           "Lỗi tải biểu đồ TradingView:",
@@ -389,6 +462,12 @@ function TradingViewGoldChart({
     return () => {
       cancelled = true;
 
+      if (checkIframe) {
+        window.clearInterval(
+          checkIframe
+        );
+      }
+
       if (loadingTimeout) {
         window.clearTimeout(
           loadingTimeout
@@ -398,10 +477,6 @@ function TradingViewGoldChart({
       widgetRef.current =
         null;
 
-      /*
-       * Chỉ xóa nội dung khi container
-       * vẫn còn tồn tại.
-       */
       if (
         containerRef.current ===
         container
@@ -410,7 +485,10 @@ function TradingViewGoldChart({
           "";
       }
     };
-  }, [theme]);
+  }, [
+    theme,
+    isMobile,
+  ]);
 
   return (
     <div className="gold-chart-wrapper">
@@ -436,10 +514,11 @@ function TradingViewGoldChart({
 
       <div
         ref={containerRef}
-        className={`gold-chart-widget ${isLoading
+        className={`gold-chart-widget ${
+          isLoading
             ? "gold-chart-hidden"
             : ""
-          }`}
+        }`}
       />
     </div>
   );

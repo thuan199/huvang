@@ -1,21 +1,69 @@
 import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+
+import {
   BarChart3,
   Globe2,
 } from 'lucide-react';
 
 import {
-  LineChart,
+  CartesianGrid,
+  LabelList,
   Line,
+  LineChart,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  LabelList,
 } from 'recharts';
 
 import { formatMoney } from '../utils/formatters';
 import TradingViewGoldChart from './TradingViewGoldChart';
+import './LocalGoldChart.css';
+
+const CHART_SOURCES = [
+  {
+    value: 'PNJ',
+    label: 'PNJ',
+  },
+  {
+    value: 'SJC',
+    label: 'SJC',
+  },
+  {
+    value: 'MI_HONG',
+    label: 'Mi Hồng',
+  },
+];
+
+const CHART_RANGES = [
+  {
+    value: '1d',
+    label: 'Hôm nay',
+  },
+  {
+    value: '1w',
+    label: '1 tuần',
+  },
+  {
+    value: '1m',
+    label: '1 tháng',
+  },
+  {
+    value: '3m',
+    label: '3 tháng',
+  },
+  {
+    value: '6m',
+    label: '6 tháng',
+  },
+  {
+    value: '12m',
+    label: '12 tháng',
+  },
+];
 
 function PriceChangeLabel({
   x,
@@ -24,7 +72,8 @@ function PriceChangeLabel({
   changeKey,
   offsetY = -14,
 }) {
-  const change = payload?.[changeKey];
+  const change =
+    payload?.[changeKey];
 
   if (
     change === null ||
@@ -34,17 +83,20 @@ function PriceChangeLabel({
     return null;
   }
 
-  const number = Number(change);
-  const isIncrease = number > 0;
+  const number =
+    Number(change);
+
+  const isIncrease =
+    number > 0;
 
   const formattedValue =
-    Math.abs(number).toLocaleString(
-      'vi-VN'
-    );
+    Math.abs(number)
+      .toLocaleString('vi-VN');
 
-  const text = isIncrease
-    ? `▲ +${formattedValue}`
-    : `▼ -${formattedValue}`;
+  const text =
+    isIncrease
+      ? `▲ +${formattedValue}`
+      : `▼ -${formattedValue}`;
 
   return (
     <text
@@ -53,8 +105,8 @@ function PriceChangeLabel({
       textAnchor="middle"
       className={
         isIncrease
-          ? 'chart-change-label chart-change-label-positive'
-          : 'chart-change-label chart-change-label-negative'
+          ? 'local-gold-chart__change-label local-gold-chart__change-label--positive'
+          : 'local-gold-chart__change-label local-gold-chart__change-label--negative'
       }
     >
       {text}
@@ -74,63 +126,82 @@ function LocalGoldChart({
   priceChartData,
   theme,
 }) {
-  const chartSources = [
-    {
-      value: 'PNJ',
-      label: 'PNJ',
-    },
-    {
-      value: 'SJC',
-      label: 'SJC',
-    },
-    {
-      value: 'MI_HONG',
-      label: 'Mi Hồng',
-    },
-  ];
+  const chartContainerRef =
+    useRef(null);
 
-  const chartRanges = [
-    {
-      value: '1d',
-      label: 'Hôm nay',
-    },
-    {
-      value: '1w',
-      label: '1 tuần',
-    },
-    {
-      value: '1m',
-      label: '1 tháng',
-    },
-    {
-      value: '3m',
-      label: '3 tháng',
-    },
-    {
-      value: '6m',
-      label: '6 tháng',
-    },
-    {
-      value: '12m',
-      label: '12 tháng',
-    },
-  ];
+  const [
+    chartWidth,
+    setChartWidth,
+  ] = useState(0);
+
+  useEffect(() => {
+    const element =
+      chartContainerRef.current;
+
+    if (!element) {
+      return undefined;
+    }
+
+    function updateChartWidth() {
+      const nextWidth =
+        Math.floor(
+          element.getBoundingClientRect().width
+        );
+
+      if (nextWidth > 0) {
+        setChartWidth(nextWidth);
+      }
+    }
+
+    updateChartWidth();
+
+    const resizeObserver =
+      new ResizeObserver(
+        updateChartWidth
+      );
+
+    resizeObserver.observe(
+      element
+    );
+
+    window.addEventListener(
+      'resize',
+      updateChartWidth
+    );
+
+    return () => {
+      resizeObserver.disconnect();
+
+      window.removeEventListener(
+        'resize',
+        updateChartWidth
+      );
+    };
+  }, [
+    activeGoldTab,
+    activeHistorySource,
+    chartRange,
+  ]);
 
   const activeSourceLabel =
-    chartSources.find(
+    CHART_SOURCES.find(
       (source) =>
         source.value ===
         activeHistorySource
     )?.label ?? 'PNJ';
 
+  const hasChartData =
+    Array.isArray(priceChartData) &&
+    priceChartData.length > 0;
+
   return (
-    <div className="card">
-      <div className="gold-chart-tabs">
+    <section className="card local-gold-chart">
+      <div className="local-gold-chart__tabs">
         <button
           type="button"
           className={
             activeGoldTab === 'local'
-              ? 'active'
+              ? 'is-active'
               : ''
           }
           onClick={() =>
@@ -138,14 +209,16 @@ function LocalGoldChart({
           }
         >
           <BarChart3 size={17} />
-          Lịch sử giá {activeSourceLabel}
+          <span>
+            Lịch sử giá {activeSourceLabel}
+          </span>
         </button>
 
         <button
           type="button"
           className={
             activeGoldTab === 'world'
-              ? 'active'
+              ? 'is-active'
               : ''
           }
           onClick={() =>
@@ -153,7 +226,9 @@ function LocalGoldChart({
           }
         >
           <Globe2 size={17} />
-          Biểu đồ XAU/USD
+          <span>
+            Biểu đồ XAU/USD
+          </span>
         </button>
       </div>
 
@@ -165,8 +240,8 @@ function LocalGoldChart({
             {activeSourceLabel}
           </h2>
 
-          <div className="chart-source-buttons">
-            {chartSources.map(
+          <div className="local-gold-chart__source-buttons">
+            {CHART_SOURCES.map(
               (source) => (
                 <button
                   key={source.value}
@@ -174,7 +249,7 @@ function LocalGoldChart({
                   className={
                     activeHistorySource ===
                     source.value
-                      ? 'active'
+                      ? 'is-active'
                       : ''
                   }
                   onClick={() =>
@@ -189,8 +264,8 @@ function LocalGoldChart({
             )}
           </div>
 
-          <div className="chart-range-buttons">
-            {chartRanges.map(
+          <div className="local-gold-chart__range-buttons">
+            {CHART_RANGES.map(
               (range) => (
                 <button
                   key={range.value}
@@ -198,7 +273,7 @@ function LocalGoldChart({
                   className={
                     chartRange ===
                     range.value
-                      ? 'active'
+                      ? 'is-active'
                       : ''
                   }
                   onClick={() =>
@@ -213,135 +288,139 @@ function LocalGoldChart({
             )}
           </div>
 
-          {priceChartData.length === 0 ? (
+          {!hasChartData ? (
             <p className="small-text">
               Chưa có lịch sử giá{' '}
               {activeSourceLabel} để vẽ
               biểu đồ.
             </p>
           ) : (
-            <>
-              <p className="chart-swipe-hint">
-                Vuốt sang trái hoặc phải
-                để xem thêm dữ liệu
-              </p>
+            <div
+              ref={chartContainerRef}
+              className="local-gold-chart__canvas"
+            >
+              {chartWidth > 0 && (
+                <LineChart
+                  width={chartWidth}
+                  height={300}
+                  data={priceChartData}
+                  margin={{
+                    top: 34,
+                    right: 10,
+                    left: 0,
+                    bottom: 8,
+                  }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                  />
 
-              <div className="chart-scroll">
-                <div className="chart-scroll-content">
-                  <ResponsiveContainer
-                    width="100%"
-                    height={320}
+                  <XAxis
+                    dataKey="time"
+                    minTickGap={18}
+                    tickMargin={8}
+                  />
+
+                  <YAxis
+                    tickFormatter={(
+                      value
+                    ) =>
+                      formatMoney(
+                        value
+                      )
+                    }
+                    domain={[
+                      'dataMin - 50000',
+                      'dataMax + 50000',
+                    ]}
+                    width={72}
+                  />
+
+                  <Tooltip
+                    formatter={(
+                      value,
+                      name
+                    ) => [
+                      `${formatMoney(
+                        value
+                      )} VND`,
+                      name,
+                    ]}
+                    labelFormatter={(
+                      _,
+                      payload
+                    ) => {
+                      if (
+                        !payload ||
+                        payload.length === 0
+                      ) {
+                        return '';
+                      }
+
+                      return payload[0]
+                        .payload
+                        .fullTime;
+                    }}
+                  />
+
+                  <Line
+                    type="stepAfter"
+                    dataKey="price"
+                    name={`Giá mua ${activeSourceLabel}`}
+                    stroke="#2563eb"
+                    strokeWidth={3}
+                    dot={{
+                      r: 3,
+                      fill: "#ffffff",
+                      stroke: "#2563eb",
+                      strokeWidth: 2,
+                    }}
+                    activeDot={{ r: 5 }}
+                    isAnimationActive={false}
                   >
-                    <LineChart
-                      data={priceChartData}
-                      margin={{
-                        top: 34,
-                        right: 24,
-                        left: 10,
-                        bottom: 12,
-                      }}
-                    >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                      />
-
-                      <XAxis
-                        dataKey="time"
-                        minTickGap={24}
-                      />
-
-                      <YAxis
-                        tickFormatter={(
-                          value
-                        ) =>
-                          formatMoney(
-                            value
-                          )
-                        }
-                        domain={[
-                          'dataMin - 50000',
-                          'dataMax + 50000',
-                        ]}
-                        width={90}
-                      />
-
-                      <Tooltip
-                        formatter={(
-                          value,
-                          name
-                        ) => [
-                          `${formatMoney(
-                            value
-                          )} VND`,
-                          name,
-                        ]}
-                        labelFormatter={(
-                          _,
-                          payload
-                        ) => {
-                          if (
-                            !payload ||
-                            payload.length === 0
-                          ) {
-                            return '';
-                          }
-
-                          return payload[0]
-                            .payload
-                            .fullTime;
-                        }}
-                      />
-
-                      <Line
-                        type="stepAfter"
-                        dataKey="price"
-                        name={`Giá mua ${activeSourceLabel}`}
-                        strokeWidth={3}
-                        dot={{ r: 4 }}
-                        activeDot={{
-                          r: 6,
-                        }}
-                      >
-                        <LabelList
-                          content={(
-                            props
-                          ) => (
-                            <PriceChangeLabel
-                              {...props}
-                              changeKey="buyPriceChange"
-                              offsetY={-16}
-                            />
-                          )}
+                    <LabelList
+                      content={(
+                        props
+                      ) => (
+                        <PriceChangeLabel
+                          {...props}
+                          changeKey="buyPriceChange"
+                          offsetY={-15}
                         />
-                      </Line>
+                      )}
+                    />
+                  </Line>
 
-                      <Line
-                        type="stepAfter"
-                        dataKey="sellPrice"
-                        name={`Giá bán ${activeSourceLabel}`}
-                        strokeWidth={3}
-                        dot={{ r: 4 }}
-                        activeDot={{
-                          r: 6,
-                        }}
-                      >
-                        <LabelList
-                          content={(
-                            props
-                          ) => (
-                            <PriceChangeLabel
-                              {...props}
-                              changeKey="sellPriceChange"
-                              offsetY={18}
-                            />
-                          )}
+                  <Line
+                    type="stepAfter"
+                    dataKey="sellPrice"
+                    name={`Giá bán ${activeSourceLabel}`}
+                    stroke="#d97706"
+                    strokeWidth={3}
+                    dot={{
+                      r: 3,
+                      fill: "#ffffff",
+                      stroke: "#d97706",
+                      strokeWidth: 2,
+                    }}
+                    activeDot={{ r: 5 }}
+                    isAnimationActive={false}
+                  >
+                    <LabelList
+                      content={(
+                        props
+                      ) => (
+                        <PriceChangeLabel
+                          {...props}
+                          changeKey="sellPriceChange"
+                          offsetY={18}
                         />
-                      </Line>
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </>
+                      )}
+                    />
+                  </Line>
+                </LineChart>
+              )}
+            </div>
           )}
         </>
       )}
@@ -360,14 +439,14 @@ function LocalGoldChart({
             OANDA:XAUUSD.
           </p>
 
-          <div className="world-chart-box">
+          <div className="local-gold-chart__world-chart">
             <TradingViewGoldChart
               theme={theme}
             />
           </div>
         </>
       )}
-    </div>
+    </section>
   );
 }
 

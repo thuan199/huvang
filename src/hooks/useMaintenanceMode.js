@@ -8,50 +8,55 @@ import { supabase } from "../supabaseClient";
 
 const defaultMaintenance = {
   enabled: false,
-  message:
-    "Website đang bảo trì. Vui lòng quay lại sau.",
+  message: "Website đang bảo trì. Vui lòng quay lại sau.",
   startedAt: null,
   expectedEndAt: null,
 };
 
+const REQUEST_TIMEOUT_MS = 10000;
+
+async function withTimeout(promise, timeoutMs = REQUEST_TIMEOUT_MS) {
+  let timeoutId;
+
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => {
+      reject(new Error("Yêu cầu Supabase quá thời gian chờ."));
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([
+      promise,
+      timeoutPromise,
+    ]);
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
 export function useMaintenanceMode() {
-  const [
-    maintenance,
-    setMaintenance,
-  ] = useState(defaultMaintenance);
+  const [maintenance, setMaintenance] =
+    useState(defaultMaintenance);
 
-  const [
-    isAdmin,
-    setIsAdmin,
-  ] = useState(false);
+  const [isAdmin, setIsAdmin] =
+    useState(false);
 
-  const [
-    loading,
-    setLoading,
-  ] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
 
-  const loadMaintenance = useCallback(
-    async () => {
-      const {
-        data,
-        error,
-      } = await supabase
-        .from("app_settings")
-        .select(
-          "setting_key, setting_value"
-        )
-        .eq(
-          "setting_key",
-          "maintenance"
-        )
-        .maybeSingle();
+  const loadMaintenance = useCallback(async () => {
+    try {
+      const request =
+        supabase
+          .from("app_settings")
+          .select("setting_key, setting_value")
+          .eq("setting_key", "maintenance")
+          .maybeSingle();
+
+      const { data, error } =
+        await withTimeout(request);
 
       if (error) {
-        console.error(
-          "Không tải được trạng thái bảo trì:",
-          error
-        );
-
         throw error;
       }
 
@@ -59,87 +64,98 @@ export function useMaintenanceMode() {
         data?.setting_value ?? {};
 
       setMaintenance({
-        enabled:
-          value.enabled === true,
-
+        enabled: value.enabled === true,
         message:
           value.message ||
           defaultMaintenance.message,
-
         startedAt:
           value.started_at ?? null,
-
         expectedEndAt:
-          value.expected_end_at ??
-          null,
+          value.expected_end_at ?? null,
       });
-    },
-    []
-  );
-
-  const checkAdmin = useCallback(
-    async () => {
-      const {
-        data: sessionData,
-        error: sessionError,
-      } = await supabase.auth.getSession();
-
-      if (sessionError) {
-        console.error(
-          "Không đọc được session:",
-          sessionError
-        );
-
-        setIsAdmin(false);
-        return false;
-      }
-
-      const user =
-        sessionData.session?.user;
-
-      if (!user) {
-        setIsAdmin(false);
-        return false;
-      }
-
-      const {
-        data,
+    } catch (error) {
+      console.error(
+        "Không tải được trạng thái bảo trì:",
         error,
-      } = await supabase
-        .from("app_admins")
-        .select("user_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      );
 
-      if (error) {
+      setMaintenance(
+        defaultMaintenance,
+      );
+    }
+  }, []);
+
+  const checkAdminByUser =
+    useCallback(async (user) => {
+      if (!user?.id) {
+        setIsAdmin(false);
+        return false;
+      }
+
+      try {
+        const request =
+          supabase
+            .from("app_admins")
+            .select("user_id")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+        const { data, error } =
+          await withTimeout(request);
+
+        if (error) {
+          throw error;
+        }
+
+        const adminResult =
+          data?.user_id === user.id;
+
+        setIsAdmin(adminResult);
+
+        return adminResult;
+      } catch (error) {
         console.error(
           "Không kiểm tra được admin:",
-          {
-            message: error.message,
-            code: error.code,
-            details: error.details,
-            hint: error.hint,
-          }
+          error,
         );
 
         setIsAdmin(false);
         return false;
       }
+    }, []);
 
-      const adminResult =
-        data?.user_id === user.id;
+  const checkAdmin =
+    useCallback(async () => {
+      try {
+        const { data, error } =
+          await withTimeout(
+            supabase.auth.getSession(),
+          );
 
-      setIsAdmin(adminResult);
+        if (error) {
+          throw error;
+        }
 
-      return adminResult;
-    },
-    []
-  );
+        return checkAdminByUser(
+          data.session?.user ?? null,
+        );
+      } catch (error) {
+        console.error(
+          "Không đọc được session:",
+          error,
+        );
+
+        setIsAdmin(false);
+        return false;
+      }
+    }, [checkAdminByUser]);
 
   const reloadMaintenance =
     useCallback(async () => {
-      await loadMaintenance();
-      await checkAdmin();
+      await Promise.allSettled([
+        loadMaintenance(),
+        checkAdmin(),
+      ]);
     }, [
       loadMaintenance,
       checkAdmin,
@@ -149,18 +165,13 @@ export function useMaintenanceMode() {
     let mounted = true;
 
     async function initialize() {
-      try {
-        setLoading(true);
+      setLoading(true);
 
-        await Promise.all([
+      try {
+        await Promise.allSettled([
           loadMaintenance(),
           checkAdmin(),
         ]);
-      } catch (error) {
-        console.error(
-          "Lỗi khởi tạo maintenance:",
-          error
-        );
       } finally {
         if (mounted) {
           setLoading(false);
@@ -170,45 +181,40 @@ export function useMaintenanceMode() {
 
     initialize();
 
-    const {
-      data: authListener,
-    } =
+    const { data: authListener } =
       supabase.auth.onAuthStateChange(
-        async (
-          _event,
-          session
-        ) => {
+        (_event, session) => {
           if (!mounted) {
             return;
           }
 
-          setLoading(true);
-
-          try {
-            if (!session?.user) {
-              setIsAdmin(false);
-            } else {
-              await checkAdmin();
+          window.setTimeout(async () => {
+            if (!mounted) {
+              return;
             }
 
-            await loadMaintenance();
-          } catch (error) {
-            console.error(
-              "Lỗi cập nhật trạng thái đăng nhập:",
-              error
-            );
-          } finally {
-            if (mounted) {
-              setLoading(false);
+            setLoading(true);
+
+            try {
+              await Promise.allSettled([
+                loadMaintenance(),
+                checkAdminByUser(
+                  session?.user ?? null,
+                ),
+              ]);
+            } finally {
+              if (mounted) {
+                setLoading(false);
+              }
             }
-          }
-        }
+          }, 0);
+        },
       );
 
     const channel =
       supabase
         .channel(
-          "app-settings-maintenance"
+          "app-settings-maintenance",
         )
         .on(
           "postgres_changes",
@@ -219,31 +225,27 @@ export function useMaintenanceMode() {
             filter:
               "setting_key=eq.maintenance",
           },
-          async () => {
-            try {
-              await loadMaintenance();
-            } catch (error) {
-              console.error(
-                "Không tải lại được maintenance:",
-                error
-              );
-            }
-          }
+          () => {
+            loadMaintenance();
+          },
         )
         .subscribe();
 
     return () => {
       mounted = false;
 
-      authListener.subscription.unsubscribe();
+      authListener
+        .subscription
+        .unsubscribe();
 
       supabase.removeChannel(
-        channel
+        channel,
       );
     };
   }, [
     loadMaintenance,
     checkAdmin,
+    checkAdminByUser,
   ]);
 
   return {

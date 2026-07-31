@@ -1,6 +1,7 @@
 .market-news {
   width: 100%;
-  margin-top: 20px;
+  margin-top: 0px;
+  margin-bottom: 20px;
   padding: 20px;
 
   box-sizing: border-box;
@@ -27,11 +28,12 @@
 
 .market-news__header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
   gap: 16px;
 
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 .market-news__header h2 {
