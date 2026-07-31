@@ -11,26 +11,25 @@ const HELP_TABS = [
     label: "Hướng dẫn",
     icon: "📖",
   },
-
+  {
+    id: "faq",
+    label: "FAQ",
+    icon: "❓",
+  },
+  {
+    id: "about",
+    label: "Thông tin",
+    icon: "ℹ️",
+  },
   {
     id: "world-gold",
     label: "Giá vàng thế giới",
     icon: "🌍",
   },
   {
-    id: "faq",
-    label: "Câu hỏi thường gặp",
-    icon: "❓",
-  },
-  {
     id: "contact",
     label: "Liên hệ",
     icon: "☎️",
-  },
-  {
-    id: "about",
-    label: "Giới thiệu",
-    icon: "ℹ️",
   },
   {
     id: "coffee",
@@ -695,6 +694,15 @@ function FaqContent() {
       <h3>
         Câu hỏi thường gặp
       </h3>
+      <details className="help-faq">
+        <summary>
+          Tại sao tôi phải đăng ký và đăng nhập?
+        </summary>
+
+        <p>
+          Mỗi người dùng sẽ có một tài khoản riêng để hệ thống lưu trữ và đồng bộ dữ liệu cá nhân như giao dịch mua bán, tài sản vàng, cài đặt và các thông tin liên quan. Nhờ đó, dữ liệu của bạn sẽ luôn được liên kết với đúng tài khoản và không bị lẫn với người dùng khác.
+        </p>
+      </details>
 
       <details className="help-faq">
         <summary>
@@ -1068,7 +1076,7 @@ function AboutContent() {
   return (
     <div className="help-section">
       <h3>
-        Giới thiệu webApp Hũ Vàng
+        Thông tin về Hũ Vàng
       </h3>
 
       <div className="help-about">
@@ -1083,10 +1091,8 @@ function AboutContent() {
         </h4>
 
         <p>
-          Công cụ hỗ trợ quản lý
-          giao dịch vàng, theo dõi
-          giá vốn, giá hiện tại và
-          lãi/lỗ.
+          Công cụ hỗ trợ quản lý giao dịch vàng,
+          theo dõi giá vốn, giá hiện tại và lãi/lỗ.
         </p>
 
         <ul>
@@ -1103,8 +1109,7 @@ function AboutContent() {
           </li>
 
           <li>
-            Quy đổi giá vàng thế
-            giới
+            Quy đổi giá vàng thế giới
           </li>
 
           <li>
@@ -1115,17 +1120,88 @@ function AboutContent() {
             Trợ lý AI
           </li>
         </ul>
+      </div>
 
-        <div className="help-about__sources">
-          <strong>
-            Nguồn dữ liệu tham khảo
-          </strong>
+      <HelpInfoSection
+        icon="🔐"
+        title="Tại sao cần đăng ký và đăng nhập?"
+      >
+        <p>
+          Các chức năng như quản lý tài sản,
+          lưu giao dịch và theo dõi đầu tư là
+          dữ liệu cá nhân.
+        </p>
 
-          <span>
-            SJC, PNJ, Mi Hồng, Vietcombank,
-            XAU/USD
-          </span>
-        </div>
+        <p>
+          Khi bạn đăng ký và đăng nhập, hệ thống
+          sẽ tạo một tài khoản riêng để liên kết
+          giao dịch, tài sản và cài đặt với đúng
+          người dùng. Nhờ đó, dữ liệu của bạn không
+          bị lẫn với người khác và vẫn được giữ lại
+          khi đăng nhập trên thiết bị khác.
+        </p>
+      </HelpInfoSection>
+
+      <HelpInfoSection
+        icon="🛡️"
+        title="Thông tin chúng tôi sử dụng"
+      >
+        <p>
+          Khi đăng nhập bằng Google, Hũ Vàng chỉ sử dụng
+          các thông tin cơ bản cần thiết để nhận diện tài khoản:
+        </p>
+
+        <ul className="help-info-list">
+          <li>Ảnh đại diện.</li>
+          <li>Họ tên hiển thị, nếu được cung cấp.</li>
+          <li>Địa chỉ email.</li>
+        </ul>
+
+        <p>
+          Hũ Vàng không đọc Gmail, Google Drive,
+          Google Photos, danh bạ, lịch hoặc các dữ liệu
+          cá nhân khác trong tài khoản Google của bạn.
+        </p>
+      </HelpInfoSection>
+
+      <HelpInfoSection
+        icon="📧"
+        title="Email và thông báo"
+      >
+        <p>
+          Email được dùng để xác định tài khoản,
+          hỗ trợ bảo mật và liên hệ khi thật sự cần thiết.
+        </p>
+
+        <p>
+          Chúng tôi chỉ gửi email khi có thay đổi lớn
+          của hệ thống hoặc thông báo quan trọng ảnh hưởng
+          đến người dùng. Hũ Vàng không gửi thư quảng cáo
+          hoặc thư rác.
+        </p>
+      </HelpInfoSection>
+
+      <HelpInfoSection
+        icon="🤝"
+        title="Cam kết quyền riêng tư"
+      >
+        <p>
+          Hũ Vàng không bán hoặc chia sẻ thông tin cá nhân
+          của bạn cho bên thứ ba vì mục đích quảng cáo.
+          Dữ liệu giao dịch và tài sản của mỗi người dùng
+          chỉ được liên kết với tài khoản tương ứng.
+        </p>
+      </HelpInfoSection>
+
+      <div className="help-about__sources">
+        <strong>
+          Nguồn dữ liệu tham khảo
+        </strong>
+
+        <span>
+          SJC, PNJ, Mi Hồng, Vietcombank,
+          XAU/USD
+        </span>
       </div>
     </div>
   );
