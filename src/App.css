@@ -7693,3 +7693,25 @@ body.dark-theme .mobile-bottom-tab:active {
   border-radius: 50%;
   background: #ca8a04;
 }
+
+.header-login-button {
+  width: auto;
+  min-width: 112px;
+  height: 40px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  padding: 0 15px;
+  border-radius: 999px;
+
+  white-space: nowrap;
+}
+
+.header-login-button span {
+  display: inline;
+  visibility: visible;
+  opacity: 1;
+}
