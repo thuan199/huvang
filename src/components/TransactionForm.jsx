@@ -3,6 +3,7 @@ import {
   Pencil,
   Save,
   XCircle,
+  Store,
 } from 'lucide-react';
 
 const GOLD_SOURCES = [
@@ -179,10 +180,10 @@ function TransactionForm({
     isPrivateSource
       ? transactionForm.gold_type ?? ''
       : availableProducts.some(
-          (product) =>
-            product.value ===
-            transactionForm.gold_type,
-        )
+        (product) =>
+          product.value ===
+          transactionForm.gold_type,
+      )
         ? transactionForm.gold_type
         : availableProducts[0]?.value ?? '';
 
@@ -223,10 +224,10 @@ function TransactionForm({
     const buybackPrice = isPrivate
       ? 0
       : getMarketBuybackPrice(
-          marketCurrentPrices,
-          sourceCode,
-          firstProduct?.value,
-        );
+        marketCurrentPrices,
+        sourceCode,
+        firstProduct?.value,
+      );
 
     setTransactionForm(
       (currentForm) => ({
@@ -368,7 +369,13 @@ function TransactionForm({
 
           <p className="transaction-price-note">
             Nhập đúng tên tiệm bạn đã mua vàng. Tên này sẽ
-            được dùng để liên kết với mục “Giá tiệm vàng của tôi”.
+            được dùng để liên kết với mục{' '}
+            <span className="transaction-price-note__link">
+              <strong>
+              <Store size={17} />{' '}
+              Giá tiệm vàng tư nhân</strong>
+            </span>
+            .
           </p>
         </>
       )}
