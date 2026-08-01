@@ -405,7 +405,7 @@ function CurrentPriceForm({
 
             {user && (
               <button type="button" className="private-price-open-button current-market-prices__private" onClick={onOpenPrivateGoldPrices}>
-                <Store size={17} /> Giá tiệm vàng của tôi
+                <Store size={17} /> Giá tiệm vàng tư nhân
               </button>
             )}
           </div>

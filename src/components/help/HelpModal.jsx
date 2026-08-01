@@ -301,7 +301,7 @@ function GuideContent() {
           và chọn
           <strong>
             {" "}
-            Giá tiệm vàng của tôi
+            Giá tiệm vàng tư nhân
           </strong>
           .
         </p>
