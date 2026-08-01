@@ -18,6 +18,9 @@ function SummaryCards({ summary }) {
   const totalCurrentValue = Number(summary?.totalCurrentValue || 0);
   const profit = Number(summary?.profit || 0);
   const profitPercent = Number(summary?.profitPercent || 0);
+  const unpricedTransactionCount = Number(
+    summary?.unpricedTransactionCount || 0
+  );
 
   return (
     <div className="summary">
@@ -58,6 +61,12 @@ function SummaryCards({ summary }) {
         <strong>
           {formatMoney(totalCurrentValue)}
         </strong>
+
+        {unpricedTransactionCount > 0 && (
+          <small className="summary-card__note">
+            Chưa gồm {unpricedTransactionCount} giao dịch chưa có giá
+          </small>
+        )}
       </div>
 
       <div className="summary-card">
@@ -78,6 +87,12 @@ function SummaryCards({ summary }) {
         <strong className={profit >= 0 ? 'profit' : 'loss'}>
           {formatMoney(profit)}
         </strong>
+
+        {unpricedTransactionCount > 0 && (
+          <small className="summary-card__note">
+            Chỉ tính các giao dịch đã có giá hiện tại
+          </small>
+        )}
       </div>
 
       <div className="summary-card">

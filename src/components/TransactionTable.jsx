@@ -8,53 +8,235 @@ import {
 
 import { formatMoney } from '../utils/formatters';
 
-function calculateSavedTransactionResult(transaction) {
-  const quantity = Number(
-    transaction.quantity_chi || 0
+
+function getSourceLabel(transaction) {
+  const sourceCode = String(
+    transaction?.source_code ?? ''
+  ).trim().toUpperCase();
+
+  const labels = {
+    PNJ: 'PNJ',
+    SJC: 'SJC',
+    MI_HONG: 'Mi Hồng',
+    PRIVATE: 'Tư nhân',
+  };
+
+  return labels[sourceCode] ?? (sourceCode || '-');
+}
+
+
+function normalizeText(value) {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getPrivatePriceForTransaction(
+  transaction,
+  privateGoldPrices = [],
+) {
+  const sourceCode = String(
+    transaction?.source_code ??
+    transaction?.market_source_code ??
+    ''
+  )
+    .trim()
+    .toUpperCase();
+
+  if (sourceCode !== 'PRIVATE') {
+    return null;
+  }
+
+  const transactionShopId = String(
+    transaction?.private_shop_id ??
+    transaction?.shop_id ??
+    ''
+  ).trim();
+
+  const transactionShopName = normalizeText(
+    transaction?.location ??
+    transaction?.seller_name ??
+    transaction?.shop_name
   );
 
-  const purchasePrice = Number(
-    transaction.price_per_chi ??
-    transaction.unit_price ??
+  const transactionGoldType = normalizeText(
+    transaction?.gold_type ??
+    transaction?.gold_name ??
+    transaction?.gold_type_name
+  );
+
+  const candidates = (
+    Array.isArray(privateGoldPrices)
+      ? privateGoldPrices
+      : []
+  ).filter((item) => {
+    const priceShopId = String(
+      item?.shop_id ??
+      item?.private_shop_id ??
+      item?.shop?.id ??
+      ''
+    ).trim();
+
+    const priceShopName = normalizeText(
+      item?.shop_name ??
+      item?.shop?.shop_name
+    );
+
+    const sameShopId =
+      transactionShopId &&
+      priceShopId &&
+      transactionShopId === priceShopId;
+
+    const sameShopName =
+      transactionShopName &&
+      priceShopName &&
+      transactionShopName === priceShopName;
+
+    return sameShopId || sameShopName;
+  });
+
+  let matched = candidates.find((item) => {
+    const priceGoldType = normalizeText(
+      item?.gold_type_name ??
+      item?.gold_type ??
+      item?.gold_name
+    );
+
+    return (
+      transactionGoldType &&
+      priceGoldType === transactionGoldType
+    );
+  });
+
+  if (!matched && transactionGoldType) {
+    matched = candidates.find((item) => {
+      const priceGoldType = normalizeText(
+        item?.gold_type_name ??
+        item?.gold_type ??
+        item?.gold_name
+      );
+
+      return (
+        priceGoldType.includes(
+          transactionGoldType
+        ) ||
+        transactionGoldType.includes(
+          priceGoldType
+        )
+      );
+    });
+  }
+
+  if (!matched && candidates.length === 1) {
+    matched = candidates[0];
+  }
+
+  if (!matched) {
+    return null;
+  }
+
+  const currentPrice = Number(
+    matched?.buy_price_per_chi ??
+    matched?.buy_price ??
     0
   );
 
-  const savedBuybackPrice = Number(
-    transaction.sell_price_per_chi || 0
+  if (currentPrice <= 0) {
+    return null;
+  }
+
+  return {
+    currentPrice,
+    priceDate:
+      matched?.price_date ??
+      matched?.updated_at ??
+      matched?.created_at ??
+      null,
+  };
+}
+
+function buildTransactionResult(
+  transaction,
+  calculateTransactionResult,
+  privateGoldPrices,
+) {
+  const baseResult =
+    typeof calculateTransactionResult ===
+      'function'
+      ? calculateTransactionResult(
+          transaction
+        )
+      : {};
+
+  if (
+    Number(
+      baseResult?.currentPrice ?? 0
+    ) > 0
+  ) {
+    return baseResult;
+  }
+
+  const privatePrice =
+    getPrivatePriceForTransaction(
+      transaction,
+      privateGoldPrices
+    );
+
+  if (!privatePrice) {
+    return baseResult;
+  }
+
+  const quantity = Number(
+    transaction?.quantity_chi ?? 0
   );
 
-  const hasSavedBuybackPrice =
-    savedBuybackPrice > 0;
+  const purchasePrice = Number(
+    transaction?.price_per_chi ??
+    transaction?.unit_price ??
+    0
+  );
 
-  const profit = hasSavedBuybackPrice
-    ? (
-      savedBuybackPrice -
-      purchasePrice
-    ) * quantity
-    : 0;
+  const originalValue =
+    quantity * purchasePrice;
 
-  const investedAmount =
-    purchasePrice * quantity;
+  const currentValue =
+    quantity *
+    privatePrice.currentPrice;
+
+  const profit =
+    currentValue - originalValue;
 
   const profitPercent =
-    hasSavedBuybackPrice &&
-      investedAmount > 0
-      ? (
-        profit /
-        investedAmount
-      ) * 100
+    originalValue > 0
+      ? (profit / originalValue) * 100
       : 0;
 
   return {
-    hasSavedBuybackPrice,
+    ...baseResult,
+    originalValue,
+    currentValue,
+    currentPrice:
+      privatePrice.currentPrice,
     profit,
     profitPercent,
+    hasMarketPrice: true,
+    isLiveMarketPrice: false,
+    priceSource: 'private-latest',
+    priceDate:
+      privatePrice.priceDate,
   };
 }
 
 function TransactionTable({
   loading,
   transactions,
+  privateGoldPrices = [],
   calculateTransactionResult,
   onEdit,
   onDelete,
@@ -64,9 +246,11 @@ function TransactionTable({
   const mobileTotalPages = Math.max(1, transactions.length);
   const mobileTransaction = transactions[mobilePage - 1] || null;
   const mobileResult = mobileTransaction
-    ? calculateSavedTransactionResult(
-      mobileTransaction
-    )
+    ? buildTransactionResult(
+        mobileTransaction,
+        calculateTransactionResult,
+        privateGoldPrices
+      )
     : null;
 
   useEffect(() => {
@@ -97,8 +281,8 @@ function TransactionTable({
                     <th>Loại</th>
                     <th>Vàng</th>
                     <th>Số chỉ</th>
-                    <th>Giá tại thời điểm mua</th>
-                    <th>Giá cửa hàng thu lại lúc giao dịch</th>
+                    <th>Giá mua lúc giao dịch</th>
+                    <th>Giá thu lại hiện tại</th>
                     <th>Nơi mua/bán</th>
                     <th>Lời/lỗ</th>
                     <th>Lời/lỗ %</th>
@@ -110,8 +294,10 @@ function TransactionTable({
                 <tbody>
                   {transactions.map((transaction) => {
                     const result =
-                      calculateSavedTransactionResult(
-                        transaction
+                      buildTransactionResult(
+                        transaction,
+                        calculateTransactionResult,
+                        privateGoldPrices
                       );
 
                     return (
@@ -131,7 +317,12 @@ function TransactionTable({
                           </span>
                         </td>
 
-                        <td>{transaction.gold_type}</td>
+                        <td>
+                          <div>{transaction.gold_type}</div>
+                          <small className="transaction-source-label">
+                            {getSourceLabel(transaction)}
+                          </small>
+                        </td>
 
                         <td>
                           {Number(transaction.quantity_chi || 0)}
@@ -141,14 +332,22 @@ function TransactionTable({
                           {formatMoney(transaction.price_per_chi)}
                         </td>
 
-                        <td title="Giá cửa hàng thu lại đã lưu cùng giao dịch">
+
+                        <td title="Giá mua lại mới nhất dùng để tính lời/lỗ">
                           {Number(
-                            transaction.sell_price_per_chi || 0
+                            result.currentPrice || 0
                           ) > 0
-                            ? `${formatMoney(
-                              transaction.sell_price_per_chi
-                            )} VND/chỉ`
-                            : 'Chưa có giá'}
+                            ? (
+                              <>
+                                {formatMoney(result.currentPrice)} VND/chỉ
+                                {result.priceDate && (
+                                  <small className="transaction-price-date">
+                                    Cập nhật {new Date(result.priceDate).toLocaleDateString('vi-VN')}
+                                  </small>
+                                )}
+                              </>
+                            )
+                            : 'Chưa có giá hiện tại'}
                         </td>
 
                         <td>
@@ -164,7 +363,7 @@ function TransactionTable({
 
                         <td
                           className={
-                            result.hasSavedBuybackPrice
+                            result.hasMarketPrice
                               ? (
                                 result.profit >= 0
                                   ? 'profit'
@@ -173,7 +372,7 @@ function TransactionTable({
                               : ''
                           }
                         >
-                          {result.hasSavedBuybackPrice
+                          {result.hasMarketPrice
                             ? `${formatMoney(
                               result.profit
                             )} VND`
@@ -182,7 +381,7 @@ function TransactionTable({
 
                         <td
                           className={
-                            result.hasSavedBuybackPrice
+                            result.hasMarketPrice
                               ? (
                                 result.profitPercent >= 0
                                   ? 'profit'
@@ -191,7 +390,7 @@ function TransactionTable({
                               : ''
                           }
                         >
-                          {result.hasSavedBuybackPrice
+                          {result.hasMarketPrice
                             ? `${result.profitPercent.toFixed(
                               2
                             )}%`
@@ -261,7 +460,12 @@ function TransactionTable({
 
                       <tr>
                         <th>Vàng</th>
-                        <td>{mobileTransaction.gold_type}</td>
+                        <td>
+                          <div>{mobileTransaction.gold_type}</div>
+                          <small className="transaction-source-label">
+                            {getSourceLabel(mobileTransaction)}
+                          </small>
+                        </td>
                       </tr>
 
                       <tr>
@@ -286,14 +490,30 @@ function TransactionTable({
 
                       <tr>
                         <th>Giá thu lại lúc giao dịch</th>
-                        <td title="Giá cửa hàng thu lại đã lưu cùng giao dịch">
+                        <td>
+                          {Number(mobileTransaction.sell_price_per_chi || 0) > 0
+                            ? `${formatMoney(mobileTransaction.sell_price_per_chi)} VND/chỉ`
+                            : '-'}
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <th>Giá thu lại hiện tại</th>
+                        <td title="Giá mua lại mới nhất dùng để tính lời/lỗ">
                           {Number(
-                            mobileTransaction.sell_price_per_chi || 0
+                            mobileResult.currentPrice || 0
                           ) > 0
-                            ? `${formatMoney(
-                              mobileTransaction.sell_price_per_chi
-                            )} VND/chỉ`
-                            : 'Chưa có giá'}
+                            ? (
+                              <>
+                                {formatMoney(mobileResult.currentPrice)} VND/chỉ
+                                {mobileResult.priceDate && (
+                                  <small className="transaction-price-date">
+                                    Cập nhật {new Date(mobileResult.priceDate).toLocaleDateString('vi-VN')}
+                                  </small>
+                                )}
+                              </>
+                            )
+                            : 'Chưa có giá hiện tại'}
                         </td>
                       </tr>
 
@@ -306,7 +526,7 @@ function TransactionTable({
                         <th>Lời/lỗ</th>
                         <td
                           className={
-                            mobileResult.hasSavedBuybackPrice
+                            mobileResult.hasMarketPrice
                               ? (
                                 mobileResult.profit >= 0
                                   ? 'profit'
@@ -315,7 +535,7 @@ function TransactionTable({
                               : ''
                           }
                         >
-                          {mobileResult.hasSavedBuybackPrice
+                          {mobileResult.hasMarketPrice
                             ? `${formatMoney(
                               mobileResult.profit
                             )} VND`
@@ -327,7 +547,7 @@ function TransactionTable({
                         <th>Lời/lỗ %</th>
                         <td
                           className={
-                            mobileResult.hasSavedBuybackPrice
+                            mobileResult.hasMarketPrice
                               ? (
                                 mobileResult.profitPercent >= 0
                                   ? 'profit'
@@ -336,7 +556,7 @@ function TransactionTable({
                               : ''
                           }
                         >
-                          {mobileResult.hasSavedBuybackPrice
+                          {mobileResult.hasMarketPrice
                             ? (
                               <>
                                 {mobileResult.profitPercent >= 0

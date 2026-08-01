@@ -20,6 +20,7 @@ import TransactionTable from './components/TransactionTable';
 import PriceHistoryTable from './components/PriceHistoryTable';
 import TransactionForm from './components/TransactionForm';
 import CurrentPriceForm from './components/CurrentPriceForm';
+import PrivateGoldPriceManager from './components/PrivateGoldPriceManager';
 import LocalGoldChart from './components/LocalGoldChart';
 import WorldGoldComparison from './components/WorldGoldComparison';
 import AppHeader from './components/AppHeader';
@@ -29,6 +30,11 @@ import PublicChat from './components/public-chat/PublicChat';
 import AIChatPage from "./components/ai-chat/AIChatPage";
 import MarketNews from "./components/market-news/MarketNews";
 import { supabase } from './supabaseClient';
+import {
+  findOrCreatePrivateGoldShop,
+  getPrivateGoldPrices,
+  getPrivateGoldPriceHistory,
+} from './services/privateGoldPriceService';
 
 
 import {
@@ -85,7 +91,7 @@ const MOBILE_TABS = [
   },
   {
     id: 'charts',
-    label: 'Biểu đồ',
+    label: 'Phân tích',
     icon: ChartNoAxesCombined,
   },
   {
@@ -282,7 +288,7 @@ function App() {
   const [
     activeGoldTab,
     setActiveGoldTab,
-  ] = useState('local');
+  ] = useState('overview');
 
   const [
     activeMobileTab,
@@ -1090,6 +1096,48 @@ function App() {
     }
   }
 
+  const [privateGoldPrices, setPrivateGoldPrices] =
+    useState([]);
+
+  const [privateGoldPriceHistory, setPrivateGoldPriceHistory] =
+    useState([]);
+
+  const [privatePriceOpen, setPrivatePriceOpen] =
+    useState(false);
+
+  async function reloadPrivateGoldPrices() {
+    if (!user?.id) {
+      setPrivateGoldPrices([]);
+      setPrivateGoldPriceHistory([]);
+      return [];
+    }
+
+    try {
+      const [latestRows, historyRows] = await Promise.all([
+        getPrivateGoldPrices(user.id),
+        getPrivateGoldPriceHistory(user.id),
+      ]);
+
+      setPrivateGoldPrices(Array.isArray(latestRows) ? [...latestRows] : []);
+      setPrivateGoldPriceHistory(Array.isArray(historyRows) ? [...historyRows] : []);
+      return latestRows;
+    } catch (error) {
+      console.error('Không thể tải giá tiệm vàng:', error);
+      setPrivateGoldPrices([]);
+      setPrivateGoldPriceHistory([]);
+      return [];
+    }
+  }
+
+  async function handlePrivateGoldPriceChanged() {
+    await reloadPrivateGoldPrices();
+    await reloadGoldData();
+  }
+
+  useEffect(() => {
+    reloadPrivateGoldPrices();
+  }, [user?.id]);
+
   /*
    * Thống kê danh mục.
    *
@@ -1101,8 +1149,78 @@ function App() {
     calculateTransactionResult,
   } = useGoldSummary(
     transactions,
-    marketCurrentPrices
+    marketCurrentPrices,
+    privateGoldPrices
   );
+
+  const privateHistorySources = useMemo(() => {
+    const sourceMap = new Map();
+
+    privateGoldPriceHistory.forEach((item) => {
+      const shopId = String(item.shop_id ?? '').trim();
+      if (!shopId || sourceMap.has(shopId)) return;
+      sourceMap.set(shopId, {
+        code: `PRIVATE:${shopId}`,
+        label: `🏪 ${item.shop_name || 'Tiệm tư nhân'}`,
+        shopName: item.shop_name || 'Tiệm tư nhân',
+        isPrivate: true,
+      });
+    });
+
+    return Array.from(sourceMap.values()).sort((a, b) =>
+      a.shopName.localeCompare(b.shopName, 'vi'),
+    );
+  }, [privateGoldPriceHistory]);
+
+  const historySources = useMemo(() => [
+    { code: 'SJC', label: '🥇 SJC' },
+    { code: 'MI_HONG', label: '🏪 Mi Hồng' },
+    { code: 'PNJ', label: '💍 PNJ' },
+    ...privateHistorySources,
+  ], [privateHistorySources]);
+
+  const privateHistoryWithChanges = useMemo(() => {
+    const groups = new Map();
+
+    privateGoldPriceHistory.forEach((item) => {
+      const key = `${item.shop_id}::${normalizeProductName(item.gold_type_name)}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(item);
+    });
+
+    const result = [];
+    groups.forEach((rows) => {
+      const sorted = [...rows].sort((a, b) =>
+        new Date(a.price_date ?? a.created_at).getTime() -
+        new Date(b.price_date ?? b.created_at).getTime(),
+      );
+
+      sorted.forEach((item, index) => {
+        const previous = index > 0 ? sorted[index - 1] : null;
+        const buyPrice = Number(item.buy_price_per_chi ?? item.buy_price ?? 0);
+        const sellPrice = Number(item.sell_price_per_chi ?? item.sell_price ?? 0);
+        result.push({
+          ...item,
+          source_code: `PRIVATE:${item.shop_id}`,
+          product_name: item.gold_type_name,
+          buy_price: buyPrice,
+          sell_price: sellPrice,
+          source_updated_at: item.price_date,
+          buyPriceChange: previous
+            ? buyPrice - Number(previous.buy_price_per_chi ?? previous.buy_price ?? 0)
+            : null,
+          sellPriceChange: previous
+            ? sellPrice - Number(previous.sell_price_per_chi ?? previous.sell_price ?? 0)
+            : null,
+        });
+      });
+    });
+
+    return result.sort((a, b) =>
+      new Date(b.price_date ?? b.created_at).getTime() -
+      new Date(a.price_date ?? a.created_at).getTime(),
+    );
+  }, [privateGoldPriceHistory]);
 
   const [historyPage, setHistoryPage] =
     useState(1);
@@ -1122,20 +1240,20 @@ function App() {
    */
   const priceHistoryWithChanges =
     useMemo(() => {
-      const selectedSource =
-        normalizeSourceCode(
-          activeHistorySource
+      if (String(activeHistorySource).startsWith('PRIVATE:')) {
+        return privateHistoryWithChanges.filter(
+          (item) => item.source_code === activeHistorySource,
         );
+      }
 
-      return allShopPriceHistoryWithChanges
-        .filter(
-          (item) =>
-            getItemSourceCode(item) ===
-            selectedSource
-        );
+      const selectedSource = normalizeSourceCode(activeHistorySource);
+      return allShopPriceHistoryWithChanges.filter(
+        (item) => getItemSourceCode(item) === selectedSource,
+      );
     }, [
       activeHistorySource,
       allShopPriceHistoryWithChanges,
+      privateHistoryWithChanges,
     ]);
 
   const historyTotalPages =
@@ -1273,6 +1391,7 @@ function App() {
   const defaultTransactionForm = {
     transaction_type: 'BUY',
     source_code: 'PNJ',
+    private_shop_id: null,
     gold_type: 'Nhẫn 9999',
     quantity_chi: '',
     price_per_chi: '',
@@ -1292,6 +1411,7 @@ function App() {
     defaultTransactionForm
   );
 
+
   /*
    * Ghi nhớ cửa hàng + loại vàng đã được tự động nạp giá.
    * Mục đích:
@@ -1308,6 +1428,10 @@ function App() {
   ) {
     const normalizedSource =
       normalizeSourceCode(sourceCode);
+
+    if (normalizedSource === 'PRIVATE') {
+      return 0;
+    }
 
     const normalizedGoldType =
       normalizeProductName(goldType);
@@ -1496,8 +1620,13 @@ function App() {
 
     const sellPrice = Number(
       transactionForm
-        .sell_price_per_chi
+        .sell_price_per_chi || 0
     );
+
+    const isPrivateSource =
+      normalizeSourceCode(
+        transactionForm.source_code
+      ) === 'PRIVATE';
 
     if (
       !transactionForm
@@ -1530,27 +1659,40 @@ function App() {
       return;
     }
 
-    if (
-      !sellPrice ||
-      sellPrice <= 0
-    ) {
+    if (!sellPrice || sellPrice <= 0) {
       setMessageType('error');
       setMessage(
-        'Vui lòng nhập giá bán ra hợp lệ.'
+        isPrivateSource
+          ? 'Vui lòng nhập giá tiệm thu lại tại thời điểm giao dịch.'
+          : 'Vui lòng nhập giá cửa hàng thu lại hợp lệ.'
       );
       return;
     }
 
-    const payload = {
+    if (
+      isPrivateSource &&
+      !transactionForm.location.trim()
+    ) {
+      setMessageType('error');
+      setMessage(
+        'Vui lòng nhập tên tiệm vàng tư nhân.'
+      );
+      return;
+    }
+
+    let payload = {
       user_id: user.id,
       transaction_type: transactionForm.transaction_type,
       gold_name: transactionForm.gold_type.trim(),
       quantity_chi: quantity,
       unit_price: price,
       sell_price_per_chi:
-        sellPrice,
+        sellPrice > 0
+          ? sellPrice
+          : null,
       source_code:
         transactionForm.source_code,
+      private_shop_id: null,
       fee_amount: 0,
       total_amount: quantity * price,
       transaction_date: transactionForm.transaction_date,
@@ -1561,6 +1703,20 @@ function App() {
     try {
       const wasEditing =
         Boolean(editingId);
+
+      let privateShop = null;
+
+      if (isPrivateSource) {
+        privateShop = await findOrCreatePrivateGoldShop({
+          userId: user.id,
+          shopName: transactionForm.location,
+        });
+
+        payload = {
+          ...payload,
+          private_shop_id: privateShop.id,
+        };
+      }
 
       if (editingId) {
         await updateGoldTransaction({
@@ -1577,6 +1733,11 @@ function App() {
           payload
         );
       }
+      /*
+       * Giao dịch tư nhân chỉ lưu giá tại thời điểm giao dịch.
+       * Không dùng mức giá này làm giá hiện tại. Giá hiện tại chỉ
+       * được tạo khi user nhập trong “Giá tiệm vàng của tôi”.
+       */
 
       const defaultBuybackPrice =
         getCurrentBuybackPrice(
@@ -1630,13 +1791,19 @@ function App() {
       transaction_type:
         tx.transaction_type,
 
+      private_shop_id:
+        tx.private_shop_id ?? null,
+
       source_code:
         tx.source_code ??
         tx.market_source_code ??
         'PNJ',
 
       gold_type:
-        tx.gold_type ?? '',
+        tx.gold_type ??
+        tx.gold_name ??
+        tx.gold_type_name ??
+        '',
 
       quantity_chi:
         String(
@@ -1645,7 +1812,9 @@ function App() {
 
       price_per_chi:
         String(
-          tx.price_per_chi ?? ''
+          tx.price_per_chi ??
+          tx.unit_price ??
+          ''
         ),
 
       sell_price_per_chi:
@@ -1661,7 +1830,10 @@ function App() {
           .slice(0, 10),
 
       location:
-        tx.location ?? '',
+        tx.location ??
+        tx.seller_name ??
+        tx.shop_name ??
+        '',
 
       note:
         tx.note ?? '',
@@ -1807,11 +1979,12 @@ function App() {
     return (
       <PriceHistoryTable
         activeSource={activeHistorySource}
+        sources={historySources}
         onSourceChange={
           setActiveHistorySource
         }
         priceHistory={
-          priceHistory
+          priceHistoryWithChanges
         }
         paginatedPriceHistory={
           paginatedPriceHistory
@@ -1863,6 +2036,13 @@ function App() {
           priceChartData
         }
         theme={displayTheme}
+        transactions={transactions}
+        summary={summary}
+        calculateTransactionResult={
+          calculateTransactionResult
+        }
+        user={user}
+        onLoginRequired={openLoginScreen}
       />
     );
   }
@@ -1963,6 +2143,9 @@ function App() {
               onPriceUpdated={
                 reloadGoldData
               }
+              onOpenPrivateGoldPrices={() =>
+                setPrivatePriceOpen(true)
+              }
             />
           </section>
         );
@@ -1983,6 +2166,9 @@ function App() {
                 loading={loading}
                 transactions={
                   transactions
+                }
+                privateGoldPrices={
+                  privateGoldPrices
                 }
                 calculateTransactionResult={
                   calculateTransactionResult
@@ -2142,8 +2328,23 @@ function App() {
     );
   }
 
+
   return (
     <>
+      <PrivateGoldPriceManager
+        open={privatePriceOpen}
+        user={user}
+        prices={privateGoldPrices}
+        transactions={transactions}
+        onClose={() =>
+          setPrivatePriceOpen(false)
+        }
+        onChanged={
+          handlePrivateGoldPriceChanged
+        }
+        confirm={confirm}
+      />
+
       <div
         ref={appHeaderRef}
         className="app-header-fixed"
@@ -2340,18 +2541,23 @@ function App() {
                       />
                     </LoginRequiredOverlay>
 
-                    <CurrentPriceForm
-                      user={user}
-                      prices={
-                        marketCurrentPrices
-                      }
-                      priceHistory={
-                        allShopPriceHistoryWithChanges
-                      }
-                      onPriceUpdated={
-                        reloadGoldData
-                      }
-                    />
+                    <div className="current-price-column">
+                      <CurrentPriceForm
+                        user={user}
+                        prices={
+                          marketCurrentPrices
+                        }
+                        priceHistory={
+                          allShopPriceHistoryWithChanges
+                        }
+                        onPriceUpdated={
+                          reloadGoldData
+                        }
+                        onOpenPrivateGoldPrices={() =>
+                          setPrivatePriceOpen(true)
+                        }
+                      />
+                    </div>
                   </div>
 
                   <LoginRequiredOverlay
@@ -2364,6 +2570,9 @@ function App() {
                     <TransactionTable
                       loading={loading}
                       transactions={transactions}
+                      privateGoldPrices={
+                        privateGoldPrices
+                      }
                       calculateTransactionResult={
                         calculateTransactionResult
                       }

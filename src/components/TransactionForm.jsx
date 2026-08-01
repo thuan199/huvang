@@ -36,6 +36,11 @@ const GOLD_SOURCES = [
       },
     ],
   },
+  {
+    code: 'PRIVATE',
+    label: '🏪 Tư nhân',
+    products: [],
+  },
 ];
 
 function normalizeSourceCode(value) {
@@ -167,14 +172,19 @@ function TransactionForm({
   const availableProducts =
     selectedSource?.products ?? [];
 
+  const isPrivateSource =
+    selectedSourceCode === 'PRIVATE';
+
   const selectedGoldType =
-    availableProducts.some(
-      (product) =>
-        product.value ===
-        transactionForm.gold_type,
-    )
-      ? transactionForm.gold_type
-      : availableProducts[0]?.value ?? '';
+    isPrivateSource
+      ? transactionForm.gold_type ?? ''
+      : availableProducts.some(
+          (product) =>
+            product.value ===
+            transactionForm.gold_type,
+        )
+        ? transactionForm.gold_type
+        : availableProducts[0]?.value ?? '';
 
   function updateFormField(
     fieldName,
@@ -207,12 +217,16 @@ function TransactionForm({
     const firstProduct =
       newSource.products?.[0];
 
-    const buybackPrice =
-      getMarketBuybackPrice(
-        marketCurrentPrices,
-        sourceCode,
-        firstProduct?.value,
-      );
+    const isPrivate =
+      sourceCode === 'PRIVATE';
+
+    const buybackPrice = isPrivate
+      ? 0
+      : getMarketBuybackPrice(
+          marketCurrentPrices,
+          sourceCode,
+          firstProduct?.value,
+        );
 
     setTransactionForm(
       (currentForm) => ({
@@ -221,8 +235,12 @@ function TransactionForm({
         source_code:
           sourceCode,
 
+        private_shop_id: null,
+
         gold_type:
-          firstProduct?.value ?? '',
+          isPrivate
+            ? ''
+            : firstProduct?.value ?? '',
 
         sell_price_per_chi:
           buybackPrice > 0
@@ -326,28 +344,72 @@ function TransactionForm({
         )}
       </select>
 
+      {isPrivateSource && (
+        <>
+          <label htmlFor="private-shop-name">
+            Tên tiệm vàng tư nhân
+            <span aria-hidden="true"> *</span>
+          </label>
+
+          <input
+            id="private-shop-name"
+            type="text"
+            value={transactionForm.location ?? ''}
+            onChange={(event) =>
+              updateFormField(
+                'location',
+                event.target.value,
+              )
+            }
+            placeholder="Ví dụ: Khôi Nguyên Bình Triệu"
+            autoComplete="organization"
+            required
+          />
+
+          <p className="transaction-price-note">
+            Nhập đúng tên tiệm bạn đã mua vàng. Tên này sẽ
+            được dùng để liên kết với mục “Giá tiệm vàng của tôi”.
+          </p>
+        </>
+      )}
+
       <label htmlFor="gold-type">
         Loại vàng
       </label>
 
-      <select
-        id="gold-type"
-        value={selectedGoldType}
-        onChange={
-          handleGoldTypeChange
-        }
-      >
-        {availableProducts.map(
-          (product) => (
-            <option
-              key={product.value}
-              value={product.value}
-            >
-              {product.label}
-            </option>
-          ),
-        )}
-      </select>
+      {isPrivateSource ? (
+        <input
+          id="gold-type"
+          type="text"
+          value={selectedGoldType}
+          onChange={(event) =>
+            updateFormField(
+              'gold_type',
+              event.target.value,
+            )
+          }
+          placeholder="Ví dụ: Nhẫn trơn 9999, vàng 24K..."
+        />
+      ) : (
+        <select
+          id="gold-type"
+          value={selectedGoldType}
+          onChange={
+            handleGoldTypeChange
+          }
+        >
+          {availableProducts.map(
+            (product) => (
+              <option
+                key={product.value}
+                value={product.value}
+              >
+                {product.label}
+              </option>
+            ),
+          )}
+        </select>
+      )}
 
       {selectedSourceCode ===
         'SJC' && (
@@ -403,12 +465,13 @@ function TransactionForm({
       />
 
       <label htmlFor="sell-price">
-        Giá cửa hàng thu lại mỗi chỉ
+        Giá tiệm thu lại tại thời điểm giao dịch
       </label>
 
       <p className="transaction-price-note">
-        Giá được tự động lấy theo cửa hàng và loại vàng đã chọn.
-        Bạn vẫn có thể điều chỉnh lại trước khi lưu.
+        {isPrivateSource
+          ? 'Nhập giá tiệm thu lại tại đúng thời điểm bạn mua. Giá này được lưu vào lịch sử giao dịch; giá hiện tại sẽ được quản lý riêng trong mục “Giá tiệm vàng của tôi”.'
+          : 'Giá được tự động lấy theo cửa hàng và loại vàng đã chọn. Bạn vẫn có thể điều chỉnh lại trước khi lưu.'}
       </p>
 
       <input
@@ -426,7 +489,7 @@ function TransactionForm({
             event.target.value,
           )
         }
-        placeholder="Nhập giá cửa hàng thu lại"
+        placeholder="Nhập giá tiệm thu lại lúc giao dịch"
       />
 
       <label htmlFor="transaction-date">
@@ -448,24 +511,27 @@ function TransactionForm({
         }
       />
 
-      <label htmlFor="transaction-location">
-        Nơi mua/bán
-      </label>
 
-      <input
-        id="transaction-location"
-        type="text"
-        value={
-          transactionForm.location ?? ''
-        }
-        onChange={(event) =>
-          updateFormField(
-            'location',
-            event.target.value,
-          )
-        }
-        placeholder="Ví dụ: PNJ Tô Ngọc Vân, Chợ Bà Chiểu..."
-      />
+      {!isPrivateSource && (
+        <>
+          <label htmlFor="transaction-location">
+            Nơi mua/bán
+          </label>
+
+          <input
+            id="transaction-location"
+            type="text"
+            value={transactionForm.location ?? ''}
+            onChange={(event) =>
+              updateFormField(
+                'location',
+                event.target.value,
+              )
+            }
+            placeholder="Ví dụ: PNJ Tô Ngọc Vân, Chợ Bà Chiểu..."
+          />
+        </>
+      )}
 
       <label htmlFor="transaction-note">
         Ghi chú

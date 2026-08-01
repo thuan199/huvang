@@ -3,1185 +3,461 @@ import {
   useMemo,
   useRef,
   useState,
-} from "react";
+} from 'react';
 
 import {
-  CloudDownload,
-  RefreshCcw,
-  CheckCircle2,
-  Info,
   AlertCircle,
+  CheckCircle2,
+  CloudDownload,
+  Info,
+  RefreshCcw,
+  Store,
   X,
-  TrendingUp,
-  TrendingDown,
-  Zap,
-} from "lucide-react";
+} from 'lucide-react';
 
-import {
-  formatMoney,
-} from "../utils/formatters";
-
-import {
-  syncAllGoldPrices,
-} from "../services/goldDataService.js";
+import { formatMoney } from '../utils/formatters';
+import { syncAllGoldPrices } from '../services/goldDataService.js';
 
 function normalizeSourceCode(value) {
-  return String(value ?? "")
+  return String(value ?? '')
     .trim()
     .toUpperCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/Đ/g, "D")
-    .replace(/[^A-Z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "")
-    .replace(/^MIHONG$/, "MI_HONG");
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/Đ/g, 'D')
+    .replace(/[^A-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .replace(/^MIHONG$/, 'MI_HONG');
+}
+
+function normalizeText(value) {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function getSourceCode(item) {
-  const nestedSource =
-    Array.isArray(item?.source)
-      ? item.source[0]
-      : item?.source;
-
-  const joinedSource =
-    Array.isArray(
-      item?.gold_price_sources
-    )
-      ? item.gold_price_sources[0]
-      : item?.gold_price_sources;
+  const nestedSource = Array.isArray(item?.source)
+    ? item.source[0]
+    : item?.source;
+  const joinedSource = Array.isArray(item?.gold_price_sources)
+    ? item.gold_price_sources[0]
+    : item?.gold_price_sources;
 
   return normalizeSourceCode(
     item?.source_code ??
-    item?.sourceCode ??
-    nestedSource?.code ??
-    nestedSource?.source_code ??
-    joinedSource?.code ??
-    joinedSource?.source_code ??
-    item?.source_name ??
-    item?.source
+      item?.sourceCode ??
+      nestedSource?.code ??
+      nestedSource?.source_code ??
+      joinedSource?.code ??
+      joinedSource?.source_code ??
+      item?.source_name ??
+      item?.source,
   );
 }
 
-function getSourceLabel(sourceCode) {
-  switch (sourceCode) {
-    case "PNJ":
-      return "PNJ";
-
-    case "MI_HONG":
-      return "Mi Hồng";
-
-    case "SJC":
-      return "SJC";
-
-    default:
-      return (
-        sourceCode ||
-        "Không xác định"
-      );
-  }
+function getSourceLabel(code) {
+  return code === 'MI_HONG' ? 'Mi Hồng' : code || 'Không xác định';
 }
 
 function getProductName(item) {
-  const sourceCode =
-    getSourceCode(item);
-
-  if (sourceCode === "SJC") {
-    return (
-      item?.gold_type_name ??
-      item?.product_name ??
-      item?.gold_type ??
-      "Vàng miếng SJC"
-    );
+  const sourceCode = getSourceCode(item);
+  if (sourceCode === 'SJC') {
+    return item?.gold_type_name ?? item?.product_name ?? item?.gold_type ?? 'Vàng miếng SJC 1 lượng';
   }
 
-  return (
-    item?.gold_type_name ??
-    item?.product_name ??
-    item?.source_product_name ??
-    item?.gold_type ??
-    "Loại vàng"
-  );
+  return item?.gold_type_name ?? item?.product_name ?? item?.source_product_name ?? item?.gold_type ?? 'Loại vàng';
 }
 
 function getBuyPrice(item) {
   return Number(
     item?.buy_price ??
-    item?.buy_price_per_chi ??
-    item?.current_price_per_chi ??
-    item?.price_per_chi ??
-    0
+      item?.buy_price_per_chi ??
+      item?.current_price_per_chi ??
+      item?.price_per_chi ??
+      0,
   );
 }
 
 function getSellPrice(item) {
-  return Number(
-    item?.sell_price ??
-    item?.sell_price_per_chi ??
-    0
-  );
+  return Number(item?.sell_price ?? item?.sell_price_per_chi ?? 0);
 }
 
-/*
- * Ưu tiên thời điểm cập nhật từ nguồn giá.
- * source_updated_at / recorded_at phản ánh đúng thời điểm
- * giá được ghi nhận hơn updated_at của bản ghi.
- */
 function getUpdatedAt(item) {
-  return (
-    item?.source_updated_at ??
-    item?.recorded_at ??
-    item?.fetched_at ??
-    item?.updated_at ??
-    item?.created_at ??
-    null
-  );
-}
+  /*
+   * Một số nguồn, đặc biệt Mi Hồng, có thể giữ
+   * source_updated_at cũ dù bản ghi vừa được đồng bộ.
+   * Vì vậy không lấy field đầu tiên có dữ liệu, mà chọn
+   * thời gian hợp lệ mới nhất trong tất cả các field.
+   */
+  const candidates = [
+    item?.source_updated_at,
+    item?.price_updated_at,
+    item?.last_updated_at,
+    item?.recorded_at,
+    item?.fetched_at,
+    item?.updated_at,
+    item?.created_at,
+  ];
 
-function getTimestamp(value) {
-  if (!value) {
-    return 0;
-  }
+  let latestValue = null;
+  let latestTime = 0;
 
-  const timestamp =
-    new Date(value).getTime();
+  for (const value of candidates) {
+    const time = getTime(value);
 
-  return Number.isFinite(timestamp)
-    ? timestamp
-    : 0;
-}
-
-function formatUpdatedTime(value) {
-  if (!value) {
-    return "Chưa xác định";
-  }
-
-  const date = new Date(value);
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-    return "Chưa xác định";
-  }
-
-  return new Intl.DateTimeFormat(
-    "vi-VN",
-    {
-      dateStyle: "short",
-      timeStyle: "short",
+    if (time > latestTime) {
+      latestTime = time;
+      latestValue = value;
     }
-  ).format(date);
+  }
+
+  return latestValue;
+}
+
+function getTime(value) {
+  const time = new Date(value ?? 0).getTime();
+  return Number.isFinite(time) ? time : 0;
 }
 
 function formatRelativeTime(value) {
-  if (!value) {
-    return "Chưa xác định";
-  }
+  const time = getTime(value);
+  if (!time) return 'Chưa xác định';
 
-  const date = new Date(value);
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-    return "Chưa xác định";
-  }
-
-  const diffMs =
-    Math.max(
-      0,
-      Date.now() - date.getTime()
-    );
-
-  const diffMinutes =
-    Math.floor(
-      diffMs / 60000
-    );
-
-  if (diffMinutes < 1) {
-    return "Vừa cập nhật";
-  }
-
-  if (diffMinutes < 60) {
-    return `Cập nhật ${diffMinutes} phút trước`;
-  }
-
-  const diffHours =
-    Math.floor(
-      diffMinutes / 60
-    );
-
-  if (diffHours < 24) {
-    return `Cập nhật ${diffHours} giờ trước`;
-  }
-
-  const diffDays =
-    Math.floor(
-      diffHours / 24
-    );
-
-  if (diffDays < 7) {
-    return `Cập nhật ${diffDays} ngày trước`;
-  }
-
-  return formatUpdatedTime(value);
+  const seconds = Math.max(0, Math.floor((Date.now() - time) / 1000));
+  if (seconds < 60) return 'Cập nhật vừa xong';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `Cập nhật ${minutes} phút trước`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Cập nhật ${hours} giờ trước`;
+  const days = Math.floor(hours / 24);
+  return `Cập nhật ${days} ngày trước`;
 }
 
-function normalizeProductName(value) {
-  return String(value ?? "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/g, "d")
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function findCurrentHistoryRow(
-  currentItem,
-  priceHistory = []
-) {
-  const currentSource =
-    currentItem.normalizedSourceCode;
-
-  const currentProduct =
-    normalizeProductName(
-      currentItem.normalizedProductName
-    );
-
-  const currentTimestamp =
-    getTimestamp(
-      currentItem.normalizedUpdatedAt
-    );
-
-  const candidates = (
-    Array.isArray(priceHistory)
-      ? priceHistory
-      : []
-  )
-    .filter((historyItem) => {
-      const historySource =
-        getSourceCode(historyItem);
-
-      const historyProduct =
-        normalizeProductName(
-          getProductName(historyItem)
-        );
-
-      return (
-        historySource === currentSource &&
-        historyProduct === currentProduct
-      );
-    })
-    .sort((first, second) => {
-      return (
-        getTimestamp(
-          getUpdatedAt(second)
-        ) -
-        getTimestamp(
-          getUpdatedAt(first)
-        )
-      );
-    });
-
-  if (candidates.length === 0) {
-    return null;
-  }
-
-  const exactRow =
-    candidates.find(
-      (item) =>
-        currentTimestamp > 0 &&
-        getTimestamp(
-          getUpdatedAt(item)
-        ) === currentTimestamp
-    );
-
-  if (exactRow) {
-    return exactRow;
-  }
-
-  return (
-    candidates.find(
-      (item) =>
-        currentTimestamp <= 0 ||
-        getTimestamp(
-          getUpdatedAt(item)
-        ) <= currentTimestamp
-    ) ??
-    candidates[0]
-  );
-}
-
-function AnimatedPrice({
-  value,
-  duration = 480,
-}) {
-  const [displayValue, setDisplayValue] =
-    useState(Number(value) || 0);
-
-  const previousValueRef =
-    useRef(Number(value) || 0);
+function CountUpNumber({ value, duration = 650 }) {
+  const numericValue = Number(value ?? 0);
+  const [displayValue, setDisplayValue] = useState(numericValue);
+  const previousRef = useRef(numericValue);
 
   useEffect(() => {
-    const nextValue =
-      Number(value) || 0;
+    const from = previousRef.current;
+    const to = numericValue;
+    previousRef.current = to;
 
-    const startValue =
-      previousValueRef.current;
-
-    previousValueRef.current =
-      nextValue;
-
-    if (
-      startValue === nextValue ||
-      typeof window === "undefined"
-    ) {
-      setDisplayValue(nextValue);
+    if (!Number.isFinite(to) || from === to) {
+      setDisplayValue(to);
       return undefined;
     }
 
-    const startedAt =
-      performance.now();
+    let frameId;
+    const startedAt = performance.now();
 
-    let animationFrameId = null;
-
-    function animate(currentTime) {
-      const progress =
-        Math.min(
-          1,
-          (currentTime - startedAt) /
-          duration
-        );
-
-      const easedProgress =
-        1 -
-        Math.pow(
-          1 - progress,
-          3
-        );
-
-      const nextDisplayValue =
-        Math.round(
-          startValue +
-          (
-            nextValue -
-            startValue
-          ) *
-          easedProgress
-        );
-
-      setDisplayValue(
-        nextDisplayValue
-      );
-
-      if (progress < 1) {
-        animationFrameId =
-          window.requestAnimationFrame(
-            animate
-          );
-      }
-    }
-
-    animationFrameId =
-      window.requestAnimationFrame(
-        animate
-      );
-
-    return () => {
-      if (animationFrameId) {
-        window.cancelAnimationFrame(
-          animationFrameId
-        );
-      }
+    const animate = (now) => {
+      const progress = Math.min(1, (now - startedAt) / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayValue(Math.round(from + (to - from) * eased));
+      if (progress < 1) frameId = requestAnimationFrame(animate);
     };
-  }, [value, duration]);
+
+    frameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frameId);
+  }, [numericValue, duration]);
+
+  return formatMoney(displayValue);
+}
+
+function PriceDelta({ change }) {
+  if (change === null || change === undefined || !Number.isFinite(Number(change))) {
+    return <div className="current-market-price-item__delta current-market-price-item__delta--flat">— Chưa có lần trước</div>;
+  }
+
+  const numeric = Number(change);
+  const direction = numeric > 0 ? 'up' : numeric < 0 ? 'down' : 'flat';
+  const arrow = numeric > 0 ? '↗' : numeric < 0 ? '↘' : '→';
+  const sign = numeric > 0 ? '+' : '';
 
   return (
-    <>
-      {formatMoney(displayValue)}
-    </>
+    <div className={`current-market-price-item__delta current-market-price-item__delta--${direction}`}>
+      <span>{arrow}</span>
+      <strong>{sign}{formatMoney(numeric)}</strong>
+      <small>so với lần trước</small>
+    </div>
   );
 }
 
-function PriceDelta({
-  value,
-}) {
-  const numericValue =
-    Number(value) || 0;
-
-  if (numericValue > 0) {
-    return (
-      <div className="current-market-price-item__delta-wrapper">
-        <span className="current-market-price-item__delta current-market-price-item__delta--up">
-          <TrendingUp size={13} />
-
-          +{formatMoney(
-            numericValue
-          )}
-        </span>
-
-        <span className="current-market-price-item__delta-note">
-          so với lần trước
-        </span>
-      </div>
-    );
-  }
-
-  if (numericValue < 0) {
-    return (
-      <div className="current-market-price-item__delta-wrapper">
-        <span className="current-market-price-item__delta current-market-price-item__delta--down">
-          <TrendingDown size={13} />
-
-          {formatMoney(
-            numericValue
-          )}
-        </span>
-
-        <span className="current-market-price-item__delta-note">
-          so với lần trước
-        </span>
-      </div>
-    );
-  }
-
-  return null;
-}
-
-function PriceCardSkeleton() {
+function PriceSkeleton() {
   return (
-    <article className="current-market-price-item current-market-price-item--skeleton">
+    <article className="current-market-price-item current-market-price-item--skeleton" aria-hidden="true">
       <div className="current-market-price-item__top">
-        <div className="current-market-price-item__identity">
-          <span className="skeleton-block skeleton-logo" />
-
-          <div className="skeleton-copy">
-            <span className="skeleton-block skeleton-line skeleton-line--medium" />
-            <span className="skeleton-block skeleton-line skeleton-line--short" />
-          </div>
-        </div>
-
-        <span className="skeleton-block skeleton-line skeleton-line--time" />
+        <div className="skeleton-block skeleton-line skeleton-line--medium" />
+        <div className="skeleton-block skeleton-line skeleton-line--time" />
       </div>
-
       <div className="current-market-price-item__values">
-        <div className="current-market-price-item__value-box">
-          <span className="skeleton-block skeleton-line skeleton-line--short" />
-          <span className="skeleton-block skeleton-line skeleton-line--price" />
-        </div>
-
-        <div className="current-market-price-item__value-box">
-          <span className="skeleton-block skeleton-line skeleton-line--short" />
-          <span className="skeleton-block skeleton-line skeleton-line--price" />
-        </div>
+        <div className="current-market-price-item__value-box"><div className="skeleton-block skeleton-line skeleton-line--price" /></div>
+        <div className="current-market-price-item__value-box"><div className="skeleton-block skeleton-line skeleton-line--price" /></div>
       </div>
     </article>
   );
 }
 
 function CurrentPriceForm({
+  user,
   prices = [],
   priceHistory = [],
-  user,
   onPriceUpdated,
+  onOpenPrivateGoldPrices,
 }) {
-  const [
-    isLoadingCurrentPrices,
-    setIsLoadingCurrentPrices,
-  ] = useState(false);
+  const [isLoadingCurrentPrices, setIsLoadingCurrentPrices] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [flashingKeys, setFlashingKeys] = useState({});
+  const toastTimerRef = useRef(null);
+  const previousPriceRef = useRef(new Map());
 
-  const [
-    toast,
-    setToast,
-  ] = useState(null);
+  const normalizedHistory = useMemo(() => {
+    const rows = Array.isArray(priceHistory) ? priceHistory : [];
+    const byProduct = new Map();
 
-  const [
-    updatedSourceCodes,
-    setUpdatedSourceCodes,
-  ] = useState([]);
-
-  const toastTimerRef =
-    useRef(null);
-
-  const updatedTimerRef =
-    useRef(null);
-
-  const normalizedPrices =
-    useMemo(() => {
-      return (
-        Array.isArray(prices)
-          ? prices
-          : []
-      )
-        .map((item) => ({
-          ...item,
-
-          normalizedSourceCode:
-            getSourceCode(item),
-
-          normalizedProductName:
-            getProductName(item),
-
-          normalizedBuyPrice:
-            getBuyPrice(item),
-
-          normalizedSellPrice:
-            getSellPrice(item),
-
-          normalizedUpdatedAt:
-            getUpdatedAt(item),
-        }))
-        .sort((first, second) => {
-          const sourceOrder = {
-            MI_HONG: 1,
-            PNJ: 2,
-            SJC: 3,
-          };
-
-          return (
-            (
-              sourceOrder[
-                first
-                  .normalizedSourceCode
-              ] ?? 99
-            ) -
-            (
-              sourceOrder[
-                second
-                  .normalizedSourceCode
-              ] ?? 99
-            )
-          );
-        });
-    }, [prices]);
-
-  const newestUpdatedTimestamp =
-    useMemo(() => {
-      const timestamps =
-        normalizedPrices
-          .map((item) =>
-            getTimestamp(
-              item.normalizedUpdatedAt
-            )
-          )
-          .filter(
-            (timestamp) =>
-              timestamp > 0
-          );
-
-      return timestamps.length > 0
-        ? Math.max(...timestamps)
-        : null;
-    }, [normalizedPrices]);
-
-  function hideToast() {
-    if (
-      toastTimerRef.current
-    ) {
-      window.clearTimeout(
-        toastTimerRef.current
-      );
-
-      toastTimerRef.current =
-        null;
+    for (const row of rows) {
+      const key = `${getSourceCode(row)}::${normalizeText(getProductName(row))}`;
+      if (!byProduct.has(key)) byProduct.set(key, []);
+      byProduct.get(key).push(row);
     }
 
+    for (const group of byProduct.values()) {
+      group.sort(
+        (a, b) =>
+          getTime(getUpdatedAt(b)) -
+          getTime(getUpdatedAt(a)),
+      );
+    }
+
+    return byProduct;
+  }, [priceHistory]);
+
+  const normalizedPrices = useMemo(() => {
+    const sourceOrder = { MI_HONG: 1, PNJ: 2, SJC: 3 };
+
+    return (Array.isArray(prices) ? prices : [])
+      .map((item) => {
+        const sourceCode = getSourceCode(item);
+        const productName = getProductName(item);
+        const historyKey = `${sourceCode}::${normalizeText(productName)}`;
+        const historyRows = normalizedHistory.get(historyKey) ?? [];
+        const latestHistory = historyRows[0];
+        const previousHistory = historyRows[1];
+        const buyPrice = getBuyPrice(item);
+        const sellPrice = getSellPrice(item);
+
+        const buyChange = latestHistory?.buyPriceChange ?? (
+          previousHistory ? buyPrice - getBuyPrice(previousHistory) : null
+        );
+        const sellChange = latestHistory?.sellPriceChange ?? (
+          previousHistory ? sellPrice - getSellPrice(previousHistory) : null
+        );
+
+        return {
+          ...item,
+          normalizedSourceCode: sourceCode,
+          normalizedProductName: productName,
+          normalizedBuyPrice: buyPrice,
+          normalizedSellPrice: sellPrice,
+          normalizedUpdatedAt: getUpdatedAt(item),
+          buyChange,
+          sellChange,
+        };
+      })
+      .sort((a, b) => (sourceOrder[a.normalizedSourceCode] ?? 99) - (sourceOrder[b.normalizedSourceCode] ?? 99));
+  }, [prices, normalizedHistory]);
+
+  const fastestKey = useMemo(() => {
+    let selected = null;
+    let selectedTime = 0;
+    normalizedPrices.forEach((item, index) => {
+      const time = getTime(item.normalizedUpdatedAt);
+      if (time > selectedTime) {
+        selectedTime = time;
+        selected = item.id ?? `${item.normalizedSourceCode}-${item.normalizedProductName}-${index}`;
+      }
+    });
+    return selected;
+  }, [normalizedPrices]);
+
+  useEffect(() => {
+    const nextMap = new Map();
+    const changed = {};
+
+    normalizedPrices.forEach((item, index) => {
+      const key = item.id ?? `${item.normalizedSourceCode}-${item.normalizedProductName}-${index}`;
+      const signature = `${item.normalizedBuyPrice}|${item.normalizedSellPrice}|${item.normalizedUpdatedAt ?? ''}`;
+      const previous = previousPriceRef.current.get(key);
+      nextMap.set(key, signature);
+      if (previous && previous !== signature) {
+        const delta = Number(item.buyChange ?? 0) + Number(item.sellChange ?? 0);
+        changed[key] = delta < 0 ? 'down' : 'up';
+      }
+    });
+
+    previousPriceRef.current = nextMap;
+
+    if (Object.keys(changed).length > 0) {
+      setFlashingKeys(changed);
+      const timer = window.setTimeout(() => setFlashingKeys({}), 1400);
+      return () => window.clearTimeout(timer);
+    }
+
+    return undefined;
+  }, [normalizedPrices]);
+
+  function hideToast() {
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = null;
     setToast(null);
   }
 
-  function showToast(
-    message,
-    type = "success"
-  ) {
-    if (
-      toastTimerRef.current
-    ) {
-      window.clearTimeout(
-        toastTimerRef.current
-      );
-    }
-
-    setToast({
-      message,
-      type,
-    });
-
-    toastTimerRef.current =
-      window.setTimeout(() => {
-        setToast(null);
-
-        toastTimerRef.current =
-          null;
-      }, 5000);
+  function showToast(message, type = 'success') {
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+    setToast({ message, type });
+    toastTimerRef.current = window.setTimeout(() => {
+      setToast(null);
+      toastTimerRef.current = null;
+    }, 5000);
   }
 
-  function highlightUpdatedSources(
-    sourceCodes = []
-  ) {
-    if (
-      updatedTimerRef.current
-    ) {
-      window.clearTimeout(
-        updatedTimerRef.current
-      );
-    }
-
-    setUpdatedSourceCodes(
-      sourceCodes
-    );
-
-    updatedTimerRef.current =
-      window.setTimeout(() => {
-        setUpdatedSourceCodes([]);
-
-        updatedTimerRef.current =
-          null;
-      }, 1400);
-  }
-
-  useEffect(() => {
-    return () => {
-      if (
-        toastTimerRef.current
-      ) {
-        window.clearTimeout(
-          toastTimerRef.current
-        );
-      }
-
-      if (
-        updatedTimerRef.current
-      ) {
-        window.clearTimeout(
-          updatedTimerRef.current
-        );
-      }
-    };
+  useEffect(() => () => {
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
   }, []);
 
-  function buildResultMessage(
-    result
-  ) {
-    const updatedSources =
-      result.changedResults.map(
-        (item) => item.source
-      );
-
-    const unchangedSources =
-      result.successResults
-        .filter(
-          (item) =>
-            !item.changed
-        )
-        .map(
-          (item) =>
-            item.source
-        );
-
-    const failedSources =
-      result.failedResults.map(
-        (item) =>
-          `${item.source}: ${item.message}`
-      );
-
-    const messages = [];
-
-    if (
-      updatedSources.length > 0
-    ) {
-      messages.push(
-        `Đã cập nhật: ${updatedSources.join(
-          ", "
-        )}.`
-      );
-    }
-
-    if (
-      unchangedSources.length > 0
-    ) {
-      messages.push(
-        `Không thay đổi: ${unchangedSources.join(
-          ", "
-        )}.`
-      );
-    }
-
-    if (
-      failedSources.length > 0
-    ) {
-      messages.push(
-        `Lỗi: ${failedSources.join(
-          " | "
-        )}`
-      );
-    }
-
-    return messages.join(" ");
+  function buildResultMessage(result) {
+    const updated = result.changedResults.map((item) => item.source);
+    const unchanged = result.successResults.filter((item) => !item.changed).map((item) => item.source);
+    const failed = result.failedResults.map((item) => `${item.source}: ${item.message}`);
+    return [
+      updated.length ? `Đã cập nhật: ${updated.join(', ')}.` : '',
+      unchanged.length ? `Không thay đổi: ${unchanged.join(', ')}.` : '',
+      failed.length ? `Lỗi: ${failed.join(' | ')}` : '',
+    ].filter(Boolean).join(' ');
   }
 
   async function handleGetCurrentPrices() {
-    if (!user) {
-      showToast(
-        "Vui lòng đăng nhập để cập nhật giá vàng.",
-        "info"
-      );
-      return;
-    }
-
-    if (
-      isLoadingCurrentPrices
-    ) {
-      return;
-    }
+    if (isLoadingCurrentPrices) return;
 
     try {
-      setIsLoadingCurrentPrices(
-        true
-      );
-
-      const result =
-        await syncAllGoldPrices();
-
-      const changedSourceCodes =
-        result.changedResults.map(
-          (item) =>
-            normalizeSourceCode(
-              item.sourceCode ??
-              item.source
-            )
-        );
-
-      if (
-        result.hasSuccess &&
-        typeof onPriceUpdated ===
-          "function"
-      ) {
+      setIsLoadingCurrentPrices(true);
+      const result = await syncAllGoldPrices();
+      if (result.hasSuccess && typeof onPriceUpdated === 'function') {
         await onPriceUpdated();
       }
-
-      if (
-        changedSourceCodes.length > 0
-      ) {
-        highlightUpdatedSources(
-          changedSourceCodes
-        );
+      const message = buildResultMessage(result);
+      if (result.failedResults.length > 0) {
+        showToast(message || 'Một số nguồn giá không thể cập nhật.', result.hasSuccess ? 'info' : 'error');
+      } else if (!result.changed) {
+        showToast(message || 'PNJ, Mi Hồng và SJC chưa có giá mới.', 'info');
+      } else {
+        showToast(message || 'Đã cập nhật giá vàng hiện tại.', 'success');
       }
-
-      const resultMessage =
-        buildResultMessage(
-          result
-        );
-
-      if (
-        result.failedResults.length >
-        0
-      ) {
-        showToast(
-          resultMessage ||
-            "Một số nguồn giá không thể cập nhật.",
-
-          result.hasSuccess
-            ? "info"
-            : "error"
-        );
-
-        return;
-      }
-
-      if (!result.changed) {
-        showToast(
-          resultMessage ||
-            "PNJ, Mi Hồng và SJC chưa có giá mới.",
-
-          "info"
-        );
-
-        return;
-      }
-
-      showToast(
-        resultMessage ||
-          "Đã cập nhật giá vàng hiện tại.",
-
-        "success"
-      );
     } catch (error) {
-      console.error(
-        "Lỗi lấy giá hiện tại:",
-        error
-      );
-
-      showToast(
-        error instanceof Error
-          ? error.message
-          : "Không thể lấy giá hiện tại.",
-
-        "error"
-      );
+      console.error('Lỗi lấy giá hiện tại:', error);
+      showToast(error instanceof Error ? error.message : 'Không thể lấy giá hiện tại.', 'error');
     } finally {
-      setIsLoadingCurrentPrices(
-        false
-      );
+      setIsLoadingCurrentPrices(false);
     }
   }
 
-  function getToastIcon() {
-    if (
-      toast?.type ===
-      "success"
-    ) {
-      return (
-        <CheckCircle2
-          size={20}
-        />
-      );
-    }
-
-    if (
-      toast?.type ===
-      "error"
-    ) {
-      return (
-        <AlertCircle
-          size={20}
-        />
-      );
-    }
-
-    return (
-      <Info size={20} />
-    );
-  }
+  const toastIcon = toast?.type === 'success'
+    ? <CheckCircle2 size={20} />
+    : toast?.type === 'error'
+      ? <AlertCircle size={20} />
+      : <Info size={20} />;
 
   return (
     <>
       {toast && (
-        <div
-          className={
-            `app-toast ` +
-            `app-toast-${toast.type}`
-          }
-          role="status"
-          aria-live="polite"
-        >
-          <div className="app-toast-icon">
-            {getToastIcon()}
-          </div>
-
+        <div className={`app-toast app-toast-${toast.type}`} role="status" aria-live="polite">
+          <div className="app-toast-icon">{toastIcon}</div>
           <div className="app-toast-content">
-            <strong className="app-toast-title">
-              {toast.type ===
-                "success"
-                ? "Thành công"
-                : toast.type ===
-                    "error"
-                  ? "Có lỗi xảy ra"
-                  : "Thông tin"}
-            </strong>
-
-            <span className="app-toast-message">
-              {toast.message}
-            </span>
+            <strong className="app-toast-title">{toast.type === 'success' ? 'Thành công' : toast.type === 'error' ? 'Có lỗi xảy ra' : 'Thông tin'}</strong>
+            <span className="app-toast-message">{toast.message}</span>
           </div>
-
-          <button
-            type="button"
-            className="app-toast-close"
-            onClick={hideToast}
-            aria-label="Đóng thông báo"
-          >
-            <X size={17} />
-          </button>
+          <button type="button" className="app-toast-close" onClick={hideToast} aria-label="Đóng thông báo"><X size={17} /></button>
         </div>
       )}
 
       <section className="card current-market-prices">
         <div className="current-market-prices__header">
-          <div>
-            <h2 className="section-title">
-              <RefreshCcw
-                size={20}
-              />
-
-              Giá vàng hiện tại
-            </h2>
-
-            <p className="small-text">
-              Giá được tự động cập nhật mỗi 30 phút. Bạn cũng có thể cập nhật ngay bằng nút bên dưới khi đăng nhập.
-            </p>
+          <div className="current-market-prices__heading">
+            <h2 className="section-title"><RefreshCcw size={20} /> Giá vàng hiện tại</h2>
+            <p className="small-text">Giá tự động cập nhật định kỳ. Bạn có thể đồng bộ thủ công khi cần.</p>
           </div>
 
-          {user && (
-            <button
-              type="button"
-              className={
-                `pnj-button icon-button current-market-prices__refresh ` +
-                `${isLoadingCurrentPrices ? "is-loading" : ""}`
-              }
-              onClick={
-                handleGetCurrentPrices
-              }
-              disabled={
-                isLoadingCurrentPrices
-              }
-              aria-busy={
-                isLoadingCurrentPrices
-              }
-            >
-              {isLoadingCurrentPrices ? (
-                <RefreshCcw
-                  size={17}
-                  className="current-market-prices__spinner"
-                  aria-hidden="true"
-                />
-              ) : (
-                <CloudDownload
-                  size={17}
-                  aria-hidden="true"
-                />
-              )}
+          <div className="current-market-prices__actions">
+            {user && (
+              <button type="button" className={`pnj-button icon-button current-market-prices__refresh ${isLoadingCurrentPrices ? 'is-loading' : ''}`} onClick={handleGetCurrentPrices} disabled={isLoadingCurrentPrices}>
+                {isLoadingCurrentPrices ? <span className="current-market-prices__spinner" aria-hidden="true" /> : <CloudDownload size={17} />}
+                {isLoadingCurrentPrices ? 'Đang đồng bộ giá...' : 'Click để lấy giá mới'}
+              </button>
+            )}
 
-              <span>
-                {isLoadingCurrentPrices
-                  ? "Đang đồng bộ giá..."
-                  : "Click để lấy giá mới"}
-              </span>
-            </button>
-          )}
+            {user && (
+              <button type="button" className="private-price-open-button current-market-prices__private" onClick={onOpenPrivateGoldPrices}>
+                <Store size={17} /> Giá tiệm vàng của tôi
+              </button>
+            )}
+          </div>
         </div>
 
-        {isLoadingCurrentPrices &&
-        normalizedPrices.length === 0 ? (
-          <div className="current-market-prices__list">
-            {Array.from({
-              length: 3,
-            }).map((_, index) => (
-              <PriceCardSkeleton
-                key={index}
-              />
-            ))}
+        {isLoadingCurrentPrices ? (
+          <div className="current-market-prices__list is-syncing">
+            {[0, 1, 2].map((item) => <PriceSkeleton key={item} />)}
           </div>
-        ) : normalizedPrices.length ===
-          0 ? (
-          <div className="current-market-prices__empty">
-            Chưa có dữ liệu giá
-            hiện tại.
-          </div>
+        ) : normalizedPrices.length === 0 ? (
+          <div className="current-market-prices__empty">Chưa có dữ liệu giá hiện tại.</div>
         ) : (
-          <div
-            className={
-              `current-market-prices__list ` +
-              `${isLoadingCurrentPrices ? "is-syncing" : ""}`
-            }
-          >
-            {normalizedPrices.map(
-              (item, index) => {
-                const sourceLabel =
-                  getSourceLabel(
-                    item
-                      .normalizedSourceCode
-                  );
+          <div className="current-market-prices__list">
+            {normalizedPrices.map((item, index) => {
+              const itemKey = item.id ?? `${item.normalizedSourceCode}-${item.normalizedProductName}-${index}`;
+              const isSjc = item.normalizedSourceCode === 'SJC';
+              const flashDirection = flashingKeys[itemKey];
 
-                const isSjc =
-                  item
-                    .normalizedSourceCode ===
-                  "SJC";
-
-                const currentHistoryRow =
-                  findCurrentHistoryRow(
-                    item,
-                    priceHistory
-                  );
-
-                const buyDelta =
-                  currentHistoryRow
-                    ?.buyPriceChange ??
-                  null;
-
-                const sellDelta =
-                  currentHistoryRow
-                    ?.sellPriceChange ??
-                  null;
-
-                const itemTimestamp =
-                  getTimestamp(
-                    item
-                      .normalizedUpdatedAt
-                  );
-
-                const isNewestSource =
-                  newestUpdatedTimestamp !==
-                    null &&
-                  itemTimestamp > 0 &&
-                  itemTimestamp ===
-                    newestUpdatedTimestamp;
-
-                const isJustUpdated =
-                  updatedSourceCodes.includes(
-                    item
-                      .normalizedSourceCode
-                  );
-
-                return (
-                  <article
-                    key={
-                      item.id ??
-                      `${item.normalizedSourceCode}-${item.normalizedProductName}-${index}`
-                    }
-                    className={
-                      `current-market-price-item ` +
-                      `${isJustUpdated ? "is-just-updated" : ""}`
-                    }
-                  >
-                    <div className="current-market-price-item__top">
-                      <div className="current-market-price-item__identity">
-                        <div className="current-market-price-item__logo">
-                          {item.normalizedSourceCode ===
-                          "MI_HONG"
-                            ? "MH"
-                            : item.normalizedSourceCode}
+              return (
+                <article key={itemKey} className={`current-market-price-item ${flashDirection ? `is-price-flash is-price-flash--${flashDirection}` : ''}`}>
+                  <div className="current-market-price-item__top">
+                    <div className="current-market-price-item__identity">
+                      <div className="current-market-price-item__logo">{item.normalizedSourceCode === 'MI_HONG' ? 'MH' : item.normalizedSourceCode}</div>
+                      <div>
+                        <div className="current-market-price-item__source-row">
+                          <strong className="current-market-price-item__source">{getSourceLabel(item.normalizedSourceCode)}</strong>
+                          {fastestKey === itemKey && <span className="current-market-price-item__newest-badge">⚡ Mới nhất</span>}
                         </div>
-
-                        <div>
-                          <div className="current-market-price-item__source-row">
-                            <strong className="current-market-price-item__source">
-                              {sourceLabel}
-                            </strong>
-
-                            {isNewestSource && (
-                              <span className="current-market-price-item__newest-badge">
-                                <Zap
-                                  size={12}
-                                  fill="currentColor"
-                                />
-                                Mới nhất
-                              </span>
-                            )}
-                          </div>
-
-                          <p className="current-market-price-item__product">
-                            {item.normalizedProductName}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="current-market-price-item__status">
-                        <time
-                          className="current-market-price-item__time"
-                          dateTime={
-                            item.normalizedUpdatedAt ??
-                            undefined
-                          }
-                          title={formatUpdatedTime(
-                            item.normalizedUpdatedAt
-                          )}
-                        >
-                          {formatRelativeTime(
-                            item.normalizedUpdatedAt
-                          )}
-                        </time>
-
-                        {isJustUpdated && (
-                          <span className="current-market-price-item__updated-badge">
-                            <CheckCircle2
-                              size={13}
-                            />
-                            Đã cập nhật
-                          </span>
-                        )}
+                        <p className="current-market-price-item__product">{item.normalizedProductName}</p>
                       </div>
                     </div>
+                    <time title={new Date(item.normalizedUpdatedAt ?? 0).toLocaleString('vi-VN')}>{formatRelativeTime(item.normalizedUpdatedAt)}</time>
+                  </div>
 
-                    <div className="current-market-price-item__values">
-                      <div className="current-market-price-item__value-box current-market-price-item__value-box--buy">
-                        <span>
-                          Cửa hàng mua vào
-                        </span>
-
-                        {isLoadingCurrentPrices ? (
-                          <span className="skeleton-block skeleton-line skeleton-line--price" />
-                        ) : (
-                          <>
-                            <strong>
-                              {item.normalizedBuyPrice >
-                              0 ? (
-                                <>
-                                  <AnimatedPrice
-                                    value={
-                                      item.normalizedBuyPrice
-                                    }
-                                  />{" "}
-                                  VND/chỉ
-                                </>
-                              ) : (
-                                "Chưa có"
-                              )}
-                            </strong>
-
-                            {buyDelta !== null && (
-                              <PriceDelta
-                                value={
-                                  buyDelta
-                                }
-                              />
-                            )}
-                          </>
-                        )}
-                      </div>
-
-                      <div className="current-market-price-item__value-box current-market-price-item__value-box--sell">
-                        <span>
-                          Cửa hàng bán ra
-                        </span>
-
-                        {isLoadingCurrentPrices ? (
-                          <span className="skeleton-block skeleton-line skeleton-line--price" />
-                        ) : (
-                          <>
-                            <strong>
-                              {item.normalizedSellPrice >
-                              0 ? (
-                                <>
-                                  <AnimatedPrice
-                                    value={
-                                      item.normalizedSellPrice
-                                    }
-                                  />{" "}
-                                  VND/chỉ
-                                </>
-                              ) : (
-                                "Chưa có"
-                              )}
-                            </strong>
-
-                            {sellDelta !== null && (
-                              <PriceDelta
-                                value={
-                                  sellDelta
-                                }
-                              />
-                            )}
-                          </>
-                        )}
-                      </div>
+                  <div className="current-market-price-item__values">
+                    <div className="current-market-price-item__value-box current-market-price-item__value-box--buy">
+                      <span>Cửa hàng mua vào</span>
+                      <strong>{item.normalizedBuyPrice > 0 ? <><CountUpNumber value={item.normalizedBuyPrice} /> VND/chỉ</> : 'Chưa có'}</strong>
+                      <PriceDelta change={item.buyChange} />
                     </div>
 
-                    {isSjc && (
-                      <p className="current-market-price-item__note">
-                        Giá SJC đã được
-                        quy đổi từ VND/lượng
-                        sang VND/chỉ.
-                      </p>
-                    )}
-                  </article>
-                );
-              }
-            )}
+                    <div className="current-market-price-item__value-box current-market-price-item__value-box--sell">
+                      <span>Cửa hàng bán ra</span>
+                      <strong>{item.normalizedSellPrice > 0 ? <><CountUpNumber value={item.normalizedSellPrice} /> VND/chỉ</> : 'Chưa có'}</strong>
+                      <PriceDelta change={item.sellChange} />
+                    </div>
+                  </div>
+
+                  {isSjc && <p className="current-market-price-item__note">Giá SJC đã được quy đổi từ VND/lượng sang VND/chỉ.</p>}
+                </article>
+              );
+            })}
           </div>
         )}
       </section>

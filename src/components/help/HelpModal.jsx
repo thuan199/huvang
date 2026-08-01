@@ -263,21 +263,119 @@ function GuideContent() {
 
       <HelpStep
         number="3"
-        title="Theo dõi lãi hoặc lỗ"
+        title="Quản lý giá vàng tư nhân"
       >
         <p>
-          Hệ thống tự động so sánh
-          giá mua của bạn với giá
-          bán hiện tại để tính số
-          tiền lãi hoặc lỗ và tỷ lệ
-          phần trăm.
+          Khi thêm giao dịch, chọn
+          <strong>
+            {" "}
+            Tư nhân
+          </strong>
+          {" "}
+          tại mục
+          <strong>
+            {" "}
+            Cửa hàng / nguồn vàng
+          </strong>
+          .
+        </p>
+
+        <p>
+          Nhập đúng
+          <strong>
+            {" "}
+            tên tiệm vàng
+          </strong>
+          , loại vàng, giá mua và
+          giá tiệm thu lại tại thời
+          điểm giao dịch.
+        </p>
+
+        <p>
+          Sau khi lưu giao dịch, vào
+          <strong>
+            {" "}
+            Giá vàng hiện tại
+          </strong>
+          {" "}
+          và chọn
+          <strong>
+            {" "}
+            Giá tiệm vàng của tôi
+          </strong>
+          .
+        </p>
+
+        <p>
+          Chọn đúng tiệm vàng và loại
+          vàng đã lưu, sau đó nhập:
+        </p>
+
+        <ul className="help-info-list">
+          <li>
+            Giá tiệm thu lại hiện tại.
+          </li>
+
+          <li>
+            Giá tiệm bán ra hiện tại.
+          </li>
+        </ul>
+
+        <p>
+          Mỗi tiệm và mỗi loại vàng chỉ
+          có một mức giá trong cùng ngày.
+          Nếu giá thay đổi trong ngày,
+          hệ thống cập nhật lại mức giá
+          của ngày đó; sang ngày mới sẽ
+          tạo thêm một mốc lịch sử mới.
+        </p>
+
+        <p>
+          Giá thu lại mới nhất sẽ được
+          dùng để tính lời/lỗ trong
+          <strong>
+            {" "}
+            Danh sách giao dịch
+          </strong>
+          .
         </p>
       </HelpStep>
 
       <HelpStep
         number="4"
+        title="Theo dõi lãi hoặc lỗ"
+      >
+        <p>
+          Hệ thống tự động so sánh
+          giá mua của bạn với giá
+          thu lại hiện tại để tính
+          số tiền lãi hoặc lỗ và tỷ
+          lệ phần trăm.
+        </p>
+
+        <p>
+          Với vàng tư nhân, kết quả
+          chỉ được tính sau khi bạn
+          cập nhật giá thu lại mới
+          nhất của tiệm vàng.
+        </p>
+      </HelpStep>
+
+      <HelpStep
+        number="5"
         title="Xem lịch sử giá"
       >
+        <p>
+          Tại mục
+          <strong>
+            {" "}
+            Lịch sử cập nhật giá cửa hàng
+          </strong>
+          , chọn SJC, PNJ, Mi Hồng hoặc
+          tên tiệm vàng tư nhân của bạn
+          để xem các lần thay đổi giá.
+        </p>
+
         <p>
           Sử dụng biểu đồ để xem
           biến động giá trong ngày,
@@ -288,7 +386,7 @@ function GuideContent() {
       </HelpStep>
 
       <HelpStep
-        number="5"
+        number="6"
         title="Dùng Chat và Trợ lý AI"
       >
         <p>
