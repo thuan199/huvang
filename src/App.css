@@ -16258,3 +16258,164 @@ body.dark-theme .private-price-open-button:hover,
   color: #f5d76e;
 }
 
+/* =========================================================
+   FIX MODAL GIA TIEM VANG TU NHAN TREN MOBILE
+   - Modal nam tren thanh menu duoi
+   - Header co dinh, chi noi dung modal cuon
+   - Xem duoc day du "Them gia tiem vang" va "Gia moi nhat"
+========================================================= */
+
+.private-price-overlay {
+  z-index: 200000 !important;
+}
+
+.private-price-modal {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.private-price-modal__header {
+  flex: 0 0 auto;
+}
+
+.private-price-modal__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Khi modal đang mở, không để bottom navigation che nội dung. */
+body:has(.private-price-overlay) .mobile-bottom-tabs {
+  display: none !important;
+}
+
+body:has(.private-price-overlay) {
+  overflow: hidden !important;
+}
+
+@media (max-width: 720px) {
+  .private-price-overlay {
+    inset: 0 !important;
+    display: flex !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+
+    width: 100% !important;
+    height: 100dvh !important;
+    padding: 0 !important;
+
+    overflow: hidden !important;
+  }
+
+  .private-price-modal {
+    width: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    min-height: 0 !important;
+
+    margin: 0 !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .private-price-modal__header {
+    position: relative;
+    z-index: 2;
+
+    padding:
+      calc(16px + env(safe-area-inset-top))
+      16px
+      15px !important;
+
+    background: var(--card-bg, #ffffff);
+  }
+
+  .private-price-modal__header > div {
+    min-width: 0;
+    padding-right: 46px;
+  }
+
+  .private-price-modal__header h2 {
+    font-size: 19px;
+    line-height: 1.3;
+  }
+
+  .private-price-modal__header p {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .private-price-close {
+    position: absolute;
+    top: calc(14px + env(safe-area-inset-top));
+    right: 14px;
+
+    margin: 0 !important;
+  }
+
+  .private-price-modal__body {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-content: start !important;
+    gap: 24px !important;
+
+    width: 100% !important;
+    max-height: none !important;
+    min-height: 0 !important;
+
+    padding:
+      18px
+      16px
+      calc(34px + env(safe-area-inset-bottom)) !important;
+
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  .private-price-form,
+  .private-price-list {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .private-price-form h3,
+  .private-price-list h3 {
+    display: block !important;
+    margin: 0 0 14px !important;
+  }
+
+  .private-price-form__actions {
+    padding-bottom: 4px;
+  }
+
+  .private-price-item:last-child {
+    margin-bottom: 12px;
+  }
+}
+
+/* Dark theme */
+body.dark-theme .private-price-modal__header,
+.dark-theme .private-price-modal__header {
+  background: #111827;
+}
+
+/* =========================================================
+   FIX THU TU LOP MODAL
+   Confirm phai nam tren modal Gia tiem vang tu nhan.
+========================================================= */
+.confirm-modal-backdrop {
+  z-index: 220000 !important;
+}
+
+.confirm-modal {
+  position: relative;
+  z-index: 1;
+}
+
+/* Modal giá tư nhân vẫn nằm trên bottom navigation,
+   nhưng thấp hơn hộp xác nhận. */
+.private-price-overlay {
+  z-index: 200000 !important;
+}

@@ -1298,6 +1298,18 @@ function App() {
     useState(null);
 
   const [
+    isSavingTransaction,
+    setIsSavingTransaction,
+  ] = useState(false);
+
+  /*
+   * Chặn submit lặp ngay trong cùng một nhịp render.
+   * State dùng để cập nhật giao diện; ref dùng để khóa tức thì.
+   */
+  const savingTransactionRef =
+    useRef(false);
+
+  const [
     chartRange,
     setChartRange,
   ] = useState('1d');
@@ -1597,10 +1609,47 @@ function App() {
     marketCurrentPrices,
   ]);
 
+  function resetTransactionForm() {
+    const defaultBuybackPrice =
+      getCurrentBuybackPrice(
+        defaultTransactionForm.source_code,
+        defaultTransactionForm.gold_type
+      );
+
+    setTransactionForm({
+      ...defaultTransactionForm,
+
+      transaction_date:
+        new Date()
+          .toISOString()
+          .slice(0, 10),
+
+      sell_price_per_chi:
+        defaultBuybackPrice > 0
+          ? String(defaultBuybackPrice)
+          : "",
+    });
+
+    lastAutoBuybackSelectionRef.current = [
+      normalizeSourceCode(
+        defaultTransactionForm.source_code
+      ),
+      normalizeProductName(
+        defaultTransactionForm.gold_type
+      ),
+    ].join("|");
+
+    setEditingId(null);
+  }
+
   async function saveTransaction(
     event
   ) {
     event.preventDefault();
+
+    if (savingTransactionRef.current) {
+      return;
+    }
 
     if (!user) {
       handleLoginRequired();
@@ -1680,6 +1729,9 @@ function App() {
       return;
     }
 
+    savingTransactionRef.current = true;
+    setIsSavingTransaction(true);
+
     let payload = {
       user_id: user.id,
       transaction_type: transactionForm.transaction_type,
@@ -1739,33 +1791,11 @@ function App() {
        * được tạo khi user nhập trong “Giá tiệm vàng của tôi”.
        */
 
-      const defaultBuybackPrice =
-        getCurrentBuybackPrice(
-          defaultTransactionForm.source_code,
-          defaultTransactionForm.gold_type
-        );
-
-      setTransactionForm({
-        ...defaultTransactionForm,
-
-        sell_price_per_chi:
-          defaultBuybackPrice > 0
-            ? String(defaultBuybackPrice)
-            : "",
-      });
-
-      lastAutoBuybackSelectionRef.current = [
-        normalizeSourceCode(
-          defaultTransactionForm.source_code
-        ),
-        normalizeProductName(
-          defaultTransactionForm.gold_type
-        ),
-      ].join("|");
-
-      setEditingId(null);
-
-      await reloadGoldData();
+      /*
+       * Reset form ngay sau khi database lưu thành công.
+       * Không chờ reload danh sách để mobile phản hồi nhanh hơn.
+       */
+      resetTransactionForm();
 
       setMessageType('success');
 
@@ -1774,6 +1804,8 @@ function App() {
           ? 'Đã cập nhật giao dịch.'
           : 'Đã lưu giao dịch.'
       );
+
+      await reloadGoldData();
     } catch (error) {
       setMessageType('error');
 
@@ -1781,6 +1813,9 @@ function App() {
         error?.message ||
         'Không thể lưu giao dịch.'
       );
+    } finally {
+      savingTransactionRef.current = false;
+      setIsSavingTransaction(false);
     }
   }
 
@@ -1858,32 +1893,11 @@ function App() {
   }
 
   function cancelEdit() {
-    setEditingId(null);
+    if (savingTransactionRef.current) {
+      return;
+    }
 
-    const defaultBuybackPrice =
-      getCurrentBuybackPrice(
-        defaultTransactionForm.source_code,
-        defaultTransactionForm.gold_type
-      );
-
-    setTransactionForm({
-      ...defaultTransactionForm,
-
-      sell_price_per_chi:
-        defaultBuybackPrice > 0
-          ? String(defaultBuybackPrice)
-          : "",
-    });
-
-    lastAutoBuybackSelectionRef.current = [
-      normalizeSourceCode(
-        defaultTransactionForm.source_code
-      ),
-      normalizeProductName(
-        defaultTransactionForm.gold_type
-      ),
-    ].join("|");
-
+    resetTransactionForm();
     setMessage('');
   }
 
@@ -2121,6 +2135,9 @@ function App() {
                 }
                 onCancel={
                   cancelEdit
+                }
+                isSaving={
+                  isSavingTransaction
                 }
               />
             </LoginRequiredOverlay>
@@ -2538,6 +2555,9 @@ function App() {
                         }
                         onSubmit={saveTransaction}
                         onCancel={cancelEdit}
+                        isSaving={
+                          isSavingTransaction
+                        }
                       />
                     </LoginRequiredOverlay>
 
