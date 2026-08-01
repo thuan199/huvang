@@ -25,6 +25,26 @@ function getSourceLabel(transaction) {
 }
 
 
+function isSellTransaction(transaction) {
+  return String(
+    transaction?.transaction_type ?? '',
+  )
+    .trim()
+    .toUpperCase() === 'SELL';
+}
+
+function getComparisonLabel(transaction) {
+  return isSellTransaction(transaction)
+    ? 'Giá bán lúc giao dịch'
+    : 'Giá thu lại hiện tại';
+}
+
+function getComparisonEmptyText(transaction) {
+  return isSellTransaction(transaction)
+    ? 'Chưa có giá bán'
+    : 'Chưa có giá hiện tại';
+}
+
 function normalizeText(value) {
   return String(value ?? '')
     .trim()
@@ -282,7 +302,7 @@ function TransactionTable({
                     <th>Vàng</th>
                     <th>Số chỉ</th>
                     <th>Giá mua lúc giao dịch</th>
-                    <th>Giá thu lại hiện tại</th>
+                    <th>Giá đối chiếu</th>
                     <th>Nơi mua/bán</th>
                     <th>Lời/lỗ</th>
                     <th>Lời/lỗ %</th>
@@ -333,21 +353,40 @@ function TransactionTable({
                         </td>
 
 
-                        <td title="Giá mua lại mới nhất dùng để tính lời/lỗ">
-                          {Number(
-                            result.currentPrice || 0
-                          ) > 0
-                            ? (
-                              <>
-                                {formatMoney(result.currentPrice)} VND/chỉ
-                                {result.priceDate && (
-                                  <small className="transaction-price-date">
-                                    Cập nhật {new Date(result.priceDate).toLocaleDateString('vi-VN')}
-                                  </small>
-                                )}
-                              </>
-                            )
-                            : 'Chưa có giá hiện tại'}
+                        <td
+                          title={
+                            isSellTransaction(transaction)
+                              ? 'Giá người dùng đã bán tại thời điểm giao dịch'
+                              : 'Giá thu lại mới nhất dùng để tạm tính lời/lỗ'
+                          }
+                        >
+                          <div className="comparison-price-cell">
+                            <small
+                              className={
+                                isSellTransaction(transaction)
+                                  ? 'comparison-price-label comparison-price-label--sell'
+                                  : 'comparison-price-label comparison-price-label--buy'
+                              }
+                            >
+                              {getComparisonLabel(transaction)}
+                            </small>
+
+                            <strong>
+                              {Number(result.currentPrice || 0) > 0
+                                ? `${formatMoney(result.currentPrice)}`
+                                : getComparisonEmptyText(transaction)}
+                            </strong>
+
+                            {!isSellTransaction(transaction) &&
+                              result.priceDate && (
+                                <small className="transaction-price-date">
+                                  Cập nhật{' '}
+                                  {new Date(
+                                    result.priceDate
+                                  ).toLocaleDateString('vi-VN')}
+                                </small>
+                              )}
+                          </div>
                         </td>
 
                         <td>
@@ -489,31 +528,41 @@ function TransactionTable({
                       </tr>
 
                       <tr>
-                        <th>Giá thu lại lúc giao dịch</th>
-                        <td>
-                          {Number(mobileTransaction.sell_price_per_chi || 0) > 0
-                            ? `${formatMoney(mobileTransaction.sell_price_per_chi)} VND/chỉ`
-                            : '-'}
-                        </td>
-                      </tr>
+                        <th>Giá đối chiếu</th>
+                        <td
+                          title={
+                            isSellTransaction(mobileTransaction)
+                              ? 'Giá người dùng đã bán tại thời điểm giao dịch'
+                              : 'Giá thu lại mới nhất dùng để tạm tính lời/lỗ'
+                          }
+                        >
+                          <div className="comparison-price-cell">
+                            <small
+                              className={
+                                isSellTransaction(mobileTransaction)
+                                  ? 'comparison-price-label comparison-price-label--sell'
+                                  : 'comparison-price-label comparison-price-label--buy'
+                              }
+                            >
+                              {getComparisonLabel(mobileTransaction)}
+                            </small>
 
-                      <tr>
-                        <th>Giá thu lại hiện tại</th>
-                        <td title="Giá mua lại mới nhất dùng để tính lời/lỗ">
-                          {Number(
-                            mobileResult.currentPrice || 0
-                          ) > 0
-                            ? (
-                              <>
-                                {formatMoney(mobileResult.currentPrice)} VND/chỉ
-                                {mobileResult.priceDate && (
-                                  <small className="transaction-price-date">
-                                    Cập nhật {new Date(mobileResult.priceDate).toLocaleDateString('vi-VN')}
-                                  </small>
-                                )}
-                              </>
-                            )
-                            : 'Chưa có giá hiện tại'}
+                            <strong>
+                              {Number(mobileResult.currentPrice || 0) > 0
+                                ? `${formatMoney(mobileResult.currentPrice)}`
+                                : getComparisonEmptyText(mobileTransaction)}
+                            </strong>
+
+                            {!isSellTransaction(mobileTransaction) &&
+                              mobileResult.priceDate && (
+                                <small className="transaction-price-date">
+                                  Cập nhật{' '}
+                                  {new Date(
+                                    mobileResult.priceDate
+                                  ).toLocaleDateString('vi-VN')}
+                                </small>
+                              )}
+                          </div>
                         </td>
                       </tr>
 

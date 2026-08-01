@@ -16419,3 +16419,93 @@ body.dark-theme .private-price-modal__header,
 .private-price-overlay {
   z-index: 200000 !important;
 }
+
+.comparison-price-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.comparison-price-cell > small {
+  color: #7a6f5a;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.comparison-price-cell > strong {
+  color: #1f2937;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.dark-theme .comparison-price-cell > small {
+  color: #94a3b8;
+}
+
+.dark-theme .comparison-price-cell > strong {
+  color: #f8fafc;
+}
+
+.comparison-price-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.comparison-price-cell > small {
+  color: #7a6f5a;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.comparison-price-cell > strong {
+  color: #1f2937;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.dark-theme .comparison-price-cell > small {
+  color: #94a3b8;
+}
+
+.dark-theme .comparison-price-cell > strong {
+  color: #f8fafc;
+}
+
+
+.comparison-price-label {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.comparison-price-label--buy {
+  color: #166534 !important;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+}
+
+.comparison-price-label--sell {
+  color: #92400e !important;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+}
+
+.dark-theme .comparison-price-label--buy {
+  color: #bbf7d0 !important;
+  background: #14532d;
+  border-color: #22c55e;
+}
+
+.dark-theme .comparison-price-label--sell {
+  color: #fde68a !important;
+  background: #78350f;
+  border-color: #f59e0b;
+}

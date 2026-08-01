@@ -167,11 +167,35 @@ export default function useGoldSummary(
       transaction?.source_code ?? transaction?.market_source_code,
     );
 
+    const transactionType = String(
+      transaction?.transaction_type ?? '',
+    )
+      .trim()
+      .toUpperCase();
+
     let currentPrice = 0;
     let priceDate = null;
     let priceSource = 'none';
 
-    if (sourceCode === 'PRIVATE') {
+    if (transactionType === 'SELL') {
+      currentPrice = Number(
+        transaction?.sell_price_per_chi ??
+        transaction?.sale_price_per_chi ??
+        transaction?.sold_price_per_chi ??
+        0,
+      );
+
+      priceDate =
+        transaction?.transaction_date ??
+        transaction?.updated_at ??
+        transaction?.created_at ??
+        null;
+
+      priceSource =
+        currentPrice > 0
+          ? 'transaction-sell-price'
+          : 'none';
+    } else if (sourceCode === 'PRIVATE') {
       const privatePrice = getPrivatePrice(privateCurrentPrices, transaction);
       currentPrice = privatePrice.price;
       priceDate = privatePrice.priceDate;
