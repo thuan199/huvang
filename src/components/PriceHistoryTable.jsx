@@ -4,6 +4,7 @@ import {
 
 import {
   History,
+  HistoryIcon,
   Trash2,
 } from 'lucide-react';
 
@@ -13,6 +14,7 @@ import {
 } from '../utils/formatters';
 
 import PriceWithChange from './PriceWithChange';
+import EmptyState from './EmptyState';
 
 const DEFAULT_SOURCES = [
   {
@@ -256,10 +258,12 @@ function PriceHistoryTable({
 
       {priceHistory.length ===
       0 ? (
-        <p className="small-text">
-          Chưa có lịch sử cập nhật giá của{' '}
-          {activeLabel}.
-        </p>
+        <EmptyState
+          icon={HistoryIcon}
+          title="Chưa có lịch sử giá"
+          description={`Giá ${activeLabel} sau mỗi lần cập nhật sẽ được lưu và hiển thị tại đây.`}
+          compact
+        />
       ) : (
         <div className="table-wrap">
           <table>

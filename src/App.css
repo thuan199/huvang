@@ -16678,3 +16678,1042 @@ body.dark-theme .private-price-modal__header,
 .dark-theme .transaction-gold-info small {
   color: #94a3b8;
 }
+
+.transaction-desktop-table table th,
+.transaction-desktop-table table td {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  line-height: 1.25;
+  vertical-align: middle;
+}
+
+.transaction-desktop-table table tbody tr {
+  height: auto;
+}
+
+.transaction-desktop-table .transaction-source-circle {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  font-size: 8px;
+}
+
+.transaction-desktop-table .transaction-gold-cell {
+  gap: 7px;
+}
+
+.transaction-desktop-table .transaction-gold-info strong {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.transaction-desktop-table .comparison-price-cell {
+  gap: 2px;
+}
+
+.transaction-desktop-table .comparison-price-label {
+  padding: 2px 6px;
+  font-size: 9px;
+}
+
+.transaction-desktop-table .comparison-price-value {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.transaction-desktop-table .transaction-price-date {
+  font-size: 9px;
+  line-height: 1.2;
+}
+
+.transaction-profit-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.transaction-profit-cell strong {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.transaction-profit-cell small {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: currentColor;
+}
+
+.transaction-note-ellipsis {
+  display: inline-block;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+  cursor: help;
+}
+
+.transaction-desktop-table .table-actions {
+  gap: 6px;
+}
+
+.transaction-desktop-table .table-icon-button {
+  min-height: 30px;
+  padding: 6px 9px;
+  font-size: 11px;
+}
+
+.dark-theme .transaction-note-ellipsis {
+  color: #cbd5e1;
+}
+
+/* =========================================================
+   NÚT THAO TÁC GIAO DỊCH DESKTOP
+   Icon-only, màu trung tính, tooltip khi hover
+========================================================= */
+
+.transaction-desktop-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.transaction-action-icon {
+  position: relative;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+
+  margin: 0;
+  padding: 0;
+
+  border: 1px solid #d8dee8;
+  border-radius: 9px;
+
+  background: #ffffff;
+  color: #64748b;
+
+  box-shadow: none;
+  cursor: pointer;
+
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.transaction-action-icon:hover {
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+
+/* Nút sửa */
+.transaction-action-icon--edit:hover {
+  border-color: #94a3b8;
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+/* Nút xóa */
+.transaction-action-icon--delete {
+  color: #94a3b8;
+}
+
+.transaction-action-icon--delete:hover {
+  border-color: #fecaca;
+  background: #fff1f2;
+  color: #dc2626;
+}
+
+/* Tooltip */
+.transaction-action-icon::after {
+  content: attr(data-tooltip);
+
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  z-index: 20;
+
+  padding: 6px 9px;
+  border-radius: 7px;
+
+  background: #1e293b;
+  color: #ffffff;
+
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transform: translate(-50%, 4px);
+
+  transition:
+    opacity 0.16s ease,
+    visibility 0.16s ease,
+    transform 0.16s ease;
+}
+
+.transaction-action-icon::before {
+  content: "";
+
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 3px);
+  z-index: 20;
+
+  width: 7px;
+  height: 7px;
+
+  background: #1e293b;
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transform:
+    translateX(-50%)
+    rotate(45deg);
+
+  transition:
+    opacity 0.16s ease,
+    visibility 0.16s ease;
+}
+
+.transaction-action-icon:hover::after,
+.transaction-action-icon:hover::before,
+.transaction-action-icon:focus-visible::after,
+.transaction-action-icon:focus-visible::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+.transaction-action-icon:hover::after,
+.transaction-action-icon:focus-visible::after {
+  transform: translate(-50%, 0);
+}
+
+/* Dark theme */
+.dark-theme .transaction-action-icon {
+  border-color: #475569;
+  background: #1e293b;
+  color: #cbd5e1;
+}
+
+.dark-theme .transaction-action-icon--edit:hover {
+  border-color: #64748b;
+  background: #334155;
+  color: #f8fafc;
+}
+
+.dark-theme .transaction-action-icon--delete:hover {
+  border-color: #7f1d1d;
+  background: rgba(127, 29, 29, 0.35);
+  color: #fca5a5;
+}
+
+/* Mobile vẫn dùng nút có chữ như cũ */
+@media (max-width: 768px) {
+  .transaction-action-icon::before,
+  .transaction-action-icon::after {
+    display: none;
+  }
+}
+
+/* =========================================================
+   MOBILE - DANH SÁCH GIAO DỊCH
+========================================================= */
+@media (max-width: 768px) {
+  .transaction-mobile-table th,
+  .transaction-mobile-table td {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    vertical-align: middle;
+  }
+
+  .transaction-mobile-profit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    text-align: center;
+  }
+
+  .transaction-mobile-profit strong {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  .transaction-mobile-profit small {
+    font-size: 12px;
+    font-weight: 500;
+    color: currentColor;
+  }
+
+  .transaction-mobile-note {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    max-width: 100%;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .transaction-mobile-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .transaction-mobile-actions button {
+    width: 100%;
+    min-height: 44px;
+    margin: 0;
+  }
+
+  .transaction-mobile-pagination button {
+    min-height: 42px;
+    padding: 9px 13px;
+  }
+}
+
+/* =========================================================
+   FORM GIAO DỊCH - CHIA NHÓM
+========================================================= */
+.transaction-form-groups {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.transaction-form-group {
+  padding: 16px;
+  border: 1px solid var(--card-border, #eadfc8);
+  border-radius: 16px;
+  background: rgba(255, 253, 248, 0.72);
+}
+
+.transaction-form-group__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin-bottom: 15px;
+}
+
+.transaction-form-group__number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: #fff1bd;
+  color: #8a6500;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.transaction-form-group__header h3 {
+  margin: 0 0 3px;
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.transaction-form-group__header p {
+  margin: 0;
+  color: #7a6f5a;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.transaction-form-group__fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px 14px;
+}
+
+.transaction-form-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.transaction-form-field--full {
+  grid-column: 1 / -1;
+}
+
+.transaction-form-field label {
+  margin: 0 0 6px;
+}
+
+.transaction-form-field input,
+.transaction-form-field select,
+.transaction-form-field textarea {
+  width: 100%;
+  margin: 0;
+}
+
+.transaction-form-field textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.transaction-form-field .transaction-price-note,
+.transaction-form-field .transaction-unit-note {
+  margin: 0 0 8px;
+}
+
+.transaction-price-note__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.transaction-price-note__link svg {
+  flex: 0 0 auto;
+}
+
+/* Dark theme */
+.dark-theme .transaction-form-group {
+  border-color: #334155;
+  background: rgba(15, 23, 42, 0.66);
+}
+
+.dark-theme .transaction-form-group__number {
+  background: #332d1d;
+  color: #f5d76e;
+}
+
+.dark-theme .transaction-form-group__header p {
+  color: #94a3b8;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .transaction-form-groups {
+    gap: 13px;
+    margin-top: 14px;
+  }
+
+  .transaction-form-group {
+    padding: 14px 12px;
+    border-radius: 14px;
+  }
+
+  .transaction-form-group__header {
+    margin-bottom: 13px;
+  }
+
+  .transaction-form-group__fields {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .transaction-form-field--full {
+    grid-column: auto;
+  }
+
+  .transaction-form-field input,
+  .transaction-form-field select {
+    min-height: 44px;
+  }
+
+  .transaction-form-field textarea {
+    min-height: 88px;
+  }
+
+  .form-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .form-actions button {
+    width: 100%;
+    min-height: 44px;
+    margin: 0;
+  }
+}
+
+/* =========================================================
+   GIÁ VÀNG HIỆN TẠI - COMPACT, ƯU TIÊN MOBILE
+========================================================= */
+
+.current-market-prices__list {
+  gap: 12px;
+}
+
+.current-market-price-item {
+  padding: 15px;
+}
+
+.current-market-price-item__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 13px;
+}
+
+.current-market-price-item__identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.current-market-price-item__identity-text {
+  min-width: 0;
+}
+
+.current-market-price-item__logo {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  font-size: 11px;
+}
+
+.current-market-price-item__source {
+  display: block;
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.current-market-price-item__product {
+  margin: 3px 0 0;
+  color: #7a6f5a;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.current-market-price-item__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.current-market-price-item__meta time {
+  color: #7a6f5a;
+  font-size: 11px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.current-market-price-item__newest-badge {
+  padding: 3px 7px;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.current-market-price-item__values {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.current-market-price-item__value-box {
+  min-width: 0;
+  padding: 12px;
+}
+
+.current-market-price-item__value-box > span {
+  display: block;
+  margin-bottom: 5px;
+  color: #7a6f5a;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.current-market-price-item__value-box > strong {
+  display: block;
+  color: #17202a;
+  font-size: clamp(17px, 2vw, 22px);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.current-market-price-item__unit {
+  display: block;
+  margin-top: 3px;
+  color: #8a8170;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.current-market-price-item__delta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 7px;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.current-market-price-item__delta strong {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.current-market-price-item__delta small {
+  font-size: 10px;
+}
+
+.current-market-price-item__note {
+  margin: 9px 0 0;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+/* Dark theme */
+.dark-theme .current-market-price-item__product,
+.dark-theme .current-market-price-item__meta time,
+.dark-theme .current-market-price-item__value-box > span,
+.dark-theme .current-market-price-item__unit {
+  color: #94a3b8;
+}
+
+.dark-theme .current-market-price-item__value-box > strong {
+  color: #f8fafc;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .current-market-price-item {
+    padding: 13px;
+    border-radius: 14px;
+  }
+
+  .current-market-price-item__top {
+    gap: 8px;
+    margin-bottom: 11px;
+  }
+
+  .current-market-price-item__logo {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    font-size: 10px;
+  }
+
+  .current-market-price-item__source {
+    font-size: 14px;
+  }
+
+  .current-market-price-item__product {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+  }
+
+  .current-market-price-item__meta {
+    gap: 4px;
+  }
+
+  .current-market-price-item__meta time {
+    max-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 10px;
+  }
+
+  .current-market-price-item__newest-badge {
+    padding: 3px 6px;
+    font-size: 9px;
+  }
+
+  .current-market-price-item__values {
+    gap: 8px;
+  }
+
+  .current-market-price-item__value-box {
+    padding: 10px 9px;
+    text-align: center;
+  }
+
+  .current-market-price-item__value-box > span {
+    margin-bottom: 4px;
+    font-size: 10px;
+  }
+
+  .current-market-price-item__value-box > strong {
+    font-size: 16px;
+  }
+
+  .current-market-price-item__unit {
+    font-size: 9px;
+  }
+
+  .current-market-price-item__delta {
+    justify-content: center;
+    gap: 3px;
+    margin-top: 6px;
+  }
+
+  .current-market-price-item__delta small {
+    display: none;
+  }
+}
+
+@media (max-width: 390px) {
+  .current-market-price-item__values {
+    grid-template-columns: 1fr;
+  }
+
+  .current-market-price-item__meta time {
+    max-width: 92px;
+  }
+}
+
+/* Mua vào */
+.current-market-price-item__value-box--buy {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+}
+
+.current-market-price-item__value-box--buy > span {
+  color: #15803d;
+}
+
+.current-market-price-item__value-box--buy > strong {
+  color: #166534;
+}
+
+/* Bán ra */
+.current-market-price-item__value-box--sell {
+  border: 1px solid #fde68a;
+  background: #fffbeb;
+}
+
+.current-market-price-item__value-box--sell > span {
+  color: #b45309;
+}
+
+.current-market-price-item__value-box--sell > strong {
+  color: #92400e;
+}
+
+.dark-theme .current-market-price-item__value-box--buy {
+  border-color: #166534;
+  background: rgba(20, 83, 45, 0.35);
+}
+
+.dark-theme .current-market-price-item__value-box--buy > span,
+.dark-theme .current-market-price-item__value-box--buy > strong {
+  color: #86efac;
+}
+
+.dark-theme .current-market-price-item__value-box--sell {
+  border-color: #92400e;
+  background: rgba(120, 53, 15, 0.35);
+}
+
+.dark-theme .current-market-price-item__value-box--sell > span,
+.dark-theme .current-market-price-item__value-box--sell > strong {
+  color: #fcd34d;
+}
+
+@media (max-width: 768px) {
+  .current-market-price-item__value-box--buy,
+  .current-market-price-item__value-box--sell {
+    border-radius: 12px;
+  }
+}
+
+/* =========================================================
+   PHÂN TÍCH - BẢN RÚT GỌN
+========================================================= */
+
+.smart-analysis__content--compact {
+  gap: 13px;
+}
+
+.smart-analysis__hero--compact {
+  padding: 18px;
+  gap: 14px;
+}
+
+.portfolio-score-explanation--compact {
+  margin: 0;
+  gap: 10px;
+}
+
+.portfolio-score-explanation--compact
+.portfolio-score-explanation__column {
+  padding: 12px 14px;
+}
+
+.portfolio-score-explanation--compact ul {
+  margin-top: 8px;
+}
+
+.portfolio-score-explanation--compact li {
+  margin: 3px 0;
+  font-size: 12px;
+}
+
+.smart-analysis__two-column--compact {
+  gap: 12px;
+}
+
+.smart-analysis__two-column--compact
+.smart-analysis-panel {
+  padding: 15px;
+}
+
+.smart-analysis__two-column--compact
+.smart-analysis-panel__heading {
+  margin-bottom: 12px;
+}
+
+.smart-analysis__two-column--compact
+.allocation-list {
+  gap: 10px;
+}
+
+.recommendation-summary {
+  display: grid;
+  gap: 10px;
+}
+
+.recommendation-summary__item {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px;
+  border-radius: 12px;
+  background: #fff9eb;
+}
+
+.recommendation-summary__item > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f2d77e;
+  color: #6e5000;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.recommendation-summary__item p,
+.recommendation-summary__alert p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.recommendation-summary__alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.recommendation-summary__alert svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+/* Không dùng các khối cũ ở bản compact */
+.smart-analysis__content--compact + .smart-insight-grid,
+.smart-analysis__content--compact + .smart-analysis__micro-stats {
+  display: none;
+}
+
+/* Dark theme */
+.dark-theme .recommendation-summary__item {
+  background: #0f172a;
+}
+
+.dark-theme .recommendation-summary__item p {
+  color: #e2e8f0;
+}
+
+.dark-theme .recommendation-summary__alert {
+  border-color: #6b5727;
+  background: #302817;
+  color: #fcd34d;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .smart-analysis__content--compact {
+    gap: 11px;
+  }
+
+  .smart-analysis__hero--compact {
+    padding: 14px;
+  }
+
+  .portfolio-score-explanation--compact {
+    grid-template-columns: 1fr;
+  }
+
+  .portfolio-score-explanation--compact
+  .portfolio-score-explanation__column {
+    padding: 11px 12px;
+  }
+
+  .smart-analysis__two-column--compact {
+    grid-template-columns: 1fr;
+  }
+
+  .smart-analysis__two-column--compact
+  .smart-analysis-panel {
+    padding: 13px;
+  }
+
+  .recommendation-summary__item,
+  .recommendation-summary__alert {
+    padding: 9px;
+  }
+}
+
+/* =========================================================
+   EMPTY STATE DUNG CHUNG
+========================================================= */
+.app-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 190px;
+  padding: 28px 20px;
+  border: 1px dashed #dfc982;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #fffdf8 0%, #fff8e8 100%);
+  text-align: center;
+}
+
+.app-empty-state--compact {
+  min-height: 140px;
+  padding: 20px 16px;
+}
+
+.app-empty-state__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  background: #fff1bd;
+  color: #9a6800;
+  box-shadow: inset 0 0 0 1px rgba(184, 134, 11, 0.12);
+}
+
+.app-empty-state--compact .app-empty-state__icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
+}
+
+.app-empty-state__content {
+  max-width: 480px;
+}
+
+.app-empty-state__content strong {
+  display: block;
+  color: #2b2417;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.app-empty-state__content p {
+  margin: 6px 0 0;
+  color: #7a6f5a;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.app-empty-state__action {
+  margin-top: 2px;
+}
+
+.app-empty-state__action button {
+  margin-top: 0;
+}
+
+.dark-theme .app-empty-state {
+  border-color: #475569;
+  background: linear-gradient(180deg, #111827 0%, #0f172a 100%);
+}
+
+.dark-theme .app-empty-state__icon {
+  background: #332d1d;
+  color: #f5d76e;
+  box-shadow: inset 0 0 0 1px rgba(245, 215, 110, 0.12);
+}
+
+.dark-theme .app-empty-state__content strong {
+  color: #f8fafc;
+}
+
+.dark-theme .app-empty-state__content p {
+  color: #94a3b8;
+}
+
+@media (max-width: 768px) {
+  .app-empty-state {
+    min-height: 160px;
+    padding: 22px 16px;
+    border-radius: 14px;
+  }
+
+  .app-empty-state--compact {
+    min-height: 128px;
+    padding: 17px 13px;
+  }
+
+  .app-empty-state__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+  }
+
+  .app-empty-state__content strong {
+    font-size: 15px;
+  }
+
+  .app-empty-state__content p {
+    font-size: 12px;
+  }
+}

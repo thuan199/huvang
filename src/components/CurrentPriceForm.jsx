@@ -428,28 +428,78 @@ function CurrentPriceForm({
                 <article key={itemKey} className={`current-market-price-item ${flashDirection ? `is-price-flash is-price-flash--${flashDirection}` : ''}`}>
                   <div className="current-market-price-item__top">
                     <div className="current-market-price-item__identity">
-                      <div className="current-market-price-item__logo">{item.normalizedSourceCode === 'MI_HONG' ? 'MH' : item.normalizedSourceCode}</div>
-                      <div>
-                        <div className="current-market-price-item__source-row">
-                          <strong className="current-market-price-item__source">{getSourceLabel(item.normalizedSourceCode)}</strong>
-                          {fastestKey === itemKey && <span className="current-market-price-item__newest-badge">⚡ Mới nhất</span>}
-                        </div>
-                        <p className="current-market-price-item__product">{item.normalizedProductName}</p>
+                      <div className="current-market-price-item__logo">
+                        {item.normalizedSourceCode === 'MI_HONG'
+                          ? 'MH'
+                          : item.normalizedSourceCode}
+                      </div>
+
+                      <div className="current-market-price-item__identity-text">
+                        <strong className="current-market-price-item__source">
+                          {getSourceLabel(item.normalizedSourceCode)}
+                        </strong>
+
+                        <p className="current-market-price-item__product">
+                          {item.normalizedProductName}
+                        </p>
                       </div>
                     </div>
-                    <time title={new Date(item.normalizedUpdatedAt ?? 0).toLocaleString('vi-VN')}>{formatRelativeTime(item.normalizedUpdatedAt)}</time>
+
+                    <div className="current-market-price-item__meta">
+                      {fastestKey === itemKey && (
+                        <span className="current-market-price-item__newest-badge">
+                          ⚡ Mới nhất
+                        </span>
+                      )}
+
+                      <time
+                        title={new Date(
+                          item.normalizedUpdatedAt ?? 0,
+                        ).toLocaleString('vi-VN')}
+                      >
+                        {formatRelativeTime(item.normalizedUpdatedAt)}
+                      </time>
+                    </div>
                   </div>
 
                   <div className="current-market-price-item__values">
                     <div className="current-market-price-item__value-box current-market-price-item__value-box--buy">
-                      <span>Cửa hàng mua vào</span>
-                      <strong>{item.normalizedBuyPrice > 0 ? <><CountUpNumber value={item.normalizedBuyPrice} /> VND/chỉ</> : 'Chưa có'}</strong>
+                      <span>Mua vào</span>
+
+                      <strong>
+                        {item.normalizedBuyPrice > 0 ? (
+                          <CountUpNumber value={item.normalizedBuyPrice} />
+                        ) : (
+                          'Chưa có'
+                        )}
+                      </strong>
+
+                      {item.normalizedBuyPrice > 0 && (
+                        <small className="current-market-price-item__unit">
+                          VND/chỉ
+                        </small>
+                      )}
+
                       <PriceDelta change={item.buyChange} />
                     </div>
 
                     <div className="current-market-price-item__value-box current-market-price-item__value-box--sell">
-                      <span>Cửa hàng bán ra</span>
-                      <strong>{item.normalizedSellPrice > 0 ? <><CountUpNumber value={item.normalizedSellPrice} /> VND/chỉ</> : 'Chưa có'}</strong>
+                      <span>Bán ra</span>
+
+                      <strong>
+                        {item.normalizedSellPrice > 0 ? (
+                          <CountUpNumber value={item.normalizedSellPrice} />
+                        ) : (
+                          'Chưa có'
+                        )}
+                      </strong>
+
+                      {item.normalizedSellPrice > 0 && (
+                        <small className="current-market-price-item__unit">
+                          VND/chỉ
+                        </small>
+                      )}
+
                       <PriceDelta change={item.sellChange} />
                     </div>
                   </div>

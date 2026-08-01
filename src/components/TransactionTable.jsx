@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  Inbox,
   ListChecks,
   MapPin,
   Pencil,
@@ -7,6 +8,7 @@ import {
 } from 'lucide-react';
 
 import { formatMoney } from '../utils/formatters';
+import EmptyState from './EmptyState';
 
 
 function getSourceLabel(transaction) {
@@ -363,7 +365,11 @@ function TransactionTable({
       {loading ? (
         <p>Đang tải...</p>
       ) : transactions.length === 0 ? (
-        <p className="small-text">Chưa có giao dịch.</p>
+        <EmptyState
+          icon={Inbox}
+          title="Chưa có giao dịch"
+          description="Hãy thêm giao dịch đầu tiên để bắt đầu theo dõi danh mục vàng của bạn."
+        />
       ) : (
         <>
           <div className="transaction-desktop-table">
@@ -378,8 +384,7 @@ function TransactionTable({
                     <th>Giá mua lúc giao dịch</th>
                     <th>Giá đối chiếu</th>
                     <th>Nơi mua/bán</th>
-                    <th>Lời/lỗ (VND)</th>
-                    <th>Lời/lỗ %</th>
+                    <th>Lời/lỗ</th>
                     <th>Ghi chú</th>
                     <th>Thao tác</th>
                   </tr>
@@ -507,51 +512,51 @@ function TransactionTable({
                               : ''
                           }
                         >
-                          {result.hasMarketPrice
-                            ? `${formatMoney(
-                              result.profit
-                            )}`
-                            : '-'}
-                        </td>
+                          {result.hasMarketPrice ? (
+                            <div className="transaction-profit-cell">
+                              <strong>
+                                {formatMoney(result.profit)} VND
+                              </strong>
 
-                        <td
-                          className={
-                            result.hasMarketPrice
-                              ? (
-                                result.profitPercent >= 0
-                                  ? 'profit'
-                                  : 'loss'
-                              )
-                              : ''
-                          }
-                        >
-                          {result.hasMarketPrice
-                            ? `${result.profitPercent.toFixed(
-                              2
-                            )}%`
-                            : '-'}
+                              <small>
+                                {result.profitPercent >= 0 ? '▲ +' : '▼ '}
+                                {result.profitPercent.toFixed(2)}%
+                              </small>
+                            </div>
+                          ) : (
+                            '-'
+                          )}
                         </td>
-
-                        <td>{transaction.note || '-'}</td>
 
                         <td>
-                          <div className="table-actions">
+                          <span
+                            className="transaction-note-ellipsis"
+                            title={transaction.note || 'Không có ghi chú'}
+                          >
+                            {transaction.note || '-'}
+                          </span>
+                        </td>
+
+                        <td>
+                          <div className="table-actions transaction-desktop-actions">
                             <button
                               type="button"
-                              className="edit-button icon-button table-icon-button"
+                              className="transaction-action-icon transaction-action-icon--edit"
                               onClick={() => onEdit(transaction)}
+                              aria-label="Sửa giao dịch"
+                              data-tooltip="Sửa giao dịch"
                             >
                               <Pencil size={15} />
-                              Sửa
                             </button>
 
                             <button
                               type="button"
-                              className="danger-button icon-button table-icon-button"
+                              className="transaction-action-icon transaction-action-icon--delete"
                               onClick={() => onDelete(transaction.id)}
+                              aria-label="Xóa giao dịch"
+                              data-tooltip="Xóa giao dịch"
                             >
                               <Trash2 size={15} />
-                              Xóa
                             </button>
                           </div>
                         </td>
@@ -697,45 +702,35 @@ function TransactionTable({
                               : ''
                           }
                         >
-                          {mobileResult.hasMarketPrice
-                            ? `${formatMoney(
-                              mobileResult.profit
-                            )} VND`
-                            : '-'}
-                        </td>
-                      </tr>
+                          {mobileResult.hasMarketPrice ? (
+                            <div className="transaction-mobile-profit">
+                              <strong>
+                                {formatMoney(mobileResult.profit)} VND
+                              </strong>
 
-                      <tr>
-                        <th>Lời/lỗ %</th>
-                        <td
-                          className={
-                            mobileResult.hasMarketPrice
-                              ? (
-                                mobileResult.profitPercent >= 0
-                                  ? 'profit'
-                                  : 'loss'
-                              )
-                              : ''
-                          }
-                        >
-                          {mobileResult.hasMarketPrice
-                            ? (
-                              <>
+                              <small>
                                 {mobileResult.profitPercent >= 0
-                                  ? '↑ +'
-                                  : '↓ '}
-                                {mobileResult.profitPercent.toFixed(
-                                  2
-                                )}%
-                              </>
-                            )
-                            : '-'}
+                                  ? '▲ +'
+                                  : '▼ '}
+                                {mobileResult.profitPercent.toFixed(2)}%
+                              </small>
+                            </div>
+                          ) : (
+                            '-'
+                          )}
                         </td>
                       </tr>
 
                       <tr>
                         <th>Ghi chú</th>
-                        <td>{mobileTransaction.note || '-'}</td>
+                        <td>
+                          <span
+                            className="transaction-mobile-note"
+                            title={mobileTransaction.note || 'Không có ghi chú'}
+                          >
+                            {mobileTransaction.note || '-'}
+                          </span>
+                        </td>
                       </tr>
                     </tbody>
                   </table>

@@ -6,23 +6,17 @@ import {
 } from 'react';
 
 import {
-  Award,
   BarChart3,
   BrainCircuit,
   CircleAlert,
-  Flame,
   Globe2,
+  Inbox,
   Lightbulb,
   LockKeyhole,
-  Medal,
   Scale,
   ShieldCheck,
   Sparkles,
-  Target,
-  TimerReset,
-  TrendingDown,
   TrendingUp,
-  Trophy,
 } from 'lucide-react';
 
 import {
@@ -37,6 +31,7 @@ import {
 
 import { formatMoney } from '../utils/formatters';
 import TradingViewGoldChart from './TradingViewGoldChart';
+import EmptyState from './EmptyState';
 import './LocalGoldChart.css';
 
 const CHART_SOURCES = [
@@ -148,21 +143,6 @@ function PriceChangeLabel({
     >
       {text}
     </text>
-  );
-}
-
-function InsightCard({ icon: Icon, title, children, tone = 'gold' }) {
-  return (
-    <article className={`smart-insight-card smart-insight-card--${tone}`}>
-      <div className="smart-insight-card__icon">
-        <Icon size={20} />
-      </div>
-
-      <div>
-        <span>{title}</span>
-        <strong>{children}</strong>
-      </div>
-    </article>
   );
 }
 
@@ -591,13 +571,20 @@ function LocalGoldChart({
       </div>
 
       {activeGoldTab === 'overview' && (
+        user && transactions.length === 0 ? (
+          <EmptyState
+            icon={Inbox}
+            title="Chưa đủ dữ liệu phân tích"
+            description="Hãy thêm giao dịch đầu tiên và cập nhật giá hiện tại để hệ thống đánh giá danh mục."
+          />
+        ) : (
         <div className={`smart-analysis ${!user ? 'smart-analysis--locked' : ''}`}>
-          <div className="smart-analysis__content">
-            <div className="smart-analysis__hero">
+          <div className="smart-analysis__content smart-analysis__content--compact">
+            <div className="smart-analysis__hero smart-analysis__hero--compact">
               <div className="smart-analysis__hero-copy">
                 <span className="smart-analysis__eyebrow">
                   <Sparkles size={15} />
-                  Insight tự động hôm nay
+                  Insight chính
                 </span>
 
                 <h2>
@@ -617,6 +604,7 @@ function LocalGoldChart({
                     <TrendingUp size={15} />
                     {formatSignedMoney(profit)}
                   </span>
+
                   <span>
                     <ShieldCheck size={15} />
                     {analysis.valuedCount} giao dịch đã định giá
@@ -624,7 +612,11 @@ function LocalGoldChart({
                 </div>
               </div>
 
-              <div className={`investment-score investment-score--${analysis.score >= 70 ? 'good' : 'warning'}`}>
+              <div
+                className={`investment-score investment-score--${
+                  analysis.score >= 70 ? 'good' : 'warning'
+                }`}
+              >
                 <span>Gold Health</span>
                 <strong>{analysis.score}</strong>
                 <small>/100 · {analysis.scoreLabel}</small>
@@ -644,7 +636,10 @@ function LocalGoldChart({
                       <div className="investment-score__track">
                         <span
                           style={{
-                            width: `${Math.min(100, (item.score / item.max) * 100)}%`,
+                            width: `${Math.min(
+                              100,
+                              (item.score / item.max) * 100,
+                            )}%`,
                           }}
                         />
                       </div>
@@ -654,17 +649,18 @@ function LocalGoldChart({
               </div>
             </div>
 
-            <div className="portfolio-score-explanation">
+            <div className="portfolio-score-explanation portfolio-score-explanation--compact">
               <div className="portfolio-score-explanation__column">
                 <span className="portfolio-score-explanation__title">
-                  <ShieldCheck size={17} /> Điểm mạnh
+                  <ShieldCheck size={17} />
+                  Điểm mạnh
                 </span>
 
                 <ul>
                   {(analysis.scoreStrengths.length > 0
                     ? analysis.scoreStrengths
                     : ['Chưa có đủ dữ liệu để xác định điểm mạnh.']
-                  ).slice(0, 3).map((item) => (
+                  ).slice(0, 2).map((item) => (
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
@@ -672,74 +668,38 @@ function LocalGoldChart({
 
               <div className="portfolio-score-explanation__column portfolio-score-explanation__column--warning">
                 <span className="portfolio-score-explanation__title">
-                  <CircleAlert size={17} /> Có thể cải thiện
+                  <CircleAlert size={17} />
+                  Cần cải thiện
                 </span>
 
                 <ul>
                   {(analysis.scoreImprovements.length > 0
                     ? analysis.scoreImprovements
                     : ['Hiện chưa có cảnh báo đáng chú ý.']
-                  ).slice(0, 3).map((item) => (
+                  ).slice(0, 2).map((item) => (
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
               </div>
             </div>
 
-            <div className="smart-insight-grid">
-              <InsightCard
-                icon={Trophy}
-                title="Giao dịch nổi bật"
-                tone="success"
-              >
-                {analysis.best
-                  ? `${analysis.best.name} · ${formatSignedMoney(analysis.best.result.profit)}`
-                  : 'Chưa có giao dịch đủ dữ liệu'}
-              </InsightCard>
-
-              <InsightCard
-                icon={CircleAlert}
-                title="Cần chú ý"
-                tone={analysis.worst?.result?.profit < 0 ? 'danger' : 'neutral'}
-              >
-                {analysis.worst?.result?.profit < 0
-                  ? `${analysis.worst.name} · ${formatSignedMoney(analysis.worst.result.profit)}`
-                  : 'Chưa có giao dịch đang lỗ'}
-              </InsightCard>
-
-              <InsightCard
-                icon={Target}
-                title="Tỷ lệ giao dịch có lãi"
-                tone="blue"
-              >
-                {analysis.valuedCount > 0
-                  ? `${analysis.winRate.toFixed(0)}% · ${analysis.profitableCount}/${analysis.valuedCount} giao dịch`
-                  : 'Chưa có dữ liệu định giá'}
-              </InsightCard>
-
-              <InsightCard
-                icon={TimerReset}
-                title="Thời gian đồng hành"
-                tone="purple"
-              >
-                {analysis.holdingDays > 0
-                  ? `${analysis.holdingDays} ngày kể từ giao dịch đầu tiên`
-                  : 'Chưa có giao dịch mua'}
-              </InsightCard>
-            </div>
-
-            <div className="smart-analysis__two-column">
-              <section className="smart-analysis-panel">
+            <div className="smart-analysis__two-column smart-analysis__two-column--compact">
+              <section className="smart-analysis-panel smart-analysis-panel--allocation">
                 <div className="smart-analysis-panel__heading">
                   <div>
-                    <span className="smart-analysis-panel__kicker">Danh mục</span>
+                    <span className="smart-analysis-panel__kicker">
+                      Danh mục
+                    </span>
                     <h3>Phân bổ theo nguồn vàng</h3>
                   </div>
+
                   <Scale size={20} />
                 </div>
 
                 {analysis.sourceAllocation.length === 0 ? (
-                  <p className="small-text">Chưa có dữ liệu để phân bổ.</p>
+                  <p className="small-text">
+                    Chưa có dữ liệu để phân bổ.
+                  </p>
                 ) : (
                   <div className="allocation-list">
                     {analysis.sourceAllocation.map((item) => (
@@ -750,12 +710,23 @@ function LocalGoldChart({
                         </div>
 
                         <div className="allocation-row__track">
-                          <span style={{ width: `${Math.max(3, item.percent)}%` }} />
+                          <span
+                            style={{
+                              width: `${Math.max(3, item.percent)}%`,
+                            }}
+                          />
                         </div>
 
                         <div className="allocation-row__meta">
-                          <span>{formatMoney(item.currentValue)} VND</span>
-                          <span className={item.profit >= 0 ? 'profit' : 'loss'}>
+                          <span>
+                            {formatMoney(item.currentValue)} VND
+                          </span>
+
+                          <span
+                            className={
+                              item.profit >= 0 ? 'profit' : 'loss'
+                            }
+                          >
                             {formatSignedMoney(item.profit)}
                           </span>
                         </div>
@@ -765,40 +736,41 @@ function LocalGoldChart({
                 )}
               </section>
 
-              <section className="smart-analysis-panel">
+              <section className="smart-analysis-panel smart-analysis-panel--recommendation">
                 <div className="smart-analysis-panel__heading">
                   <div>
-                    <span className="smart-analysis-panel__kicker">Gợi ý thông minh</span>
-                    <h3>Việc nên làm tiếp theo</h3>
+                    <span className="smart-analysis-panel__kicker">
+                      Gợi ý ưu tiên
+                    </span>
+                    <h3>2 việc nên chú ý</h3>
                   </div>
+
                   <Lightbulb size={20} />
                 </div>
 
-                <div className="recommendation-list">
-                  {analysis.insights.map((insight, index) => (
-                    <div className="recommendation-item" key={`${insight}-${index}`}>
+                <div className="recommendation-summary">
+                  {analysis.insights.slice(0, 2).map((insight, index) => (
+                    <div
+                      className="recommendation-summary__item"
+                      key={`${insight}-${index}`}
+                    >
                       <span>{index + 1}</span>
                       <p>{insight}</p>
                     </div>
                   ))}
 
                   {analysis.maxAllocation?.percent >= 70 && (
-                    <div className="recommendation-item recommendation-item--highlight">
-                      <span>!</span>
+                    <div className="recommendation-summary__alert">
+                      <CircleAlert size={17} />
+
                       <p>
-                        Có thể cân nhắc đa dạng thêm nguồn vàng để giảm mức độ tập trung.
+                        Danh mục đang tập trung nhiều ở một nguồn vàng.
+                        Có thể cân nhắc đa dạng thêm nếu muốn giảm rủi ro.
                       </p>
                     </div>
                   )}
                 </div>
               </section>
-            </div>
-
-            <div className="smart-analysis__micro-stats">
-              <span><Flame size={16} /> {analysis.profitableCount} giao dịch có lãi</span>
-              <span><TrendingDown size={16} /> {analysis.losingCount} giao dịch đang lỗ</span>
-              <span><Scale size={16} /> Giá vốn TB {formatMoney(analysis.averageBuyPrice)} VND/chỉ</span>
-              <span><TrendingUp size={16} /> {profitPercent.toFixed(2)}% hiệu suất hiện tại</span>
             </div>
           </div>
 
@@ -814,6 +786,7 @@ function LocalGoldChart({
             </button>
           )}
         </div>
+        )
       )}
 
       {activeGoldTab === 'local' && (
@@ -854,9 +827,12 @@ function LocalGoldChart({
           </div>
 
           {!hasChartData ? (
-            <p className="small-text">
-              Chưa có lịch sử giá {activeSourceLabel} để vẽ biểu đồ.
-            </p>
+            <EmptyState
+              icon={BarChart3}
+              title="Chưa có dữ liệu biểu đồ"
+              description={`Cần ít nhất một lần cập nhật giá ${activeSourceLabel} để bắt đầu hiển thị biểu đồ.`}
+              compact
+            />
           ) : (
             <div
               ref={chartContainerRef}

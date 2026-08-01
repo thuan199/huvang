@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Building2,
+  Inbox,
   Pencil,
   Plus,
   Trash2,
@@ -8,6 +9,7 @@ import {
 } from 'lucide-react';
 
 import { formatMoney } from '../utils/formatters';
+import EmptyState from './EmptyState';
 import {
   deletePrivateGoldPriceSeries,
   savePrivateGoldPrice,
@@ -335,10 +337,12 @@ export default function PrivateGoldPriceManager({
             <h3>Thêm giá tiệm vàng</h3>
 
             {privateOptions.length === 0 ? (
-              <div className="private-price-empty">
-                Chưa có giao dịch vàng tư nhân hợp lệ. Hãy thêm giao dịch và
-                nhập tên tiệm vàng trước.
-              </div>
+              <EmptyState
+                icon={Building2}
+                title="Chưa có giao dịch vàng tư nhân"
+                description="Hãy thêm giao dịch, chọn nguồn Tư nhân và nhập đúng tên tiệm trước khi cập nhật giá."
+                compact
+              />
             ) : (
               <div className="private-price-form__grid">
                 <label>
@@ -427,7 +431,12 @@ export default function PrivateGoldPriceManager({
           <div className="private-price-list">
             <h3>Giá mới nhất</h3>
             {sortedPrices.length === 0 ? (
-              <div className="private-price-empty">Chưa có giá tiệm vàng.</div>
+              <EmptyState
+                icon={Inbox}
+                title="Chưa có giá tiệm vàng"
+                description="Hãy chọn một giao dịch tư nhân và thêm giá hiện tại của tiệm vàng bạn đang theo dõi."
+                compact
+              />
             ) : (
               sortedPrices.map((item) => {
                 const ageInDays = getAgeInDays(item.price_date);

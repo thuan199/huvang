@@ -298,265 +298,311 @@ function TransactionForm({
           : 'Chọn cửa hàng và loại vàng bạn đã mua hoặc bán.'}
       </p>
 
-      <label htmlFor="transaction-type">
-        Loại giao dịch
-      </label>
+      <div className="transaction-form-groups">
+        <section className="transaction-form-group">
+          <div className="transaction-form-group__header">
+            <span className="transaction-form-group__number">1</span>
 
-      <select
-        id="transaction-type"
-        value={
-          transactionForm
-            .transaction_type ?? 'BUY'
-        }
-        onChange={(event) =>
-          updateFormField(
-            'transaction_type',
-            event.target.value,
-          )
-        }
-      >
-        <option value="BUY">
-          Mua
-        </option>
+            <div>
+              <h3>Thông tin vàng</h3>
+              <p>Chọn loại giao dịch, nguồn vàng và loại vàng.</p>
+            </div>
+          </div>
 
-        <option value="SELL">
-          Bán
-        </option>
-      </select>
+          <div className="transaction-form-group__fields">
+            <div className="transaction-form-field">
+              <label htmlFor="transaction-type">
+                Loại giao dịch
+              </label>
 
-      <label htmlFor="gold-source">
-        Cửa hàng / nguồn vàng
-      </label>
-
-      <select
-        id="gold-source"
-        value={selectedSourceCode}
-        onChange={handleSourceChange}
-      >
-        {GOLD_SOURCES.map(
-          (source) => (
-            <option
-              key={source.code}
-              value={source.code}
-            >
-              {source.label}
-            </option>
-          ),
-        )}
-      </select>
-
-      {isPrivateSource && (
-        <>
-          <label htmlFor="private-shop-name">
-            Tên tiệm vàng tư nhân
-            <span aria-hidden="true"> *</span>
-          </label>
-
-          <input
-            id="private-shop-name"
-            type="text"
-            value={transactionForm.location ?? ''}
-            onChange={(event) =>
-              updateFormField(
-                'location',
-                event.target.value,
-              )
-            }
-            placeholder="Ví dụ: Khôi Nguyên Bình Triệu"
-            autoComplete="organization"
-            required
-          />
-
-          <p className="transaction-price-note">
-            Nhập đúng tên tiệm bạn đã mua vàng. Tên này sẽ
-            được dùng để liên kết với mục{' '}
-            <span className="transaction-price-note__link">
-              <strong>
-              <Store size={17} />{' '}
-              Giá tiệm vàng tư nhân</strong>
-            </span>
-            .
-          </p>
-        </>
-      )}
-
-      <label htmlFor="gold-type">
-        Loại vàng
-      </label>
-
-      {isPrivateSource ? (
-        <input
-          id="gold-type"
-          type="text"
-          value={selectedGoldType}
-          onChange={(event) =>
-            updateFormField(
-              'gold_type',
-              event.target.value,
-            )
-          }
-          placeholder="Ví dụ: Nhẫn trơn 9999, vàng 24K..."
-        />
-      ) : (
-        <select
-          id="gold-type"
-          value={selectedGoldType}
-          onChange={
-            handleGoldTypeChange
-          }
-        >
-          {availableProducts.map(
-            (product) => (
-              <option
-                key={product.value}
-                value={product.value}
+              <select
+                id="transaction-type"
+                value={
+                  transactionForm
+                    .transaction_type ?? 'BUY'
+                }
+                onChange={(event) =>
+                  updateFormField(
+                    'transaction_type',
+                    event.target.value,
+                  )
+                }
               >
-                {product.label}
-              </option>
-            ),
-          )}
-        </select>
-      )}
+                <option value="BUY">Mua</option>
+                <option value="SELL">Bán</option>
+              </select>
+            </div>
 
-      {selectedSourceCode ===
-        'SJC' && (
-          <p className="transaction-unit-note">
-            Giá SJC được nhập theo chỉ.
-            Nguồn SJC công bố theo lượng,
-            với 1 lượng = 10 chỉ.
-          </p>
-        )}
+            <div className="transaction-form-field">
+              <label htmlFor="gold-source">
+                Cửa hàng / nguồn vàng
+              </label>
 
-      <label htmlFor="quantity-chi">
-        Số lượng chỉ
-      </label>
+              <select
+                id="gold-source"
+                value={selectedSourceCode}
+                onChange={handleSourceChange}
+              >
+                {GOLD_SOURCES.map(
+                  (source) => (
+                    <option
+                      key={source.code}
+                      value={source.code}
+                    >
+                      {source.label}
+                    </option>
+                  ),
+                )}
+              </select>
+            </div>
 
-      <input
-        id="quantity-chi"
-        type="number"
-        min="0"
-        step="0.1"
-        value={
-          transactionForm
-            .quantity_chi ?? ''
-        }
-        onChange={(event) =>
-          updateFormField(
-            'quantity_chi',
-            event.target.value,
-          )
-        }
-        placeholder="Ví dụ: 5"
-      />
+            {isPrivateSource && (
+              <div className="transaction-form-field transaction-form-field--full">
+                <label htmlFor="private-shop-name">
+                  Tên tiệm vàng tư nhân
+                  <span aria-hidden="true"> *</span>
+                </label>
 
-      <label htmlFor="buy-price">
-        Giá mua mỗi chỉ
-      </label>
+                <input
+                  id="private-shop-name"
+                  type="text"
+                  value={transactionForm.location ?? ''}
+                  onChange={(event) =>
+                    updateFormField(
+                      'location',
+                      event.target.value,
+                    )
+                  }
+                  placeholder="Ví dụ: Khôi Nguyên Bình Triệu"
+                  autoComplete="organization"
+                  required
+                />
 
-      <input
-        id="buy-price"
-        type="number"
-        min="0"
-        step="5000"
-        value={
-          transactionForm
-            .price_per_chi ?? ''
-        }
-        onChange={(event) =>
-          updateFormField(
-            'price_per_chi',
-            event.target.value,
-          )
-        }
-        placeholder="Ví dụ: 14320000"
-      />
+                <p className="transaction-price-note">
+                  Nhập đúng tên tiệm bạn đã mua vàng. Tên này sẽ
+                  được dùng để liên kết với mục{' '}
+                  <span className="transaction-price-note__link">
+                    <Store size={17} />
+                    <strong>Giá tiệm vàng tư nhân</strong>
+                  </span>
+                  .
+                </p>
+              </div>
+            )}
 
-      <label htmlFor="sell-price">
-        Giá tiệm thu lại tại thời điểm giao dịch
-      </label>
+            <div className="transaction-form-field transaction-form-field--full">
+              <label htmlFor="gold-type">
+                Loại vàng
+              </label>
 
-      <p className="transaction-price-note">
-        {isPrivateSource
-          ? 'Nhập giá tiệm thu lại tại đúng thời điểm bạn mua. Giá này được lưu vào lịch sử giao dịch; giá hiện tại sẽ được quản lý riêng trong mục “Giá tiệm vàng của tôi”.'
-          : 'Giá được tự động lấy theo cửa hàng và loại vàng đã chọn. Bạn vẫn có thể điều chỉnh lại trước khi lưu.'}
-      </p>
+              {isPrivateSource ? (
+                <input
+                  id="gold-type"
+                  type="text"
+                  value={selectedGoldType}
+                  onChange={(event) =>
+                    updateFormField(
+                      'gold_type',
+                      event.target.value,
+                    )
+                  }
+                  placeholder="Ví dụ: Nhẫn trơn 9999, vàng 24K..."
+                />
+              ) : (
+                <select
+                  id="gold-type"
+                  value={selectedGoldType}
+                  onChange={handleGoldTypeChange}
+                >
+                  {availableProducts.map(
+                    (product) => (
+                      <option
+                        key={product.value}
+                        value={product.value}
+                      >
+                        {product.label}
+                      </option>
+                    ),
+                  )}
+                </select>
+              )}
 
-      <input
-        id="sell-price"
-        type="number"
-        min="0"
-        step="5000"
-        value={
-          transactionForm
-            .sell_price_per_chi ?? ''
-        }
-        onChange={(event) =>
-          updateFormField(
-            'sell_price_per_chi',
-            event.target.value,
-          )
-        }
-        placeholder="Nhập giá tiệm thu lại lúc giao dịch"
-      />
+              {selectedSourceCode === 'SJC' && (
+                <p className="transaction-unit-note">
+                  Giá SJC được nhập theo chỉ. Nguồn SJC công bố theo lượng,
+                  với 1 lượng = 10 chỉ.
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
 
-      <label htmlFor="transaction-date">
-        Ngày giao dịch
-      </label>
+        <section className="transaction-form-group">
+          <div className="transaction-form-group__header">
+            <span className="transaction-form-group__number">2</span>
 
-      <input
-        id="transaction-date"
-        type="date"
-        value={
-          transactionForm
-            .transaction_date ?? ''
-        }
-        onChange={(event) =>
-          updateFormField(
-            'transaction_date',
-            event.target.value,
-          )
-        }
-      />
+            <div>
+              <h3>Giá và số lượng</h3>
+              <p>Nhập số chỉ, giá mua và giá tiệm thu lại.</p>
+            </div>
+          </div>
 
+          <div className="transaction-form-group__fields">
+            <div className="transaction-form-field">
+              <label htmlFor="quantity-chi">
+                Số lượng chỉ
+              </label>
 
-      {!isPrivateSource && (
-        <>
-          <label htmlFor="transaction-location">
-            Nơi mua/bán
-          </label>
+              <input
+                id="quantity-chi"
+                type="number"
+                min="0"
+                step="0.1"
+                value={
+                  transactionForm
+                    .quantity_chi ?? ''
+                }
+                onChange={(event) =>
+                  updateFormField(
+                    'quantity_chi',
+                    event.target.value,
+                  )
+                }
+                placeholder="Ví dụ: 5"
+              />
+            </div>
 
-          <input
-            id="transaction-location"
-            type="text"
-            value={transactionForm.location ?? ''}
-            onChange={(event) =>
-              updateFormField(
-                'location',
-                event.target.value,
-              )
-            }
-            placeholder="Ví dụ: PNJ Tô Ngọc Vân, Chợ Bà Chiểu..."
-          />
-        </>
-      )}
+            <div className="transaction-form-field">
+              <label htmlFor="buy-price">
+                Giá mua mỗi chỉ
+              </label>
 
-      <label htmlFor="transaction-note">
-        Ghi chú
-      </label>
+              <input
+                id="buy-price"
+                type="number"
+                min="0"
+                step="5000"
+                value={
+                  transactionForm
+                    .price_per_chi ?? ''
+                }
+                onChange={(event) =>
+                  updateFormField(
+                    'price_per_chi',
+                    event.target.value,
+                  )
+                }
+                placeholder="Ví dụ: 14320000"
+              />
+            </div>
 
-      <textarea
-        id="transaction-note"
-        value={
-          transactionForm.note ?? ''
-        }
-        onChange={(event) =>
-          updateFormField(
-            'note',
-            event.target.value,
-          )
-        }
-        placeholder="Ghi chú thêm nếu có"
-      />
+            <div className="transaction-form-field transaction-form-field--full">
+              <label htmlFor="sell-price">
+                Giá tiệm thu lại tại thời điểm giao dịch
+              </label>
+
+              <p className="transaction-price-note">
+                {isPrivateSource
+                  ? 'Nhập giá tiệm thu lại tại đúng thời điểm bạn mua. Giá này được lưu vào lịch sử giao dịch; giá hiện tại sẽ được quản lý riêng trong mục “Giá tiệm vàng của tôi”.'
+                  : 'Giá được tự động lấy theo cửa hàng và loại vàng đã chọn. Bạn vẫn có thể điều chỉnh lại trước khi lưu.'}
+              </p>
+
+              <input
+                id="sell-price"
+                type="number"
+                min="0"
+                step="5000"
+                value={
+                  transactionForm
+                    .sell_price_per_chi ?? ''
+                }
+                onChange={(event) =>
+                  updateFormField(
+                    'sell_price_per_chi',
+                    event.target.value,
+                  )
+                }
+                placeholder="Nhập giá tiệm thu lại lúc giao dịch"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section className="transaction-form-group">
+          <div className="transaction-form-group__header">
+            <span className="transaction-form-group__number">3</span>
+
+            <div>
+              <h3>Thông tin bổ sung</h3>
+              <p>Thêm ngày giao dịch, địa điểm và ghi chú.</p>
+            </div>
+          </div>
+
+          <div className="transaction-form-group__fields">
+            <div className="transaction-form-field">
+              <label htmlFor="transaction-date">
+                Ngày giao dịch
+              </label>
+
+              <input
+                id="transaction-date"
+                type="date"
+                value={
+                  transactionForm
+                    .transaction_date ?? ''
+                }
+                onChange={(event) =>
+                  updateFormField(
+                    'transaction_date',
+                    event.target.value,
+                  )
+                }
+              />
+            </div>
+
+            {!isPrivateSource && (
+              <div className="transaction-form-field">
+                <label htmlFor="transaction-location">
+                  Nơi mua/bán
+                </label>
+
+                <input
+                  id="transaction-location"
+                  type="text"
+                  value={transactionForm.location ?? ''}
+                  onChange={(event) =>
+                    updateFormField(
+                      'location',
+                      event.target.value,
+                    )
+                  }
+                  placeholder="Ví dụ: PNJ Tô Ngọc Vân..."
+                />
+              </div>
+            )}
+
+            <div className="transaction-form-field transaction-form-field--full">
+              <label htmlFor="transaction-note">
+                Ghi chú
+              </label>
+
+              <textarea
+                id="transaction-note"
+                value={
+                  transactionForm.note ?? ''
+                }
+                onChange={(event) =>
+                  updateFormField(
+                    'note',
+                    event.target.value,
+                  )
+                }
+                placeholder="Ghi chú thêm nếu có"
+              />
+            </div>
+          </div>
+        </section>
+      </div>
 
       <div className="form-actions">
         <button
