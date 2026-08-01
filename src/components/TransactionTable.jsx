@@ -190,8 +190,8 @@ function buildTransactionResult(
     typeof calculateTransactionResult ===
       'function'
       ? calculateTransactionResult(
-          transaction
-        )
+        transaction
+      )
       : {};
 
   if (
@@ -253,6 +253,53 @@ function buildTransactionResult(
   };
 }
 
+function getComparisonPriceStatus(
+  transaction,
+  result,
+) {
+  const purchasePrice = Number(
+    transaction?.price_per_chi ??
+    transaction?.unit_price ??
+    0,
+  );
+
+  const comparisonPrice = Number(
+    result?.currentPrice ?? 0,
+  );
+
+  if (
+    purchasePrice <= 0 ||
+    comparisonPrice <= 0
+  ) {
+    return {
+      className: '',
+      symbol: '',
+    };
+  }
+
+  if (comparisonPrice > purchasePrice) {
+    return {
+      className:
+        'comparison-price-value--higher',
+      symbol: '▲',
+    };
+  }
+
+  if (comparisonPrice < purchasePrice) {
+    return {
+      className:
+        'comparison-price-value--lower',
+      symbol: '▼',
+    };
+  }
+
+  return {
+    className:
+      'comparison-price-value--equal',
+    symbol: '',
+  };
+}
+
 function TransactionTable({
   loading,
   transactions,
@@ -267,11 +314,21 @@ function TransactionTable({
   const mobileTransaction = transactions[mobilePage - 1] || null;
   const mobileResult = mobileTransaction
     ? buildTransactionResult(
-        mobileTransaction,
-        calculateTransactionResult,
-        privateGoldPrices
-      )
+      mobileTransaction,
+      calculateTransactionResult,
+      privateGoldPrices
+    )
     : null;
+  const mobileComparisonStatus =
+    mobileTransaction && mobileResult
+      ? getComparisonPriceStatus(
+        mobileTransaction,
+        mobileResult,
+      )
+      : {
+        className: '',
+        symbol: '',
+      };
 
   useEffect(() => {
     setMobilePage((currentPage) =>
@@ -304,7 +361,7 @@ function TransactionTable({
                     <th>Giá mua lúc giao dịch</th>
                     <th>Giá đối chiếu</th>
                     <th>Nơi mua/bán</th>
-                    <th>Lời/lỗ</th>
+                    <th>Lời/lỗ (VND)</th>
                     <th>Lời/lỗ %</th>
                     <th>Ghi chú</th>
                     <th>Thao tác</th>
@@ -318,6 +375,11 @@ function TransactionTable({
                         transaction,
                         calculateTransactionResult,
                         privateGoldPrices
+                      );
+                    const comparisonStatus =
+                      getComparisonPriceStatus(
+                        transaction,
+                        result,
                       );
 
                     return (
@@ -371,9 +433,21 @@ function TransactionTable({
                               {getComparisonLabel(transaction)}
                             </small>
 
-                            <strong>
+                            <strong
+                              className={`comparison-price-value ${comparisonStatus.className}`}
+                            >
                               {Number(result.currentPrice || 0) > 0
-                                ? `${formatMoney(result.currentPrice)}`
+                                ? (
+                                  <>
+                                    {comparisonStatus.symbol && (
+                                      <span className="comparison-price-arrow">
+                                        {comparisonStatus.symbol}
+                                      </span>
+                                    )}
+
+                                    {formatMoney(result.currentPrice)}
+                                  </>
+                                )
                                 : getComparisonEmptyText(transaction)}
                             </strong>
 
@@ -414,7 +488,7 @@ function TransactionTable({
                           {result.hasMarketPrice
                             ? `${formatMoney(
                               result.profit
-                            )} VND`
+                            )}`
                             : '-'}
                         </td>
 
@@ -486,8 +560,8 @@ function TransactionTable({
                         <td>
                           <span
                             className={`transaction-type-badge ${mobileTransaction.transaction_type === 'BUY'
-                                ? 'transaction-type-badge--buy'
-                                : 'transaction-type-badge--sell'
+                              ? 'transaction-type-badge--buy'
+                              : 'transaction-type-badge--sell'
                               }`}
                           >
                             {mobileTransaction.transaction_type === 'BUY'
@@ -547,9 +621,21 @@ function TransactionTable({
                               {getComparisonLabel(mobileTransaction)}
                             </small>
 
-                            <strong>
+                            <strong
+                              className={`comparison-price-value ${mobileComparisonStatus.className}`}
+                            >
                               {Number(mobileResult.currentPrice || 0) > 0
-                                ? `${formatMoney(mobileResult.currentPrice)}`
+                                ? (
+                                  <>
+                                    {mobileComparisonStatus.symbol && (
+                                      <span className="comparison-price-arrow">
+                                        {mobileComparisonStatus.symbol}
+                                      </span>
+                                    )}
+
+                                    {formatMoney(mobileResult.currentPrice)} VND/chỉ
+                                  </>
+                                )
                                 : getComparisonEmptyText(mobileTransaction)}
                             </strong>
 
@@ -649,6 +735,7 @@ function TransactionTable({
                 </div>
               </article>
             )}
+
 
             {transactions.length > 1 && (
               <div className="pagination transaction-mobile-pagination">
