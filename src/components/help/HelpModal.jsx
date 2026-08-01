@@ -387,6 +387,78 @@ function GuideContent() {
 
       <HelpStep
         number="6"
+        title="Phân tích danh mục"
+      >
+        <p>
+          Mục
+          <strong>
+            {" "}
+            Phân tích
+          </strong>
+          {" "}
+          tổng hợp dữ liệu từ các giao dịch mua đã lưu và giá thu lại hiện tại để đánh giá tình trạng danh mục vàng của bạn.
+        </p>
+
+        <p>
+          Hệ thống phân tích các nội dung chính:
+        </p>
+
+        <ul className="help-info-list">
+          <li>
+            <strong>Hiệu suất đầu tư:</strong>{" "}
+            dựa trên tỷ lệ lãi hoặc lỗ hiện tại của toàn bộ giao dịch đã có giá.
+          </li>
+
+          <li>
+            <strong>Tỷ lệ giao dịch có lãi:</strong>{" "}
+            so sánh số giao dịch đang có lãi với tổng số giao dịch đã được định giá.
+          </li>
+
+          <li>
+            <strong>Mức độ đa dạng:</strong>{" "}
+            đánh giá danh mục có đang tập trung quá nhiều vào một nguồn vàng hay không.
+          </li>
+
+          <li>
+            <strong>Quản trị rủi ro:</strong>{" "}
+            xem xét mức lỗ lớn nhất trong các giao dịch hiện tại.
+          </li>
+
+          <li>
+            <strong>Kỷ luật dữ liệu:</strong>{" "}
+            dựa trên mức độ đầy đủ của giá hiện tại và ghi chú giao dịch.
+          </li>
+        </ul>
+
+        <p>
+          Từ các tiêu chí trên, hệ thống tạo
+          <strong>
+            {" "}
+            Gold Health Score
+          </strong>
+          {" "}
+          với thang điểm tối đa 100:
+        </p>
+
+        <ul className="help-info-list">
+          <li>Hiệu suất đầu tư: tối đa 35 điểm.</li>
+          <li>Tỷ lệ giao dịch có lãi: tối đa 20 điểm.</li>
+          <li>Đa dạng nguồn vàng: tối đa 15 điểm.</li>
+          <li>Quản trị rủi ro: tối đa 15 điểm.</li>
+          <li>Kỷ luật dữ liệu: tối đa 15 điểm.</li>
+        </ul>
+
+        <p>
+          Mục tiêu của phần Phân tích là giúp bạn nhanh chóng nhận biết điểm mạnh, điểm cần cải thiện, giao dịch nổi bật, giao dịch cần chú ý và mức độ tập trung của danh mục.
+        </p>
+
+        <p>
+          Kết quả chỉ mang tính hỗ trợ theo dõi dữ liệu đã nhập, không phải dự báo giá và không phải khuyến nghị mua hoặc bán vàng.
+        </p>
+      </HelpStep>
+
+      <HelpStep
+        number="7"
         title="Dùng Chat và Trợ lý AI"
       >
         <p>
