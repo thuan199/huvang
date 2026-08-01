@@ -24,6 +24,23 @@ function getSourceLabel(transaction) {
   return labels[sourceCode] ?? (sourceCode || '-');
 }
 
+function getSourceShortLabel(transaction) {
+  const sourceCode = String(
+    transaction?.source_code ?? '',
+  )
+    .trim()
+    .toUpperCase();
+
+  const labels = {
+    PNJ: 'PNJ',
+    SJC: 'SJC',
+    MI_HONG: 'MH',
+    PRIVATE: 'TN',
+  };
+
+  return labels[sourceCode] ?? '?';
+}
+
 
 function isSellTransaction(transaction) {
   return String(
@@ -402,7 +419,7 @@ function TransactionTable({
                         <td>
                           <div className="transaction-gold-cell">
                             <span className="transaction-source-circle">
-                              {getSourceLabel(transaction)}
+                              {getSourceShortLabel(transaction)}
                             </span>
 
                             <div className="transaction-gold-info">
@@ -581,7 +598,7 @@ function TransactionTable({
                         <td>
                           <div className="transaction-gold-cell transaction-gold-cell--mobile">
                             <span className="transaction-source-circle">
-                              {getSourceLabel(mobileTransaction)}
+                              {getSourceShortLabel(mobileTransaction)}
                             </span>
 
                             <div className="transaction-gold-info">
