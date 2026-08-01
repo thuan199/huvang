@@ -355,7 +355,7 @@ function TransactionTable({
                 <thead>
                   <tr>
                     <th>Ngày</th>
-                    <th>Loại</th>
+                    <th>Giao dịch</th>
                     <th>Vàng</th>
                     <th>Số chỉ</th>
                     <th>Giá mua lúc giao dịch</th>
@@ -400,10 +400,15 @@ function TransactionTable({
                         </td>
 
                         <td>
-                          <div>{transaction.gold_type}</div>
-                          <small className="transaction-source-label">
-                            {getSourceLabel(transaction)}
-                          </small>
+                          <div className="transaction-gold-cell">
+                            <span className="transaction-source-circle">
+                              {getSourceLabel(transaction)}
+                            </span>
+
+                            <div className="transaction-gold-info">
+                              <strong>{transaction.gold_type}</strong>
+                            </div>
+                          </div>
                         </td>
 
                         <td>
@@ -574,10 +579,15 @@ function TransactionTable({
                       <tr>
                         <th>Vàng</th>
                         <td>
-                          <div>{mobileTransaction.gold_type}</div>
-                          <small className="transaction-source-label">
-                            {getSourceLabel(mobileTransaction)}
-                          </small>
+                          <div className="transaction-gold-cell transaction-gold-cell--mobile">
+                            <span className="transaction-source-circle">
+                              {getSourceLabel(mobileTransaction)}
+                            </span>
+
+                            <div className="transaction-gold-info">
+                              <strong>{mobileTransaction.gold_type}</strong>
+                            </div>
+                          </div>
                         </td>
                       </tr>
 

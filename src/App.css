@@ -16595,3 +16595,86 @@ body.dark-theme .private-price-modal__header,
     background: #334155;
   }
 }
+
+.transaction-gold-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  text-align: left;
+}
+
+.transaction-source-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+
+  border: 1px solid #ead27a;
+  border-radius: 50%;
+
+  background: #fff8e1;
+  color: #17202a;
+
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+}
+
+.transaction-gold-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.transaction-gold-info strong {
+  color: #1f2937;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.transaction-gold-info small {
+  color: #8a8170;
+  font-size: 10px;
+  font-weight: 400;
+}
+
+/* Tên dài như Mi Hồng */
+.transaction-source-circle {
+  padding: 2px;
+  overflow: hidden;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .transaction-gold-cell--mobile {
+    justify-content: center;
+  }
+
+  .transaction-source-circle {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    font-size: 9px;
+  }
+}
+
+/* Dark theme */
+.dark-theme .transaction-source-circle {
+  border-color: #6b5727;
+  background: #302817;
+  color: #f5d76e;
+}
+
+.dark-theme .transaction-gold-info strong {
+  color: #f8fafc;
+}
+
+.dark-theme .transaction-gold-info small {
+  color: #94a3b8;
+}
