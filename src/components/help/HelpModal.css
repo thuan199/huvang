@@ -1410,3 +1410,31 @@ body.help-modal-open {
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/* Căn nút Hỗ trợ bằng chiều cao với các nút menu header */
+.header-help-button {
+  height: 42px;
+  min-height: 40px;
+
+  margin: 0;
+  padding: 0 15px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  box-sizing: border-box;
+  line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.header-help-button__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  line-height: 1;
+  flex-shrink: 0;
+}
