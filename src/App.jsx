@@ -385,7 +385,7 @@ function App() {
   const [
     activeHistorySource,
     setActiveHistorySource,
-  ] = useState('PNJ');
+  ] = useState('SJC');
 
   /*
    * Điều hướng nội bộ:
