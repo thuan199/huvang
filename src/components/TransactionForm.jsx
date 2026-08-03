@@ -502,9 +502,22 @@ function TransactionForm({
               </label>
 
               <p className="transaction-price-note">
-                {isPrivateSource
-                  ? 'Nhập giá tiệm thu lại tại đúng thời điểm bạn mua. Giá này được lưu vào lịch sử giao dịch; giá hiện tại sẽ được quản lý riêng trong mục “Giá tiệm vàng của tôi”.'
-                  : 'Giá được tự động lấy theo cửa hàng và loại vàng đã chọn. Bạn vẫn có thể điều chỉnh lại trước khi lưu.'}
+                {isPrivateSource ? (
+                  <>
+                    Nhập giá tiệm thu lại tại đúng thời điểm bạn mua. Giá này được lưu vào
+                    lịch sử giao dịch; giá hiện tại sẽ được quản lý riêng trong mục{' '}
+                    <span className="transaction-price-note__link">
+                      <Store size={17} />
+                      <strong>Giá tiệm vàng tư nhân</strong>
+                    </span>
+                    .
+                  </>
+                ) : (
+                  <>
+                    Giá được tự động lấy theo cửa hàng và loại vàng đã chọn. Bạn vẫn có thể
+                    điều chỉnh lại trước khi lưu.
+                  </>
+                )}
               </p>
 
               <input
