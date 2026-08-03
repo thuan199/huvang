@@ -288,7 +288,7 @@ function App() {
   const [
     activeGoldTab,
     setActiveGoldTab,
-  ] = useState('overview');
+  ] = useState('local');
 
   const [
     activeMobileTab,

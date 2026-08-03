@@ -544,20 +544,20 @@ function LocalGoldChart({
       <div className="local-gold-chart__tabs analysis-dashboard__tabs">
         <button
           type="button"
-          className={activeGoldTab === 'overview' ? 'is-active' : ''}
-          onClick={() => setActiveGoldTab('overview')}
-        >
-          <BrainCircuit size={17} />
-          <span>Phân tích</span>
-        </button>
-
-        <button
-          type="button"
           className={activeGoldTab === 'local' ? 'is-active' : ''}
           onClick={() => setActiveGoldTab('local')}
         >
           <BarChart3 size={17} />
           <span>Giá cửa hàng</span>
+        </button>
+
+        <button
+          type="button"
+          className={activeGoldTab === 'overview' ? 'is-active' : ''}
+          onClick={() => setActiveGoldTab('overview')}
+        >
+          <BrainCircuit size={17} />
+          <span>Phân tích</span>
         </button>
 
         <button
